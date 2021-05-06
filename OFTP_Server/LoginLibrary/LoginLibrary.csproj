@@ -4,4 +4,9 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DatabaseLibrary.DAL\DatabaseLibrary.DAL.csproj" />
+    <ProjectReference Include="..\DatabaseLibrary\DatabaseLibrary.csproj" />
+  </ItemGroup>
+
 </Project>

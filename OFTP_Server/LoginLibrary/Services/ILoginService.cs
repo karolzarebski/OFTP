@@ -1,11 +1,12 @@
-﻿namespace LoginLibrary.Services
+﻿using System.Threading.Tasks;
+using LoginLibrary.Enums;
+
+namespace LoginLibrary.Services
 {
     public interface ILoginService
     {
-        //bool RegisterAccount(string data);
-        //bool CheckData(string data);
-        //bool ChangePassword(string data);
-        byte[] Encrypt(string data);
-        string Decrypt(byte[] data);
+        Task<bool> RegisterAccount(string login, string password);
+        Task<UserLoginSettings> CheckData(string login, string password);
+        Task<bool> ChangePassword(string login, string password);
     }
 }
