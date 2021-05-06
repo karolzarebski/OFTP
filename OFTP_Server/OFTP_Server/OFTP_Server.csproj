@@ -22,9 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CryptoLibrary\CryptoLibrary.csproj" />
     <ProjectReference Include="..\DatabaseLibrary.DAL\DatabaseLibrary.DAL.csproj" />
     <ProjectReference Include="..\DatabaseLibrary\DatabaseLibrary.csproj" />
-    <ProjectReference Include="..\LoginLibrary\LoginLibrary.csproj" />
     <ProjectReference Include="..\ServerLibrary\ServerLibrary.csproj" />
   </ItemGroup>
 

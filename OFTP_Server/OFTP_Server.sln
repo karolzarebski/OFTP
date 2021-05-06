@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseLibrary", "Database
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseLibrary.DAL", "DatabaseLibrary.DAL\DatabaseLibrary.DAL.csproj", "{5973FB40-3885-46D2-8916-CEB24546D325}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoginLibrary", "LoginLibrary\LoginLibrary.csproj", "{B449E0CA-02E5-4933-A0D2-A80C6268B003}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CryptoLibrary", "CryptoLibrary\CryptoLibrary.csproj", "{958A91AA-3D6E-4F28-8F52-58081ACBBAD3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,10 +35,10 @@ Global
 		{5973FB40-3885-46D2-8916-CEB24546D325}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5973FB40-3885-46D2-8916-CEB24546D325}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5973FB40-3885-46D2-8916-CEB24546D325}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B449E0CA-02E5-4933-A0D2-A80C6268B003}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B449E0CA-02E5-4933-A0D2-A80C6268B003}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B449E0CA-02E5-4933-A0D2-A80C6268B003}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B449E0CA-02E5-4933-A0D2-A80C6268B003}.Release|Any CPU.Build.0 = Release|Any CPU
+		{958A91AA-3D6E-4F28-8F52-58081ACBBAD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{958A91AA-3D6E-4F28-8F52-58081ACBBAD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{958A91AA-3D6E-4F28-8F52-58081ACBBAD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{958A91AA-3D6E-4F28-8F52-58081ACBBAD3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

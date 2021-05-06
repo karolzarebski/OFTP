@@ -7,8 +7,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ServerLibrary;
 using ServerLibrary.Services;
-using LoginLibrary;
-using LoginLibrary.Services;
+using CryptoLibrary;
+using CryptoLibrary.Services;
 
 namespace OFTP_Server
 {
