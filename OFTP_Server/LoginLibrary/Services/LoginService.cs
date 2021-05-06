@@ -1,9 +1,9 @@
-﻿using LoginLibrary.Enums;
-using Microsoft.Extensions.Logging;
-using DatabaseLibrary.DAL.Services;
+﻿using DatabaseLibrary.DAL.Services;
 using DatabaseLibrary.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace LoginLibrary.Services
@@ -22,9 +22,9 @@ namespace LoginLibrary.Services
             _cryptoService = cryptoService;
         }
 
-        private bool IsPasswordSecureEnough(string password)
+        private bool IsPasswordSecureEnough(string password) //Minimum ten characters, at least one uppercase letter, one lowercase letter and one number:
         {
-            return true;
+            return Regex.IsMatch(password, "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{10,}$");
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace LoginLibrary.Services
         /// </summary>
         /// <param name="data"></param>
         /// <returns>Information if user is in database</returns>
-        public async Task<bool> CheckData(string login, string password)
+        public async Task<bool> CheckLoginCredentials(string login, string password)
         {
             var user = (await _storageService.GetUserDataAsync()).FirstOrDefault(u => u.Login == login);
 

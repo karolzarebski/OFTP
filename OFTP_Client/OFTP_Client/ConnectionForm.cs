@@ -76,24 +76,35 @@ namespace OFTP_Client
         {
             var codeBuffer = new byte[1];
 
-            await stream.WriteAsync(Encoding.UTF8.GetBytes($"2|{LoginTextBox.Text}|{PasswordTextBox.Text}"));
+            string login = LoginTextBox.Text;
+            string password = PasswordTextBox.Text;
 
-            await stream.ReadAsync(codeBuffer, 0, codeBuffer.Length);
-
-            switch(Encoding.UTF8.GetString(codeBuffer))
+            if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
-                case "5":
-                    Array.Clear(codeBuffer, 0, codeBuffer.Length);
-                    MessageBox.Show("Zalogowano",
-                         "OK", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    break;
-                case "4":
-                    MessageBox.Show("Błędne dane logowania\nPodaj nowe i spróbuj ponowne",
-                        "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    Array.Clear(codeBuffer, 0, codeBuffer.Length);
-                    break;
-                default:
-                    break;
+                await stream.WriteAsync(Encoding.UTF8.GetBytes($"2|{LoginTextBox.Text}|{PasswordTextBox.Text}"));
+
+                await stream.ReadAsync(codeBuffer, 0, codeBuffer.Length);
+
+                switch (Encoding.UTF8.GetString(codeBuffer))
+                {
+                    case "5":
+                        Array.Clear(codeBuffer, 0, codeBuffer.Length);
+                        MessageBox.Show("Zalogowano",
+                             "OK", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        break;
+                    case "4":
+                        MessageBox.Show("Błędne dane logowania\nPodaj nowe i spróbuj ponowne",
+                            "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        Array.Clear(codeBuffer, 0, codeBuffer.Length);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else
+            {
+                MessageBox.Show("Dane do logowania nie mogą być puste\nPodaj nowe i spróbuj ponownie", "Puste dane",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -101,29 +112,40 @@ namespace OFTP_Client
         {
             var codeBuffer = new byte[1];
 
-            await stream.WriteAsync(Encoding.UTF8.GetBytes($"3|{LoginTextBox.Text}|{PasswordTextBox.Text}"));
+            string login = LoginTextBox.Text;
+            string password = PasswordTextBox.Text;
 
-            await stream.ReadAsync(codeBuffer, 0, codeBuffer.Length);
-
-            switch (Encoding.UTF8.GetString(codeBuffer))
+            if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
-                case "6":
-                    MessageBox.Show("Zarejestrowano\nZaloguj się",
-                         "OK", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    Array.Clear(codeBuffer, 0, codeBuffer.Length);
-                    break;
-                case "7":
-                    MessageBox.Show("Błąd rejestracji\nKonto o podanym loginie już istnieje\nPodaj nowe i spróbuj ponowne",
-                        "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    Array.Clear(codeBuffer, 0, codeBuffer.Length);
-                    break;
-                case "8":
-                    MessageBox.Show("Błąd rejestracji\nHasło nie spełnia polityki\nPodaj nowe i spróbuj ponowne",
-                        "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    Array.Clear(codeBuffer, 0, codeBuffer.Length);
-                    break;
-                default:
-                    break;
+                await stream.WriteAsync(Encoding.UTF8.GetBytes($"3|{login}|{password}"));
+
+                await stream.ReadAsync(codeBuffer, 0, codeBuffer.Length);
+
+                switch (Encoding.UTF8.GetString(codeBuffer))
+                {
+                    case "6":
+                        MessageBox.Show("Zarejestrowano\nZaloguj się",
+                             "OK", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        Array.Clear(codeBuffer, 0, codeBuffer.Length);
+                        break;
+                    case "7":
+                        MessageBox.Show("Błąd rejestracji\nKonto o podanym loginie już istnieje\nPodaj nowe i spróbuj ponowne",
+                            "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        Array.Clear(codeBuffer, 0, codeBuffer.Length);
+                        break;
+                    case "8":
+                        MessageBox.Show("Błąd rejestracji\nHasło nie spełnia polityki\nPodaj nowe i spróbuj ponowne",
+                            "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        Array.Clear(codeBuffer, 0, codeBuffer.Length);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else
+            {
+                MessageBox.Show("Dane rejestracyjne nie mogą być puste\nPodaj nowe i spróbuj ponownie", "Puste dane", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
     }
