@@ -22,6 +22,11 @@ namespace LoginLibrary.Services
             _cryptoService = cryptoService;
         }
 
+        private bool IsPasswordSecureEnough(string password)
+        {
+            return true;
+        }
+
         /// <summary>
         /// Changes password
         /// </summary>
@@ -57,20 +62,20 @@ namespace LoginLibrary.Services
         /// </summary>
         /// <param name="data"></param>
         /// <returns>Information if user is in database</returns>
-        public async Task<UserLoginSettings> CheckData(string login, string password)
+        public async Task<bool> CheckData(string login, string password)
         {
             var user = (await _storageService.GetUserDataAsync()).FirstOrDefault(u => u.Login == login);
 
             if (user == null)
             {
-                return UserLoginSettings.UserNotExists;
+                return false;
             }
 
             try
             {
                 if (await _cryptoService.DecryptPassword(user.Password) == password)
                 {
-                    return UserLoginSettings.LoggedIn;
+                    return true;
                 }
             }
             catch (Exception e)
@@ -78,7 +83,7 @@ namespace LoginLibrary.Services
                 _logger.LogInformation(e.Message);
             }
 
-            return UserLoginSettings.BadPassword;
+            return false;
         }
 
         /// <summary>
@@ -86,29 +91,34 @@ namespace LoginLibrary.Services
         /// </summary>
         /// <param name="data"></param>
         /// <returns>Status of registration</returns>
-        public async Task<bool> RegisterAccount(string login, string password)
+        public async Task<int> RegisterAccount(string login, string password)
         {
             if ((await _storageService.GetUserDataAsync()).Any(u => u.Login == login))
             {
-                return false;
+                return 7;
             }
 
             try
             {
-                _storageService.AddUserDataAsync(new User()
+                if (IsPasswordSecureEnough(password))
                 {
-                    Login = login,
-                    Password = await _cryptoService.EncryptPassword(password)
-                });
+                    _storageService.AddUserDataAsync(new User()
+                    {
+                        Login = login,
+                        Password = await _cryptoService.EncryptPassword(password)
+                    });
+
+                    return 6;
+                }
+
+                return 8;
             }
             catch (Exception e)
             {
                 _logger.LogInformation(e.Message);
 
-                return false;
+                return 99;
             }
-
-            return true;
         }
     }
 }

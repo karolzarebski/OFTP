@@ -5,6 +5,7 @@ using DatabaseLibrary.DAL;
 using DatabaseLibrary.DAL.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ServerLibrary;
 using ServerLibrary.Services;
 using LoginLibrary;
@@ -44,13 +45,18 @@ namespace OFTP_Server
         {
             var databaseConfiguration = _configuration.GetSection("DatabaseConfiguration").Get<DatabaseConfiguration>();
             var serverConfiguration = _configuration.GetSection("ServerConfiguration").Get<ServerConfiguration>();
+            var cryptoConfiguration = _configuration.GetSection("CryptoConfiguration").Get<CryptoConfiguration>();
 
             servicesCollection
                 .AddSingleton(_configuration)
                 .AddSingleton(databaseConfiguration)
                 .AddSingleton(serverConfiguration)
+                .AddSingleton(cryptoConfiguration)
                 .AddSingleton<IServerService, ServerService>()
-                .AddSingleton<IDatabaseService, DatabaseService>();
+                .AddSingleton<IDatabaseService, DatabaseService>()
+                .AddSingleton<ICryptoService, CryptoService>()
+                .AddSingleton<ILoginService, LoginService>()
+                .AddLogging(builder => builder.AddFile(_configuration.GetSection("Logs")));
 
             servicesCollection.RegisterDALDependiences();
         }

@@ -6,7 +6,6 @@ namespace LoginLibrary.Enums
     public enum UserLoginSettings
     {
         LoggedIn,
-        BadPassword,
-        UserNotExists
+        BadPassword
     }
 }
