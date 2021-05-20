@@ -1,8 +1,9 @@
-﻿using System;
-using System.Diagnostics;
+﻿using OFTP_Client.Events;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace OFTP_Client
@@ -13,6 +14,7 @@ namespace OFTP_Client
         private NetworkStream stream;
         private CryptoService _cryptoService = new CryptoService();
         private bool connected = false;
+        private event EventHandler<UsersListChangedEvent> UsersChanged;
 
         public ConnectionForm()
         {
@@ -157,7 +159,6 @@ namespace OFTP_Client
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                         Array.Clear(codeBuffer, 0, codeBuffer.Length);
                         //LoginButton.PerformClick();
-
                         InitMainWindow();
                         break;
                     case "7":
@@ -184,6 +185,20 @@ namespace OFTP_Client
         private void InitMainWindow()
         {
             var mainWindow = new MainWindow();
+            UsersChanged += mainWindow.MainWindow_UsersChanged;
+
+            Task.Run(async () =>
+            {
+                var buffer = new byte[2048];
+
+                while (true)
+                {
+                    await client.GetStream().ReadAsync(buffer, 0, buffer.Length);
+                    var newUser = (await _cryptoService.DecryptData(buffer)).Split('|');
+                    UsersChanged.Invoke(this, new UsersListChangedEvent { username = newUser[0], IPAddress = newUser[1] });
+                }
+            });
+
             mainWindow.FormClosing += (sender, e) => Show();
             mainWindow.Show();
             Hide();

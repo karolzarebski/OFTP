@@ -1,12 +1,12 @@
-﻿using System;
+﻿using OFTP_Client.Events;
+using OFTP_Client.FilesService;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using OFTP_Client.Events;
-using OFTP_Client.FilesService;
 
 namespace OFTP_Client
 {
@@ -21,6 +21,23 @@ namespace OFTP_Client
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        public void MainWindow_UsersChanged(object sender, UsersListChangedEvent e)
+        {
+            if (availableUsers.ContainsKey(e.username))
+            {
+                availableUsers.Remove(e.username);
+            }
+            else
+            {
+                availableUsers.Add(e.username, IPAddress.Parse(e.IPAddress));
+            }
+
+            Invoke(new Action(() =>
+            {
+
+            }));
         }
 
         private void Logout(object eventArgs)

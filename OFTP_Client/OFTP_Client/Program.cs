@@ -14,7 +14,6 @@ namespace OFTP_Client
         [STAThread]
         static void Main()
         {
-            var s = new CryptoService();
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
