@@ -69,25 +69,10 @@ namespace ServerLibrary.Services
                      //Add key service
 
                      var publicKey = _cryptoService.GeneratePublicKey();
-
-                     Debug.WriteLine("public key server");
-
-                     foreach (var item in publicKey)
-                     {
-                         Debug.Write($"{item} ");
-                     }
-
                      await client.GetStream().WriteAsync(publicKey);
 
                      byte[] clientPublicKey = new byte[72];
                      await client.GetStream().ReadAsync(clientPublicKey, 0, clientPublicKey.Length);
-
-                     Debug.WriteLine("public key client");
-
-                     foreach (var item in clientPublicKey)
-                     {
-                         Debug.Write($"{item} ");
-                     }
 
                      await client.GetStream().WriteAsync(_cryptoService.GenerateIV(clientPublicKey));
 

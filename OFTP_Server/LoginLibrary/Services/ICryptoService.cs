@@ -8,5 +8,6 @@ namespace LoginLibrary.Services
         Task<string> DecryptData(byte[] encryptedPassword);
         byte[] GeneratePublicKey();
         byte[] GenerateIV(byte[] publicKey);
+        byte[] CreateHash(string password, string salt);
     }
 }

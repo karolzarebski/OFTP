@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace LoginLibrary.Services
@@ -64,6 +65,10 @@ namespace LoginLibrary.Services
             }
         }
 
-
+        public byte[] CreateHash(string password, string salt)
+        {
+            using var shaHasher = SHA256.Create();
+            return shaHasher.ComputeHash(Encoding.UTF8.GetBytes($"{password}{salt}"));
+        }
     }
 }

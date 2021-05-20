@@ -60,24 +60,7 @@ namespace OFTP_Client
                 byte[] publicKey = new byte[72];
                 await stream.ReadAsync(publicKey, 0, publicKey.Length);
 
-
-                Debug.WriteLine("public key server");
-
-                foreach (var item in publicKey)
-                {
-                    Debug.Write($"{item} ");
-                }
-
                 var clientPublicKey = _cryptoService.GeneratePublicKey();
-
-                Debug.WriteLine("public key client");
-
-                foreach (var item in clientPublicKey)
-                {
-                    Debug.Write($"{item} ");
-                }
-
-
                 await stream.WriteAsync(clientPublicKey);
 
                 byte[] iv = new byte[16];
@@ -110,8 +93,7 @@ namespace OFTP_Client
 
             if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
-                //await stream.WriteAsync(Encoding.UTF8.GetBytes($"2|{LoginTextBox.Text}|{PasswordTextBox.Text}"));
-                var encryptedData = await _cryptoService.EncryptData($"2|{LoginTextBox.Text}|{PasswordTextBox.Text}");
+                var encryptedData = await _cryptoService.EncryptData($"2|{login}|{password}");
 
                 var message = new byte[encryptedData.Length + 1];
 
@@ -129,9 +111,7 @@ namespace OFTP_Client
                         Array.Clear(codeBuffer, 0, codeBuffer.Length);
                         MessageBox.Show("Zalogowano",
                              "OK", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        var meetingWindow = new MainWindow();
-                        meetingWindow.FormClosing += (sender, e) => Show();
-                        Hide();
+                        InitMainWindow();
                         break;
                     case "4":
                         MessageBox.Show("Błędne dane logowania\nPodaj nowe i spróbuj ponowne",
@@ -158,7 +138,15 @@ namespace OFTP_Client
 
             if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
-                await stream.WriteAsync(Encoding.UTF8.GetBytes($"3|{login}|{password}"));
+                var encryptedData = await _cryptoService.EncryptData($"3|{login}|{password}");
+
+                var message = new byte[encryptedData.Length + 1];
+
+                Array.Copy(encryptedData, 0, message, 1, encryptedData.Length);
+
+                message[0] = (byte)encryptedData.Length;
+
+                await stream.WriteAsync(message);
 
                 await stream.ReadAsync(codeBuffer, 0, codeBuffer.Length);
 
@@ -168,7 +156,9 @@ namespace OFTP_Client
                         MessageBox.Show("Pomyślnie zarejestrowano", "Rejestracja",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                         Array.Clear(codeBuffer, 0, codeBuffer.Length);
-                        LoginButton.PerformClick();
+                        //LoginButton.PerformClick();
+
+                        InitMainWindow();
                         break;
                     case "7":
                         MessageBox.Show("Błąd rejestracji\nKonto o podanym loginie już istnieje\nPodaj nowe i spróbuj ponowne",
@@ -189,6 +179,14 @@ namespace OFTP_Client
                 MessageBox.Show("Dane rejestracyjne nie mogą być puste\nPodaj nowe i spróbuj ponownie", "Puste dane",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
+        }
+
+        private void InitMainWindow()
+        {
+            var mainWindow = new MainWindow();
+            mainWindow.FormClosing += (sender, e) => Show();
+            mainWindow.Show();
+            Hide();
         }
     }
 }

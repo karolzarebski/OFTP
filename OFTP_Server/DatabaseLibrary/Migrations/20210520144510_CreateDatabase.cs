@@ -14,7 +14,8 @@ namespace DatabaseLibrary.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Login = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Password = table.Column<byte[]>(type: "varbinary(max)", nullable: false)
+                    Password = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
+                    Salt = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {

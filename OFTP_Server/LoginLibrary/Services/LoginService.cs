@@ -2,6 +2,7 @@
 using DatabaseLibrary.Models;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -20,6 +21,14 @@ namespace LoginLibrary.Services
             _logger = logger;
             _storageService = storageService;
             _cryptoService = cryptoService;
+        }
+
+        private string RandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
         private bool IsPasswordSecureEnough(string password) //Minimum ten characters, at least one uppercase letter, one lowercase letter and one number:
@@ -73,7 +82,7 @@ namespace LoginLibrary.Services
 
             try
             {
-                if (await _cryptoService.DecryptData(user.Password) == password)
+                if (_cryptoService.CreateHash(password, user.Salt).SequenceEqual(user.Password))
                 {
                     return true;
                 }
@@ -100,14 +109,14 @@ namespace LoginLibrary.Services
 
             try
             {   
-
-
                 if (IsPasswordSecureEnough(password))
                 {
+                    var salt = RandomString(8);
                     _storageService.AddUserDataAsync(new User()
                     {
                         Login = login,
-                        Password = await _cryptoService.EncryptData(password)
+                        Password = _cryptoService.CreateHash(password, salt),
+                        Salt = salt
                     });
 
                     return 6;
