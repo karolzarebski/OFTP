@@ -20,8 +20,8 @@ namespace OFTP_Server
 
         static void Main(string[] args)
         {
-            try
-            {
+            //try
+            //{
                 _configuration = new ConfigurationBuilder()
                     .AddJsonFile("appsettings.json")
                     .Build();
@@ -34,11 +34,11 @@ namespace OFTP_Server
                 Task.Run(() => _serviceProvider.GetRequiredService<IDatabaseService>().MigrateAsync()).Wait();
 
                 _serviceProvider.GetRequiredService<IServerService>().StartServer().Wait();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Exception occured during application startup {ex.Message}");
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"Exception occured during application startup {ex.Message}");
+            //}
         }
 
         private static void ConfigureServices(IServiceCollection servicesCollection)

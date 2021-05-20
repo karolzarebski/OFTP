@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -58,12 +59,30 @@ namespace OFTP_Client
 
                 byte[] publicKey = new byte[72];
                 await stream.ReadAsync(publicKey, 0, publicKey.Length);
+
+
+                Debug.WriteLine("public key server");
+
+                foreach (var item in publicKey)
+                {
+                    Debug.Write($"{item} ");
+                }
+
                 var clientPublicKey = _cryptoService.GeneratePublicKey();
+
+                Debug.WriteLine("public key client");
+
+                foreach (var item in clientPublicKey)
+                {
+                    Debug.Write($"{item} ");
+                }
+
+
                 await stream.WriteAsync(clientPublicKey);
 
                 byte[] iv = new byte[16];
                 await stream.ReadAsync(iv, 0, iv.Length);
-                _cryptoService.AssignIV(clientPublicKey, iv);
+                _cryptoService.AssignIV(publicKey, iv);
             }
         }
 
@@ -92,7 +111,15 @@ namespace OFTP_Client
             if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
                 //await stream.WriteAsync(Encoding.UTF8.GetBytes($"2|{LoginTextBox.Text}|{PasswordTextBox.Text}"));
-                await stream.WriteAsync(await _cryptoService.EncryptData($"2|{LoginTextBox.Text}|{PasswordTextBox.Text}"));
+                var encryptedData = await _cryptoService.EncryptData($"2|{LoginTextBox.Text}|{PasswordTextBox.Text}");
+
+                var message = new byte[encryptedData.Length + 1];
+
+                Array.Copy(encryptedData, 0, message, 1, encryptedData.Length);
+
+                message[0] = (byte)encryptedData.Length;
+
+                await stream.WriteAsync(message);
 
                 await stream.ReadAsync(codeBuffer, 0, codeBuffer.Length);
 

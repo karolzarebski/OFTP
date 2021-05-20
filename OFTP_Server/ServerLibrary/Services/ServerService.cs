@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -47,12 +48,6 @@ namespace ServerLibrary.Services
 
         public async Task StartServer()
         {
-
-            var publicKey = _cryptoService.GeneratePublicKey();
-            var publicKey1 = _cryptoService.GeneratePublicKey();
-            
-            var privateKey = _cryptoService.GenerateIV(publicKey);
-
            TcpListener server = new TcpListener(IPAddress.Parse(_serverConfiguration.IpAddress), _serverConfiguration.Port);
 
             server.Start();
@@ -74,10 +69,25 @@ namespace ServerLibrary.Services
                      //Add key service
 
                      var publicKey = _cryptoService.GeneratePublicKey();
+
+                     Debug.WriteLine("public key server");
+
+                     foreach (var item in publicKey)
+                     {
+                         Debug.Write($"{item} ");
+                     }
+
                      await client.GetStream().WriteAsync(publicKey);
 
                      byte[] clientPublicKey = new byte[72];
                      await client.GetStream().ReadAsync(clientPublicKey, 0, clientPublicKey.Length);
+
+                     Debug.WriteLine("public key client");
+
+                     foreach (var item in clientPublicKey)
+                     {
+                         Debug.Write($"{item} ");
+                     }
 
                      await client.GetStream().WriteAsync(_cryptoService.GenerateIV(clientPublicKey));
 
@@ -89,7 +99,8 @@ namespace ServerLibrary.Services
                      {
                          await client.GetStream().ReadAsync(signInBuffer, 0, signInBuffer.Length);
 
-                         var data = (await _cryptoService.DecryptData(signInBuffer)).Replace("\0", "").Split('|');
+                         var data = (await _cryptoService.DecryptData(signInBuffer.Skip(1)
+                             .Take(Convert.ToInt32(signInBuffer[0])).ToArray())).Split('|');
 
                          switch (data[0])
                          {
