@@ -45,13 +45,11 @@ namespace OFTP_Server
         {
             var databaseConfiguration = _configuration.GetSection("DatabaseConfiguration").Get<DatabaseConfiguration>();
             var serverConfiguration = _configuration.GetSection("ServerConfiguration").Get<ServerConfiguration>();
-            var cryptoConfiguration = _configuration.GetSection("CryptoConfiguration").Get<CryptoConfiguration>();
 
             servicesCollection
                 .AddSingleton(_configuration)
                 .AddSingleton(databaseConfiguration)
                 .AddSingleton(serverConfiguration)
-                .AddSingleton(cryptoConfiguration)
                 .AddSingleton<IServerService, ServerService>()
                 .AddSingleton<IDatabaseService, DatabaseService>()
                 .AddSingleton<ICryptoService, CryptoService>()

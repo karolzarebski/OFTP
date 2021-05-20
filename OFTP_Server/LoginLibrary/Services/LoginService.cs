@@ -44,7 +44,7 @@ namespace LoginLibrary.Services
                 _storageService.AddUserDataAsync(new User()
                 {
                     Login = login,
-                    Password = await _cryptoService.EncryptPassword(password)
+                    Password = await _cryptoService.EncryptData(password)
                 });
             }
             catch (Exception e)
@@ -73,7 +73,7 @@ namespace LoginLibrary.Services
 
             try
             {
-                if (await _cryptoService.DecryptPassword(user.Password) == password)
+                if (await _cryptoService.DecryptData(user.Password) == password)
                 {
                     return true;
                 }
@@ -99,13 +99,15 @@ namespace LoginLibrary.Services
             }
 
             try
-            {
+            {   
+
+
                 if (IsPasswordSecureEnough(password))
                 {
                     _storageService.AddUserDataAsync(new User()
                     {
                         Login = login,
-                        Password = await _cryptoService.EncryptPassword(password)
+                        Password = await _cryptoService.EncryptData(password)
                     });
 
                     return 6;

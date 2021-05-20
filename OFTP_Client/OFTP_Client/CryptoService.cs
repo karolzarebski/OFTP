@@ -2,9 +2,9 @@
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
-namespace LoginLibrary.Services
+namespace OFTP_Client
 {
-    public class CryptoService : ICryptoService
+    public class CryptoService
     {
         private readonly Aes aes;
         ECDiffieHellmanCng dh;
@@ -25,19 +25,17 @@ namespace LoginLibrary.Services
             return dh.PublicKey.ToByteArray();
         }
 
-        public byte[] GenerateIV(byte[] publicKey)
+        public void AssignIV(byte[] publicKey, byte[] iv)
         {
             aes.Key = dh.DeriveKeyMaterial(CngKey.Import(publicKey, CngKeyBlobFormat.EccPublicBlob));
-            aes.GenerateIV();
-            return aes.IV;
+            aes.IV = iv;
         }
 
         public Task<string> DecryptData(byte[] encryptedData)
         {
             using (MemoryStream msDecrypt = new MemoryStream(encryptedData))
             {
-                using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aes.CreateDecryptor(aes.Key,
-                    aes.IV), CryptoStreamMode.Read))
+                using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aes.CreateDecryptor(aes.Key, aes.IV), CryptoStreamMode.Read))
                 {
                     using (StreamReader srDecrypt = new StreamReader(csDecrypt))
                     {
@@ -51,8 +49,7 @@ namespace LoginLibrary.Services
         {
             using (MemoryStream msEncrypt = new MemoryStream())
             {
-                using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, aes.CreateEncryptor(aes.Key,
-                    aes.IV), CryptoStreamMode.Write))
+                using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, aes.CreateEncryptor(aes.Key, aes.IV), CryptoStreamMode.Write))
                 {
                     using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
                     {
@@ -63,7 +60,5 @@ namespace LoginLibrary.Services
                 }
             }
         }
-
-
     }
 }

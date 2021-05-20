@@ -4,7 +4,9 @@ namespace LoginLibrary.Services
 {
     public interface ICryptoService
     {
-        Task<byte[]> EncryptPassword(string password);
-        Task<string> DecryptPassword(byte[] encryptedPassword);
+        Task<byte[]> EncryptData(string password);
+        Task<string> DecryptData(byte[] encryptedPassword);
+        byte[] GeneratePublicKey();
+        byte[] GenerateIV(byte[] publicKey);
     }
 }

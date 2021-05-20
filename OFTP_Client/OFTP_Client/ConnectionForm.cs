@@ -10,6 +10,7 @@ namespace OFTP_Client
     {
         private TcpClient client;
         private NetworkStream stream;
+        private CryptoService _cryptoService = new CryptoService();
         private bool connected = false;
 
         public ConnectionForm()
@@ -54,6 +55,15 @@ namespace OFTP_Client
                 RegisterButton.Enabled = true;
                 ConnectButton.Text = "Rozłącz";
                 connected = true;
+
+                byte[] publicKey = new byte[72];
+                await stream.ReadAsync(publicKey, 0, publicKey.Length);
+                var clientPublicKey = _cryptoService.GeneratePublicKey();
+                await stream.WriteAsync(clientPublicKey);
+
+                byte[] iv = new byte[16];
+                await stream.ReadAsync(iv, 0, iv.Length);
+                _cryptoService.AssignIV(clientPublicKey, iv);
             }
         }
 
@@ -81,7 +91,8 @@ namespace OFTP_Client
 
             if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
-                await stream.WriteAsync(Encoding.UTF8.GetBytes($"2|{LoginTextBox.Text}|{PasswordTextBox.Text}"));
+                //await stream.WriteAsync(Encoding.UTF8.GetBytes($"2|{LoginTextBox.Text}|{PasswordTextBox.Text}"));
+                await stream.WriteAsync(await _cryptoService.EncryptData($"2|{LoginTextBox.Text}|{PasswordTextBox.Text}"));
 
                 await stream.ReadAsync(codeBuffer, 0, codeBuffer.Length);
 
@@ -91,6 +102,9 @@ namespace OFTP_Client
                         Array.Clear(codeBuffer, 0, codeBuffer.Length);
                         MessageBox.Show("Zalogowano",
                              "OK", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        var meetingWindow = new MainWindow();
+                        meetingWindow.FormClosing += (sender, e) => Show();
+                        Hide();
                         break;
                     case "4":
                         MessageBox.Show("Błędne dane logowania\nPodaj nowe i spróbuj ponowne",
@@ -124,9 +138,10 @@ namespace OFTP_Client
                 switch (Encoding.UTF8.GetString(codeBuffer))
                 {
                     case "6":
-                        MessageBox.Show("Zarejestrowano\nZaloguj się",
-                             "OK", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Pomyślnie zarejestrowano", "Rejestracja",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
                         Array.Clear(codeBuffer, 0, codeBuffer.Length);
+                        LoginButton.PerformClick();
                         break;
                     case "7":
                         MessageBox.Show("Błąd rejestracji\nKonto o podanym loginie już istnieje\nPodaj nowe i spróbuj ponowne",
@@ -144,7 +159,7 @@ namespace OFTP_Client
             }
             else
             {
-                MessageBox.Show("Dane rejestracyjne nie mogą być puste\nPodaj nowe i spróbuj ponownie", "Puste dane", 
+                MessageBox.Show("Dane rejestracyjne nie mogą być puste\nPodaj nowe i spróbuj ponownie", "Puste dane",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }

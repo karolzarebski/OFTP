@@ -13,6 +13,7 @@ namespace ServerLibrary.Services
     public class ServerService : IServerService
     {
         private readonly ILoginService _loginService;
+        private readonly ICryptoService _cryptoService;
         private readonly ILogger<ServerService> _logger;
 
         private readonly ServerConfiguration _serverConfiguration;
@@ -23,9 +24,11 @@ namespace ServerLibrary.Services
         private bool eventFired = false;
         private int usersCount = 0;
 
-        public ServerService(ServerConfiguration serverConfiguration, ILoginService loginService, ILogger<ServerService> logger)
+        public ServerService(ServerConfiguration serverConfiguration, ILoginService loginService,
+            ILogger<ServerService> logger, ICryptoService cryptoService)
         {
             _serverConfiguration = serverConfiguration;
+            _cryptoService = cryptoService;
             _loginService = loginService;
             _logger = logger;
 
@@ -44,7 +47,13 @@ namespace ServerLibrary.Services
 
         public async Task StartServer()
         {
-            TcpListener server = new TcpListener(IPAddress.Parse(_serverConfiguration.IpAddress), _serverConfiguration.Port);
+
+            var publicKey = _cryptoService.GeneratePublicKey();
+            var publicKey1 = _cryptoService.GeneratePublicKey();
+            
+            var privateKey = _cryptoService.GenerateIV(publicKey);
+
+           TcpListener server = new TcpListener(IPAddress.Parse(_serverConfiguration.IpAddress), _serverConfiguration.Port);
 
             server.Start();
 
@@ -62,6 +71,16 @@ namespace ServerLibrary.Services
                  {
                      await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes("1"));
 
+                     //Add key service
+
+                     var publicKey = _cryptoService.GeneratePublicKey();
+                     await client.GetStream().WriteAsync(publicKey);
+
+                     byte[] clientPublicKey = new byte[72];
+                     await client.GetStream().ReadAsync(clientPublicKey, 0, clientPublicKey.Length);
+
+                     await client.GetStream().WriteAsync(_cryptoService.GenerateIV(clientPublicKey));
+
                      bool loggedIn = false;
 
                      string clientIpAddress = client.Client.RemoteEndPoint.ToString();
@@ -70,7 +89,7 @@ namespace ServerLibrary.Services
                      {
                          await client.GetStream().ReadAsync(signInBuffer, 0, signInBuffer.Length);
 
-                         var data = Encoding.UTF8.GetString(signInBuffer).Replace("\0", "").Split('|');
+                         var data = (await _cryptoService.DecryptData(signInBuffer)).Replace("\0", "").Split('|');
 
                          switch (data[0])
                          {
