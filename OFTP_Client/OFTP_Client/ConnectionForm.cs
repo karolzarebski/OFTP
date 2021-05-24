@@ -1,8 +1,11 @@
 ﻿using OFTP_Client.Events;
 using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -13,12 +16,16 @@ namespace OFTP_Client
         private TcpClient client;
         private NetworkStream stream;
         private CryptoService _cryptoService = new CryptoService();
-        private bool connected = false;
+        private bool connected = false, isLoggedIn = false;
         private event EventHandler<UsersListChangedEvent> UsersChanged;
 
         public ConnectionForm()
         {
             InitializeComponent();
+
+            ServerIpTextBox.Text = "127.0.0.1";
+            LoginTextBox.Text = "karol123";
+            PasswordTextBox.Text = "Ww123456789";
         }
 
         private IPAddress IsServerConfigurationCorrect(string ipAddress)
@@ -184,22 +191,67 @@ namespace OFTP_Client
 
         private void InitMainWindow()
         {
+            isLoggedIn = true;
             var mainWindow = new MainWindow();
             UsersChanged += mainWindow.MainWindow_UsersChanged;
+            mainWindow.LogoutEvent += (sender, e) => isLoggedIn = false;
+
+            var cancellationTokenSource = new CancellationTokenSource();
+            var cancellationToken = cancellationTokenSource.Token;
 
             Task.Run(async () =>
             {
                 var buffer = new byte[2048];
 
-                while (true)
+                while (isLoggedIn)
                 {
-                    await client.GetStream().ReadAsync(buffer, 0, buffer.Length);
-                    var newUser = (await _cryptoService.DecryptData(buffer)).Split('|');
-                    UsersChanged.Invoke(this, new UsersListChangedEvent { username = newUser[0], IPAddress = newUser[1] });
+                    try
+                    {
+                        Debug.WriteLine("begin await");
+                        await client.GetStream().ReadAsync(buffer, 0, buffer.Length, cancellationToken);
+                        Debug.WriteLine("end wait");
+
+                        if (!cancellationToken.IsCancellationRequested)
+                        {
+                            var newUser = (await _cryptoService.DecryptData(buffer.Skip(1).Take(buffer[0]).ToArray())).Split('|');
+                            if (newUser[0] == "10")
+                            {
+                                UsersChanged.Invoke(this, new UsersListChangedEvent { username = newUser[1], IPAddress = newUser[2] });
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ex is OperationCanceledException)
+                        {
+                            isLoggedIn = false;
+                        }
+                        else
+                        {
+                            throw new Exception(ex.Message);
+                        }
+                    }
+                }
+
+                var encryptedData = await _cryptoService.EncryptData("9");
+                await stream.WriteAsync(encryptedData);
+
+                var responseCode = new byte[16];
+                await client.GetStream().ReadAsync(responseCode, 0, responseCode.Length);
+
+                if (await _cryptoService.DecryptData(responseCode) == "9")
+                {
+                    MessageBox.Show("Pomyślnie wylogowano", "Wylogowywanie", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             });
 
-            mainWindow.FormClosing += (sender, e) => Show();
+            mainWindow.FormClosing += (sender, e) =>
+            {
+                Show();
+                UsersChanged -= mainWindow.MainWindow_UsersChanged;
+                cancellationTokenSource.Cancel();
+            };
+
             mainWindow.Show();
             Hide();
         }

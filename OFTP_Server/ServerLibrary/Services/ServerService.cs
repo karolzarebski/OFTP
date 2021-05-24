@@ -1,8 +1,9 @@
-﻿using LoginLibrary.Services;
+﻿using DatabaseLibrary.DAL.Services;
+using LoginLibrary.Services;
 using Microsoft.Extensions.Logging;
+using ServerLibrary.Events;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -14,41 +15,62 @@ namespace ServerLibrary.Services
     public class ServerService : IServerService
     {
         private readonly ILoginService _loginService;
-        private readonly ICryptoService _cryptoService;
         private readonly ILogger<ServerService> _logger;
+        private readonly IDatabaseService _storageService;
+
 
         private readonly ServerConfiguration _serverConfiguration;
         private Dictionary<string, string> availableUsers = new Dictionary<string, string>();
+        Dictionary<TcpClient, CryptoService> clients = new Dictionary<TcpClient, CryptoService>();
 
-        private event EventHandler<ServerEventArgs> newUserAvailableEvent;
+        private event EventHandler<UsersCountChangedEvent> usersCountChangedEvent;
 
         private bool eventFired = false;
         private int usersCount = 0;
 
         public ServerService(ServerConfiguration serverConfiguration, ILoginService loginService,
-            ILogger<ServerService> logger, ICryptoService cryptoService)
+            ILogger<ServerService> logger, IDatabaseService storageService)
         {
+            _storageService = storageService;
             _serverConfiguration = serverConfiguration;
-            _cryptoService = cryptoService;
             _loginService = loginService;
             _logger = logger;
 
-            newUserAvailableEvent += RefreshAvailableUsers;
+            usersCountChangedEvent += RefreshAvailableUsers;
         }
 
-        private void RefreshAvailableUsers(object sender, ServerEventArgs e)
+        private async void RefreshAvailableUsers(object sender, UsersCountChangedEvent e)
         {
-            usersCount = availableUsers.Count;
-            Debug.WriteLine("FIRED");
-            eventFired = true;
+            foreach (var client in clients)
+            {
+                var encryptedData = await client.Value.EncryptData($"10|{e.Username}|{e.IPAddress}");
 
-            while (usersCount > 0) { }
-            eventFired = false;
+                var message = new byte[encryptedData.Length + 1];
+
+                Array.Copy(encryptedData, 0, message, 1, encryptedData.Length);
+
+                message[0] = (byte)encryptedData.Length;
+
+                await client.Key.GetStream().WriteAsync(message);
+            }
+        }
+
+        private async Task SendMessage(string message, TcpClient client)
+        {
+            var encryptedData = await clients[client].EncryptData(message);
+
+            var encryptedMessage = new byte[encryptedData.Length + 1];
+
+            Array.Copy(encryptedData, 0, encryptedMessage, 1, encryptedData.Length);
+
+            encryptedMessage[0] = (byte)encryptedData.Length;
+
+            await client.GetStream().WriteAsync(encryptedMessage);
         }
 
         public async Task StartServer()
         {
-           TcpListener server = new TcpListener(IPAddress.Parse(_serverConfiguration.IpAddress), _serverConfiguration.Port);
+            TcpListener server = new TcpListener(IPAddress.Parse(_serverConfiguration.IpAddress), _serverConfiguration.Port);
 
             server.Start();
 
@@ -62,19 +84,21 @@ namespace ServerLibrary.Services
                 string login = string.Empty;
                 string password = string.Empty;
 
-                await Task.Run(async () => //TODO remove await
+                 Task.Run(async () => //TODO remove await
                  {
                      await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes("1"));
 
                      //Add key service
 
-                     var publicKey = _cryptoService.GeneratePublicKey();
+                     var cryptoService = new CryptoService();
+
+                     var publicKey = cryptoService.GeneratePublicKey();
                      await client.GetStream().WriteAsync(publicKey);
 
                      byte[] clientPublicKey = new byte[72];
                      await client.GetStream().ReadAsync(clientPublicKey, 0, clientPublicKey.Length);
 
-                     await client.GetStream().WriteAsync(_cryptoService.GenerateIV(clientPublicKey));
+                     await client.GetStream().WriteAsync(cryptoService.GenerateIV(clientPublicKey));
 
                      bool loggedIn = false;
 
@@ -84,13 +108,15 @@ namespace ServerLibrary.Services
                      {
                          await client.GetStream().ReadAsync(signInBuffer, 0, signInBuffer.Length);
 
-                         var data = (await _cryptoService.DecryptData(signInBuffer.Skip(1)
+                         var data = (await cryptoService.DecryptData(signInBuffer.Skip(1)
                              .Take(Convert.ToInt32(signInBuffer[0])).ToArray())).Split('|');
+
+                         login = data[1];
 
                          switch (data[0])
                          {
                              case "2":
-                                 if (await _loginService.CheckLoginCredentials(data[1], data[2]))
+                                 if (await _loginService.CheckLoginCredentials(login, data[2]))
                                  {
                                      await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes("5"));
                                      loggedIn = true;
@@ -99,7 +125,9 @@ namespace ServerLibrary.Services
                                      {
                                          availableUsers.Add(login, clientIpAddress.Remove(clientIpAddress.IndexOf(':')));
 
-                                         newUserAvailableEvent.Invoke(this, new ServerEventArgs { client = client });
+                                         usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, IPAddress = availableUsers[login]});
+
+                                         clients.Add(client, cryptoService);
                                      }
                                  }
                                  else
@@ -109,7 +137,7 @@ namespace ServerLibrary.Services
                                  }
                                  break;
                              case "3":
-                                 int registrationResultCode = await _loginService.RegisterAccount(data[1], data[2]);
+                                 int registrationResultCode = await _loginService.RegisterAccount(login, data[2]);
 
                                  if (registrationResultCode == 6)
                                  {
@@ -119,7 +147,8 @@ namespace ServerLibrary.Services
                                      if (!availableUsers.ContainsKey(login))
                                      {
                                          availableUsers.Add(login, clientIpAddress.Remove(clientIpAddress.IndexOf(':')));
-                                         newUserAvailableEvent.Invoke(this, new ServerEventArgs { client = client });
+                                         usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, IPAddress = availableUsers[login]});
+                                         clients.Add(client, cryptoService);
                                      }
                                  }
                                  else
@@ -133,21 +162,40 @@ namespace ServerLibrary.Services
                          }
                      }
 
-                     var s = availableUsers.Keys;
-
                      while (true)
                      {
-                         if (eventFired)
+                         var codeBuffer = new byte[16];
+
+                         await client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
+
+                         var code = await cryptoService.DecryptData(codeBuffer);
+
+                         if (code == "9")
                          {
-                             await Task.Run(async () => //TODO remove await
-                             {
-                                 foreach (KeyValuePair<string, string> dictionaryEntry in availableUsers)
-                                 {
-                                     await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(dictionaryEntry.Key));
-                                     usersCount--;
-                                 }
-                             });
+                             clients.Remove(client);
+
+                             usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, IPAddress = availableUsers[login]});
+
+                             availableUsers.Remove(login);
+
+                             await client.GetStream().WriteAsync(await cryptoService.EncryptData("9"));
+
+                             client.Dispose();
+
+                             break;
                          }
+
+                         //if (eventFired)
+                         //{
+                         //    await Task.Run(async () => //TODO remove await
+                         //    {
+                         //        foreach (KeyValuePair<string, string> dictionaryEntry in availableUsers)
+                         //        {
+                         //            await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(dictionaryEntry.Key));
+                         //            usersCount--;
+                         //        }
+                         //    });
+                         //}
 
                          // hmm await to stopuje program, by trzeba walnąć jakoś taskiem?
                      }

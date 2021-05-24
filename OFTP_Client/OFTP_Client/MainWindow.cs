@@ -18,6 +18,8 @@ namespace OFTP_Client
         private SendFilesService sendFilesService;
         private ReceiveFilesService receiveFilesService;
 
+        public event EventHandler LogoutEvent;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -34,10 +36,10 @@ namespace OFTP_Client
                 availableUsers.Add(e.username, IPAddress.Parse(e.IPAddress));
             }
 
-            Invoke(new Action(() =>
-            {
-
-            }));
+            UsersListBox.Invoke((MethodInvoker)delegate {
+                UsersListBox.Items.Clear();
+                UsersListBox.Items.AddRange(availableUsers.Keys.ToArray());
+            });
         }
 
         private void Logout(object eventArgs)
@@ -60,11 +62,12 @@ namespace OFTP_Client
                         break;
                 }
             }
+
+            LogoutEvent.Invoke(this, null);
         }
 
         private void LogoutButton_Click(object sender, EventArgs e)
         {
-            Logout(e);
             Close();
         }
 
@@ -135,18 +138,18 @@ namespace OFTP_Client
             MaximumSize = Size;
             MinimumSize = Size;
 
-            availableUsers = dictionaryService.users;
+            //availableUsers = dictionaryService.users;
 
             UsersListBox.Items.AddRange(availableUsers.Keys.ToArray());
 
-            UsersListBox.SelectedIndex = 0;
+            //UsersListBox.SelectedIndex = 0;
 
             AvailableUsersLabel.Text = $"Dostępni użytownicy: {availableUsers.Count}";
 
-            receiveFilesService = new ReceiveFilesService(dictionaryService);
-            receiveFilesService.IncommingConnection += ReceiveFilesService_IncommingConnection;
+            //receiveFilesService = new ReceiveFilesService(dictionaryService);
+            //receiveFilesService.IncommingConnection += ReceiveFilesService_IncommingConnection;
 
-            InitReceiveService();
+            //InitReceiveService();
         }
 
         private async void InitReceiveService()
