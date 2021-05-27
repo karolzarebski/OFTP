@@ -9,16 +9,19 @@ namespace OFTP_Client.FilesService
         private readonly string _serverIP;
         private TcpClient client;
 
-        public SendFilesService(string ServerIP)
+        public SendFilesService(string serverIP)
         {
-            _serverIP = ServerIP;
+            _serverIP = serverIP;
         }
 
         public async Task<bool> Connect()
         {
             try
             {
-                await (client = new TcpClient()).ConnectAsync(_serverIP, 12137);
+                await (client = new TcpClient()).ConnectAsync(_serverIP, 12138);
+
+                //DH ?????
+
                 return true;
             }
             catch (SocketException ex)

@@ -61,11 +61,29 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 503.
+        /// </summary>
+        internal static string AcceptedIncomingConnection {
+            get {
+                return ResourceManager.GetString("AcceptedIncomingConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 107.
         /// </summary>
         internal static string ActiveUsers {
             get {
                 return ResourceManager.GetString("ActiveUsers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 502.
+        /// </summary>
+        internal static string AskUserForConnection {
+            get {
+                return ResourceManager.GetString("AskUserForConnection", resourceCulture);
             }
         }
         
@@ -106,11 +124,11 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 300.
+        ///   Looks up a localized string similar to 501.
         /// </summary>
-        internal static string GetIp {
+        internal static string GetUserIp {
             get {
-                return ResourceManager.GetString("GetIp", resourceCulture);
+                return ResourceManager.GetString("GetUserIp", resourceCulture);
             }
         }
         
@@ -165,6 +183,15 @@ namespace OFTP_Client.Resources {
         internal static string RegistrationPasswordWrong {
             get {
                 return ResourceManager.GetString("RegistrationPasswordWrong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 504.
+        /// </summary>
+        internal static string RejectedIncomingConnection {
+            get {
+                return ResourceManager.GetString("RejectedIncomingConnection", resourceCulture);
             }
         }
         

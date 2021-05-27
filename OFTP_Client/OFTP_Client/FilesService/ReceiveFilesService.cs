@@ -11,51 +11,55 @@ namespace OFTP_Client.FilesService
     public class ReceiveFilesService
     {
         private TcpListener receiveFilesServer;
-        private DictionaryService _dictionaryService;
+        private string _ipAddress;
 
         public string IncommingConnectionAddress { get; private set; }
         public event EventHandler<IncommingConnectionEvent> IncommingConnection;
 
-        public ReceiveFilesService(DictionaryService dictionaryService)
+        public ReceiveFilesService(string ipAddress)
         {
-            _dictionaryService = dictionaryService;
-            receiveFilesServer = new TcpListener(IPAddress.Any, 12137);
+            _ipAddress = ipAddress;
+            receiveFilesServer = new TcpListener(IPAddress.Any, 12138);
             receiveFilesServer.Start();
         }
 
-        public async Task<bool> WaitForIncommingConnection()
+        public async Task<bool> WaitForIncomingConnection()
         {
-            TcpClient client = await receiveFilesServer.AcceptTcpClientAsync();
+            var isClientOk = false;
 
-            byte[] codeBuffer = new byte[3];
-
-            await client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
-
-            byte[] responseCode;
-
-            if (Encoding.UTF8.GetString(codeBuffer) == "100") //incomming connection code
+            while (!isClientOk)
             {
-                IncommingConnection.Invoke(this, new IncommingConnectionEvent { Message = "Stan: Połączenie przychodzące" });
+                TcpClient client = await receiveFilesServer.AcceptTcpClientAsync();
 
-                IncommingConnectionAddress = client.Client.RemoteEndPoint.ToString();
-
-                var clientName = _dictionaryService.GetKeyByValue(IncommingConnectionAddress);
-
-                switch (MessageBox.Show($"Użytkownik {clientName} chce wysłać Ci pliki\nAkceptować?", "Przesyłanie plików",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+                if (!client.Client.RemoteEndPoint.ToString().StartsWith(_ipAddress))
                 {
-                    case DialogResult.Yes:
-                        IncommingConnection.Invoke(this, new IncommingConnectionEvent { Message = $"Stan: Połączono z {clientName}" });
-                        responseCode = Encoding.UTF8.GetBytes("101"); //accepted connection code
-                        await client.GetStream().WriteAsync(responseCode);
-                        return true;
-                    case DialogResult.No:
-                        IncommingConnection.Invoke(this, new IncommingConnectionEvent { Message = "Połączenie odrzucone" });
-                        responseCode = Encoding.UTF8.GetBytes("102"); //rejected connection code
-                        await client.GetStream().WriteAsync(responseCode);
-                        return false;
+                    client.Close();
+                    client.Dispose();
+                    isClientOk = false;
                 }
-            }
+                else
+                {
+                    isClientOk = true;
+
+                    await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(Resources.CodeNames.Connected));
+
+                    var cryptoService = new CryptoService();
+
+                    var publicKey = cryptoService.GeneratePublicKey();
+                    await client.GetStream().WriteAsync(publicKey);
+
+                    byte[] clientPublicKey = new byte[72];
+                    await client.GetStream().ReadAsync(clientPublicKey, 0, clientPublicKey.Length);
+
+                    await client.GetStream().WriteAsync(cryptoService.GenerateIV(clientPublicKey));
+
+                    //Odbierz nazwę pliku
+                    //Wyświetl czy chce taki plik
+                    //Zacznij odbieranie pliku
+                    //Podziękuj drugiemu użytkownikowi za nowe wirusy <3 ++1
+                    //Rozłącz się
+                }
+            }          
             return false;
         }
     }

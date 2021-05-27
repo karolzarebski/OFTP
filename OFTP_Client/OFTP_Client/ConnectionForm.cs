@@ -222,7 +222,7 @@ namespace OFTP_Client
         private void InitMainWindow()
         {
             isLoggedIn = true;
-            var mainWindow = new MainWindow(client, _cryptoService, availableUsers);
+            var mainWindow = new MainWindow(client, _cryptoService, availableUsers, LoginTextBox.Text);
 
             mainWindow.FormClosing += (sender, e) =>
             {

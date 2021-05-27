@@ -37,6 +37,7 @@ namespace OFTP_Client
             this.LogoutButton = new System.Windows.Forms.Button();
             this.FilterUsersTextBox = new System.Windows.Forms.TextBox();
             this.StateLabel = new System.Windows.Forms.Label();
+            this.LoggedInAsLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // UsersListBox
@@ -67,6 +68,7 @@ namespace OFTP_Client
             this.ConnectButton.TabIndex = 2;
             this.ConnectButton.Text = "Połącz z użytkownikiem";
             this.ConnectButton.UseVisualStyleBackColor = true;
+            this.ConnectButton.Click += new System.EventHandler(this.ConnectButton_Click);
             // 
             // ConnectWithUserTextBox
             // 
@@ -114,11 +116,21 @@ namespace OFTP_Client
             this.StateLabel.TabIndex = 7;
             this.StateLabel.Text = "Stan: Oczekiwanie";
             // 
+            // LoggedInAsLabel
+            // 
+            this.LoggedInAsLabel.AutoSize = true;
+            this.LoggedInAsLabel.Location = new System.Drawing.Point(13, 75);
+            this.LoggedInAsLabel.Name = "LoggedInAsLabel";
+            this.LoggedInAsLabel.Size = new System.Drawing.Size(101, 15);
+            this.LoggedInAsLabel.TabIndex = 8;
+            this.LoggedInAsLabel.Text = "Zalogowano jako:";
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.LoggedInAsLabel);
             this.Controls.Add(this.StateLabel);
             this.Controls.Add(this.FilterUsersTextBox);
             this.Controls.Add(this.LogoutButton);
@@ -146,5 +158,6 @@ namespace OFTP_Client
         private System.Windows.Forms.Button LogoutButton;
         private System.Windows.Forms.TextBox FilterUsersTextBox;
         private System.Windows.Forms.Label StateLabel;
+        private System.Windows.Forms.Label LoggedInAsLabel;
     }
 }

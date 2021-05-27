@@ -61,11 +61,29 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 502.
+        /// </summary>
+        internal static string AcceptedIncommingConnection {
+            get {
+                return ResourceManager.GetString("AcceptedIncommingConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 107.
         /// </summary>
         internal static string ActiveUsers {
             get {
                 return ResourceManager.GetString("ActiveUsers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 502.
+        /// </summary>
+        internal static string AskUserForConnection {
+            get {
+                return ResourceManager.GetString("AskUserForConnection", resourceCulture);
             }
         }
         
@@ -124,6 +142,15 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 501.
+        /// </summary>
+        internal static string GetUserIP {
+            get {
+                return ResourceManager.GetString("GetUserIP", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 101.
         /// </summary>
         internal static string Login {
@@ -174,6 +201,15 @@ namespace ServerLibrary.Resources {
         internal static string RegistrationPasswordWrong {
             get {
                 return ResourceManager.GetString("RegistrationPasswordWrong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 503.
+        /// </summary>
+        internal static string RejectedIncommingConnection {
+            get {
+                return ResourceManager.GetString("RejectedIncommingConnection", resourceCulture);
             }
         }
         

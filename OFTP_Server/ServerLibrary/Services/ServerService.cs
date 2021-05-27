@@ -2,6 +2,7 @@
 using LoginLibrary.Services;
 using Microsoft.Extensions.Logging;
 using ServerLibrary.Events;
+using ServerLibrary.Resources;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -68,7 +69,7 @@ namespace ServerLibrary.Services
             {
                 availableUsers.Add($"Name{i}", $"192.168.99.{i + 1}");
             }
-     
+
         }
 
         private async void RefreshAvailableUsers(object sender, UsersCountChangedEvent e)
@@ -276,10 +277,27 @@ namespace ServerLibrary.Services
 
                                 break;
                             }
-                            else if (message == Resources.CodeNames.GetIp)
+
+                            else if (message == CodeNames.AskUserForConnection)
                             {
-                                var username = await ReceiveMessage(client, false);
-                                await SendMessage(availableUsers[username].ToString(), client);
+                                var tempClientIp = availableUsers[await ReceiveMessage(client)];
+
+                                var tempClient = clients.Keys.Where(x => x.Client.RemoteEndPoint.ToString().StartsWith(tempClientIp)).FirstOrDefault();
+
+                                await SendMessage(CodeNames.AskUserForConnection, tempClient);
+
+                                var responseCode = await ReceiveMessage(tempClient, true);
+
+                                if (responseCode == CodeNames.AcceptedIncommingConnection)
+                                {
+                                    await SendMessage(availableUsers[login], tempClient);
+                                    await SendMessage(CodeNames.AcceptedIncommingConnection, client);
+                                    await SendMessage(tempClientIp, client);
+                                }
+                                else if (responseCode == CodeNames.RejectedIncommingConnection)
+                                {
+                                    await SendMessage(CodeNames.RejectedIncommingConnection, client);
+                                }
                             }
                         }
                     }

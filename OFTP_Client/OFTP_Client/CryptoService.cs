@@ -31,6 +31,13 @@ namespace OFTP_Client
             aes.IV = iv;
         }
 
+        public byte[] GenerateIV(byte[] publicKey)
+        {
+            aes.Key = dh.DeriveKeyMaterial(CngKey.Import(publicKey, CngKeyBlobFormat.EccPublicBlob));
+            aes.GenerateIV();
+            return aes.IV;
+        }
+
         public Task<string> DecryptData(byte[] encryptedData)
         {
             using (MemoryStream msDecrypt = new MemoryStream(encryptedData))
