@@ -1,15 +1,14 @@
-﻿using System;
-using System.Threading.Tasks;
-using DatabaseLibrary;
+﻿using DatabaseLibrary;
 using DatabaseLibrary.DAL;
 using DatabaseLibrary.DAL.Services;
+using LoginLibrary.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ServerLibrary;
+using ServerLibrary.Resources;
 using ServerLibrary.Services;
-using LoginLibrary;
-using LoginLibrary.Services;
+using System.Threading.Tasks;
 
 namespace OFTP_Server
 {
@@ -22,18 +21,18 @@ namespace OFTP_Server
         {
             //try
             //{
-                _configuration = new ConfigurationBuilder()
-                    .AddJsonFile("appsettings.json")
-                    .Build();
+            _configuration = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json")
+                .Build();
 
-                var servicesCollection = new ServiceCollection();
-                ConfigureServices(servicesCollection);
+            var servicesCollection = new ServiceCollection();
+            ConfigureServices(servicesCollection);
 
-                _serviceProvider = servicesCollection.BuildServiceProvider();
+            _serviceProvider = servicesCollection.BuildServiceProvider();
 
-                Task.Run(() => _serviceProvider.GetRequiredService<IDatabaseService>().MigrateAsync()).Wait();
+            Task.Run(() => _serviceProvider.GetRequiredService<IDatabaseService>().MigrateAsync()).Wait();
 
-                _serviceProvider.GetRequiredService<IServerService>().StartServer().Wait();
+            _serviceProvider.GetRequiredService<IServerService>().StartServer().Wait();
             //}
             //catch (Exception ex)
             //{

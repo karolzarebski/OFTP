@@ -1,6 +1,6 @@
 ﻿using OFTP_Client.Events;
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -16,8 +16,8 @@ namespace OFTP_Client
         private TcpClient client;
         private NetworkStream stream;
         private CryptoService _cryptoService = new CryptoService();
+        private List<string> availableUsers = new List<string>();
         private bool connected = false, isLoggedIn = false;
-        private event EventHandler<UsersListChangedEvent> UsersChanged;
 
         public ConnectionForm()
         {
@@ -40,6 +40,32 @@ namespace OFTP_Client
             }
         }
 
+        private async Task<string> ReceiveMessage(bool isCodeReceived = false)
+        {
+            if (isCodeReceived)
+            {
+                var codeBuffer = new byte[256]; //TODO check length
+                await stream.ReadAsync(codeBuffer, 0, codeBuffer.Length);
+                return await _cryptoService.DecryptData(codeBuffer.Skip(1).Take(codeBuffer[0]).ToArray());
+            }
+            else
+            {
+                var messageBuffer = new byte[1024];
+                await stream.ReadAsync(messageBuffer, 0, messageBuffer.Length);
+                return await _cryptoService.DecryptData(messageBuffer.Skip(1)
+                        .Take(messageBuffer[0]).ToArray());
+            }
+        }
+
+        private async Task SendMessage(string message)
+        {
+            var encryptedData = await _cryptoService.EncryptData(message);
+            var encryptedMessage = new byte[encryptedData.Length + 1];
+            Array.Copy(encryptedData, 0, encryptedMessage, 1, encryptedData.Length);
+            encryptedMessage[0] = (byte)encryptedData.Length;
+            await stream.WriteAsync(encryptedMessage);
+        }
+
         private async void ConnectToServer(IPAddress ipAddress)
         {
             try
@@ -55,11 +81,10 @@ namespace OFTP_Client
 
             stream = client.GetStream();
 
-            var buffer = new byte[1];
+            var code = new byte[3]; //TODO check size
+            await stream.ReadAsync(code, 0, code.Length);
 
-            await stream.ReadAsync(buffer, 0, 1);
-
-            if (Encoding.UTF8.GetString(buffer) == "1")
+            if (Encoding.UTF8.GetString(code) == Resources.CodeNames.Connected)
             {
                 LoginButton.Enabled = true;
                 RegisterButton.Enabled = true;
@@ -95,40 +120,45 @@ namespace OFTP_Client
 
         private async void LoginButton_ClickAsync(object sender, EventArgs e)
         {
-            var codeBuffer = new byte[1];
-
             string login = LoginTextBox.Text;
             string password = PasswordTextBox.Text;
 
             if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
-                var encryptedData = await _cryptoService.EncryptData($"2|{login}|{password}");
+                await SendMessage($"{Resources.CodeNames.Login}|{login}|{password}");
+                var message = await ReceiveMessage(true);
 
-                var message = new byte[encryptedData.Length + 1];
-
-                Array.Copy(encryptedData, 0, message, 1, encryptedData.Length);
-
-                message[0] = (byte)encryptedData.Length;
-
-                await stream.WriteAsync(message);
-
-                await stream.ReadAsync(codeBuffer, 0, codeBuffer.Length);
-
-                switch (Encoding.UTF8.GetString(codeBuffer))
+                if (message == Resources.CodeNames.CorrectLoginData)
                 {
-                    case "5":
-                        Array.Clear(codeBuffer, 0, codeBuffer.Length);
-                        MessageBox.Show("Zalogowano",
-                             "OK", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        InitMainWindow();
-                        break;
-                    case "4":
-                        MessageBox.Show("Błędne dane logowania\nPodaj nowe i spróbuj ponowne",
-                            "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        Array.Clear(codeBuffer, 0, codeBuffer.Length);
-                        break;
-                    default:
-                        break;
+                    MessageBox.Show("Zalogowano", "OK", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    var availableUsersCount = (await ReceiveMessage(false)).Split('|');
+
+                    if (availableUsersCount[0] == Resources.CodeNames.ActiveUsers)
+                    {
+                        var processedUsersCount = Convert.ToInt32(availableUsersCount[1]);
+
+                        await SendMessage(Resources.CodeNames.ActiveUsers);
+
+                        while (processedUsersCount >= 0)
+                        {
+                            var users = (await ReceiveMessage(false)).Split('\n');
+
+                            foreach (var craftedUser in users)
+                            {
+                                availableUsers.Add(craftedUser);
+                            }
+
+                            processedUsersCount -= 3; //server sends 3 users in a row
+                        }
+
+                    }
+                    InitMainWindow();
+                }
+                else if (message == Resources.CodeNames.WrongLoginData)
+                {
+                    MessageBox.Show("Błędne dane logowania\nPodaj nowe i spróbuj ponowne",
+                        "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             else
@@ -140,46 +170,29 @@ namespace OFTP_Client
 
         private async void RegisterButton_Click(object sender, EventArgs e)
         {
-            var codeBuffer = new byte[1];
-
             string login = LoginTextBox.Text;
             string password = PasswordTextBox.Text;
 
             if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
-                var encryptedData = await _cryptoService.EncryptData($"3|{login}|{password}");
+                await SendMessage($"{Resources.CodeNames.Register}|{login}|{password}");
 
-                var message = new byte[encryptedData.Length + 1];
-
-                Array.Copy(encryptedData, 0, message, 1, encryptedData.Length);
-
-                message[0] = (byte)encryptedData.Length;
-
-                await stream.WriteAsync(message);
-
-                await stream.ReadAsync(codeBuffer, 0, codeBuffer.Length);
-
-                switch (Encoding.UTF8.GetString(codeBuffer))
+                var message = await ReceiveMessage(true);
+                if (message == Resources.CodeNames.CorrectRegisterData)
                 {
-                    case "6":
-                        MessageBox.Show("Pomyślnie zarejestrowano", "Rejestracja",
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        Array.Clear(codeBuffer, 0, codeBuffer.Length);
-                        //LoginButton.PerformClick();
-                        InitMainWindow();
-                        break;
-                    case "7":
-                        MessageBox.Show("Błąd rejestracji\nKonto o podanym loginie już istnieje\nPodaj nowe i spróbuj ponowne",
+                    MessageBox.Show("Pomyślnie zarejestrowano", "Rejestracja",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    InitMainWindow();
+                }
+                else if (message == Resources.CodeNames.RegistrationLoginExists)
+                {
+                    MessageBox.Show("Błąd rejestracji\nKonto o podanym loginie już istnieje\nPodaj nowe i spróbuj ponowne",
                             "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        Array.Clear(codeBuffer, 0, codeBuffer.Length);
-                        break;
-                    case "8":
-                        MessageBox.Show("Błąd rejestracji\nHasło nie spełnia polityki\nPodaj nowe i spróbuj ponowne",
-                            "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        Array.Clear(codeBuffer, 0, codeBuffer.Length);
-                        break;
-                    default:
-                        break;
+                }
+                else if (message == Resources.CodeNames.RegistrationPasswordWrong)
+                {
+                    MessageBox.Show("Błąd rejestracji\nHasło nie spełnia polityki\nPodaj nowe i spróbuj ponowne",
+                        "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             else
@@ -192,64 +205,18 @@ namespace OFTP_Client
         private void InitMainWindow()
         {
             isLoggedIn = true;
-            var mainWindow = new MainWindow();
-            UsersChanged += mainWindow.MainWindow_UsersChanged;
-            mainWindow.LogoutEvent += (sender, e) => isLoggedIn = false;
-
-            var cancellationTokenSource = new CancellationTokenSource();
-            var cancellationToken = cancellationTokenSource.Token;
-
-            Task.Run(async () =>
-            {
-                var buffer = new byte[2048];
-
-                while (isLoggedIn)
-                {
-                    try
-                    {
-                        Debug.WriteLine("begin await");
-                        await client.GetStream().ReadAsync(buffer, 0, buffer.Length, cancellationToken);
-                        Debug.WriteLine("end wait");
-
-                        if (!cancellationToken.IsCancellationRequested)
-                        {
-                            var newUser = (await _cryptoService.DecryptData(buffer.Skip(1).Take(buffer[0]).ToArray())).Split('|');
-                            if (newUser[0] == "10")
-                            {
-                                UsersChanged.Invoke(this, new UsersListChangedEvent { username = newUser[1], IPAddress = newUser[2] });
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        if (ex is OperationCanceledException)
-                        {
-                            isLoggedIn = false;
-                        }
-                        else
-                        {
-                            throw new Exception(ex.Message);
-                        }
-                    }
-                }
-
-                var encryptedData = await _cryptoService.EncryptData("9");
-                await stream.WriteAsync(encryptedData);
-
-                var responseCode = new byte[16];
-                await client.GetStream().ReadAsync(responseCode, 0, responseCode.Length);
-
-                if (await _cryptoService.DecryptData(responseCode) == "9")
-                {
-                    MessageBox.Show("Pomyślnie wylogowano", "Wylogowywanie", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-            });
+            var mainWindow = new MainWindow(client, _cryptoService, availableUsers);
 
             mainWindow.FormClosing += (sender, e) =>
             {
+
                 Show();
-                UsersChanged -= mainWindow.MainWindow_UsersChanged;
-                cancellationTokenSource.Cancel();
+                LoginButton.Enabled = false;
+                RegisterButton.Enabled = false;
+                ConnectButton.Text = "Połącz";
+                LoginTextBox.Text = "";
+                PasswordTextBox.Text = "";
+                connected = false;
             };
 
             mainWindow.Show();

@@ -37,21 +37,51 @@ namespace ServerLibrary.Services
             _logger = logger;
 
             usersCountChangedEvent += RefreshAvailableUsers;
+
+            availableUsers = new Dictionary<string, string>
+            {
+                { "Karol-PC", "192.168.1.11" },
+                { "Karol-Laptop", "192.168.1.14" },
+                {"Liam", "192.168.1.8" },
+                {"Olivia", "192.168.29.22" },
+                {"Noah" , "192.168.83.32"},
+                { "Emma", "192.168.212.2"},
+                { "Oliver", "192.168.92.212"},
+                { "Ava", "192.168.13.93"},
+                {"Elijah" , "192.168.129.94"},
+                {"Charlotte" , "192.168.214.23"},
+                {"William" , "192.168.254.54"},
+                { "Sophia", "192.168.132.11"},
+                { "James", "192.168.53.123"},
+                {"Amelia" , "192.168.21.84"},
+                {"Benjamin" , "192.168.21.37"},
+                {"Isabella" , "192.168.11.98"},
+                {"Lucas" , "192.168.111.73"},
+                {  "Mia", "192.168.152.91"},
+                { "Henry" , "192.168.213.211"},
+                { "Evelyn", "192.168.10.182"},
+                { "Alexander", "192.168.251.43"},
+                {"Harper" , "192.168.167.142"}
+            };
         }
 
         private async void RefreshAvailableUsers(object sender, UsersCountChangedEvent e)
         {
             foreach (var client in clients)
             {
-                var encryptedData = await client.Value.EncryptData($"10|{e.Username}|{e.IPAddress}");
+                if(e.newClient != client.Key)
+                {
+                    var encryptedData = await client.Value.EncryptData($"{Resources.CodeNames.NewUser}|{e.Username}");
 
-                var message = new byte[encryptedData.Length + 1];
+                    var message = new byte[encryptedData.Length + 1];
 
-                Array.Copy(encryptedData, 0, message, 1, encryptedData.Length);
+                    Array.Copy(encryptedData, 0, message, 1, encryptedData.Length);
 
-                message[0] = (byte)encryptedData.Length;
+                    message[0] = (byte)encryptedData.Length;
 
-                await client.Key.GetStream().WriteAsync(message);
+                    await client.Key.GetStream().WriteAsync(message);
+                }
+
             }
         }
 
@@ -66,6 +96,23 @@ namespace ServerLibrary.Services
             encryptedMessage[0] = (byte)encryptedData.Length;
 
             await client.GetStream().WriteAsync(encryptedMessage);
+        }
+
+        private async Task<string> ReceiveMessage(TcpClient client, bool isCodeReceived = false)
+        {
+            if (isCodeReceived)
+            {
+                var codeBuffer = new byte[256]; //TODO check length
+                await client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
+                return await clients[client].DecryptData(codeBuffer.Skip(1).Take(codeBuffer[0]).ToArray());
+            }
+            else
+            {
+                var messageBuffer = new byte[1024];
+                await client.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
+                return await clients[client].DecryptData(messageBuffer.Skip(1)
+                        .Take(messageBuffer[0]).ToArray());
+            }
         }
 
         public async Task StartServer()
@@ -85,122 +132,138 @@ namespace ServerLibrary.Services
                 string password = string.Empty;
 
                  Task.Run(async () => //TODO remove await
-                 {
-                     await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes("1"));
+                {
+                    await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(Resources.CodeNames.Connected));
 
-                     //Add key service
+                    var cryptoService = new CryptoService();
 
-                     var cryptoService = new CryptoService();
+                    var publicKey = cryptoService.GeneratePublicKey();
+                    await client.GetStream().WriteAsync(publicKey);
 
-                     var publicKey = cryptoService.GeneratePublicKey();
-                     await client.GetStream().WriteAsync(publicKey);
+                    byte[] clientPublicKey = new byte[72];
+                    await client.GetStream().ReadAsync(clientPublicKey, 0, clientPublicKey.Length);
 
-                     byte[] clientPublicKey = new byte[72];
-                     await client.GetStream().ReadAsync(clientPublicKey, 0, clientPublicKey.Length);
+                    await client.GetStream().WriteAsync(cryptoService.GenerateIV(clientPublicKey));
 
-                     await client.GetStream().WriteAsync(cryptoService.GenerateIV(clientPublicKey));
+                    bool loggedIn = false;
 
-                     bool loggedIn = false;
+                    string clientIpAddress = client.Client.RemoteEndPoint.ToString();
 
-                     string clientIpAddress = client.Client.RemoteEndPoint.ToString();
+                    clients.Add(client, cryptoService);
 
-                     while (!loggedIn)
-                     {
-                         await client.GetStream().ReadAsync(signInBuffer, 0, signInBuffer.Length);
+                    while (!loggedIn)
+                    {
+                        var data = (await ReceiveMessage(client, false)).Split('|');
 
-                         var data = (await cryptoService.DecryptData(signInBuffer.Skip(1)
-                             .Take(Convert.ToInt32(signInBuffer[0])).ToArray())).Split('|');
+                        login = data[1];
 
-                         login = data[1];
+                        if (data[0] == Resources.CodeNames.Login)
+                        {
+                            if (await _loginService.CheckLoginCredentials(login, data[2]))
+                            {
+                                await SendMessage(Resources.CodeNames.CorrectLoginData, client);
+                                loggedIn = true;
 
-                         switch (data[0])
-                         {
-                             case "2":
-                                 if (await _loginService.CheckLoginCredentials(login, data[2]))
-                                 {
-                                     await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes("5"));
-                                     loggedIn = true;
+                                if (!availableUsers.ContainsKey(login))
+                                {
+                                    availableUsers.Add(login, clientIpAddress.Remove(clientIpAddress.IndexOf(':')));
 
-                                     if (!availableUsers.ContainsKey(login))
-                                     {
-                                         availableUsers.Add(login, clientIpAddress.Remove(clientIpAddress.IndexOf(':')));
+                                    usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
 
-                                         usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, IPAddress = availableUsers[login]});
+                                    //clients.Add(client, cryptoService);
+                                }
+                            }
 
-                                         clients.Add(client, cryptoService);
-                                     }
-                                 }
-                                 else
-                                 {
-                                     await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes("4"));
-                                     loggedIn = false;
-                                 }
-                                 break;
-                             case "3":
-                                 int registrationResultCode = await _loginService.RegisterAccount(login, data[2]);
+                            else
+                            {
+                                await SendMessage(Resources.CodeNames.WrongLoginData, client);
+                                loggedIn = false;
+                                clients.Remove(client);
+                            }
+                        }
+                        else if (data[0] == Resources.CodeNames.Register)
+                        {
+                            int registrationResultCode = await _loginService.RegisterAccount(login, data[2]);
 
-                                 if (registrationResultCode == 6)
-                                 {
-                                     await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(registrationResultCode.ToString()));
-                                     loggedIn = true;
+                            if (registrationResultCode.ToString() == Resources.CodeNames.CorrectRegisterData)
+                            {
+                                await SendMessage(registrationResultCode.ToString(), client);
+                                loggedIn = true;
 
-                                     if (!availableUsers.ContainsKey(login))
-                                     {
-                                         availableUsers.Add(login, clientIpAddress.Remove(clientIpAddress.IndexOf(':')));
-                                         usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, IPAddress = availableUsers[login]});
-                                         clients.Add(client, cryptoService);
-                                     }
-                                 }
-                                 else
-                                 {
-                                     await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(registrationResultCode.ToString()));
-                                     loggedIn = false;
-                                 }
-                                 break;
-                             default:
-                                 break;
-                         }
-                     }
+                                if (!availableUsers.ContainsKey(login))
+                                {
+                                    availableUsers.Add(login, clientIpAddress.Remove(clientIpAddress.IndexOf(':')));
+                                    usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
+                                    //clients.Add(client, cryptoService);
+                                }
+                            }
+                            else
+                            {
+                                await SendMessage(registrationResultCode.ToString(), client);
+                                loggedIn = false;
+                                clients.Remove(client);
+                            }
+                        }
+                    }
 
-                     while (true)
-                     {
-                         var codeBuffer = new byte[16];
+                    if (availableUsers.Count - 1 != 0)
+                    {
+                        var tempUsers = availableUsers;
 
-                         await client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
+                        await SendMessage($"{Resources.CodeNames.ActiveUsers}|{tempUsers.Count - 1}", client);
 
-                         var code = await cryptoService.DecryptData(codeBuffer);
+                        if (await ReceiveMessage(client, true) == Resources.CodeNames.ActiveUsers)
+                        {
+                            while (tempUsers.Any())
+                            {
+                                var preparatedData = string.Empty;
 
-                         if (code == "9")
-                         {
-                             clients.Remove(client);
+                                var partOfData = tempUsers.Take(3);
+                                tempUsers = tempUsers.Skip(3).ToDictionary(p => p.Key, p => p.Value);
 
-                             usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, IPAddress = availableUsers[login]});
+                                foreach (var user in partOfData)
+                                {
+                                    if (user.Key != login)
+                                    {
+                                        preparatedData += $"{user.Key}\n";
+                                    }
+                                }
 
-                             availableUsers.Remove(login);
+                                await SendMessage(preparatedData.Remove(preparatedData.Length - 1), client);
+                                await Task.Delay(1); //server sends data too fast
+                            }
+                        }
+                    }
+                    else
+                    {
+                        await SendMessage($"{Resources.CodeNames.ActiveUsers}|0", client);
+                    }
 
-                             await client.GetStream().WriteAsync(await cryptoService.EncryptData("9"));
+                    while (true)
+                    {
+                        var message = await ReceiveMessage(client, true);
 
-                             client.Dispose();
+                        if (message == Resources.CodeNames.LogOut)
+                        {
 
-                             break;
-                         }
+                            usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
 
-                         //if (eventFired)
-                         //{
-                         //    await Task.Run(async () => //TODO remove await
-                         //    {
-                         //        foreach (KeyValuePair<string, string> dictionaryEntry in availableUsers)
-                         //        {
-                         //            await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(dictionaryEntry.Key));
-                         //            usersCount--;
-                         //        }
-                         //    });
-                         //}
+                            await SendMessage(Resources.CodeNames.LogOut, client);
 
-                         // hmm await to stopuje program, by trzeba walnąć jakoś taskiem?
-                     }
+                            clients.Remove(client);
+                            availableUsers.Remove(login);
 
-                 });
+                            client.Dispose();
+
+                            break;
+                        }
+                        else if (message == Resources.CodeNames.GetIp)
+                        {
+                            var username = await ReceiveMessage(client, false);
+                            await SendMessage(availableUsers[username].ToString(), client);
+                        }
+                    }
+                });
             }
         }
     }

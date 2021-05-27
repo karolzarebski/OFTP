@@ -4,7 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Net;
+using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -12,37 +13,108 @@ namespace OFTP_Client
 {
     public partial class MainWindow : Form
     {
-        private bool isConnected = false;
-        private Dictionary<string, IPAddress> availableUsers = new Dictionary<string, IPAddress>();
+        private bool isConnected = false, isLoggedIn = true;
+        private List<string> _availableUsers = new List<string>();
         private DictionaryService dictionaryService = new DictionaryService();
         private SendFilesService sendFilesService;
         private ReceiveFilesService receiveFilesService;
 
-        public event EventHandler LogoutEvent;
+        public TcpClient _tcpClient;
+        private CryptoService _cryptoService;
+        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
-        public MainWindow()
+        public MainWindow(TcpClient tcpClient, CryptoService cryptoService, List<string> availableUsers)
         {
             InitializeComponent();
+
+            _cryptoService = cryptoService;
+            _availableUsers = availableUsers;
+            _tcpClient = tcpClient;
+
+            var cancellationToken = cancellationTokenSource.Token;
+
+            Task.Run(async () =>
+           {
+               var buffer = new byte[2048];
+
+               while (isLoggedIn)
+               {
+                   try
+                   {
+                       await tcpClient.GetStream().ReadAsync(buffer, 0, buffer.Length, cancellationToken);
+
+                       if (!cancellationToken.IsCancellationRequested)
+                       {
+                           var newUser = (await cryptoService.DecryptData(buffer.Skip(1).Take(buffer[0]).ToArray())).Split('|');
+                           if (newUser[0] == Resources.CodeNames.NewUser)
+                           {
+                               UsersChanged(newUser[1]);
+                           }
+
+                       }
+                   }
+                   catch (Exception ex)
+                   {
+                       if (ex is OperationCanceledException)
+                       {
+                           isLoggedIn = false;
+                           MessageBox.Show("Pomyślnie wylogowano", "Wylogowywanie", 
+                               MessageBoxButtons.OK, MessageBoxIcon.Information);
+                       }
+                       else
+                       {
+                           throw new Exception(ex.Message);
+                       }
+                   }
+               }
+           });
         }
 
-        public void MainWindow_UsersChanged(object sender, UsersListChangedEvent e)
+        private async Task<string> ReceiveMessage(bool isCodeReceived = false)
         {
-            if (availableUsers.ContainsKey(e.username))
+            if (isCodeReceived)
             {
-                availableUsers.Remove(e.username);
+                var codeBuffer = new byte[256]; //TODO check length
+                await _tcpClient.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
+                return await _cryptoService.DecryptData(codeBuffer.Skip(1).Take(codeBuffer[0]).ToArray());
             }
             else
             {
-                availableUsers.Add(e.username, IPAddress.Parse(e.IPAddress));
+                var messageBuffer = new byte[1024];
+                await _tcpClient.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
+                return await _cryptoService.DecryptData(messageBuffer.Skip(1)
+                        .Take(messageBuffer[0]).ToArray());
+            }
+        }
+
+        private async Task SendMessage(string message)
+        {
+            var encryptedData = await _cryptoService.EncryptData(message);
+            var encryptedMessage = new byte[encryptedData.Length + 1];
+            Array.Copy(encryptedData, 0, encryptedMessage, 1, encryptedData.Length);
+            encryptedMessage[0] = (byte)encryptedData.Length;
+            await _tcpClient.GetStream().WriteAsync(encryptedMessage);
+        }
+
+        private void UsersChanged(string userName)
+        {
+            if (_availableUsers.Contains(userName))
+            {
+                _availableUsers.Remove(userName);
+            }
+            else
+            {
+                _availableUsers.Add(userName);
             }
 
-            UsersListBox.Invoke((MethodInvoker)delegate {
+            UsersListBox.Invoke((MethodInvoker)delegate
+            {
                 UsersListBox.Items.Clear();
-                UsersListBox.Items.AddRange(availableUsers.Keys.ToArray());
+                UsersListBox.Items.AddRange(_availableUsers.ToArray());
             });
         }
 
-        private void Logout(object eventArgs)
+        private async void Logout(object eventArgs)
         {
             if (isConnected)
             {
@@ -63,7 +135,10 @@ namespace OFTP_Client
                 }
             }
 
-            LogoutEvent.Invoke(this, null);
+            await SendMessage(Resources.CodeNames.LogOut);
+
+            cancellationTokenSource.Cancel();
+            isLoggedIn = false;
         }
 
         private void LogoutButton_Click(object sender, EventArgs e)
@@ -98,7 +173,7 @@ namespace OFTP_Client
                 if (!string.IsNullOrWhiteSpace(text))
                 {
                     UsersListBox.Items.Clear();
-                    var filteredUserList = availableUsers.Keys.Where(x => x.ToLower().Contains(text));
+                    var filteredUserList = _availableUsers.Where(x => x.ToLower().Contains(text));
 
                     AvailableUsersLabel.Text = $"Dostępni użytownicy: {filteredUserList.Count()}";
 
@@ -108,9 +183,9 @@ namespace OFTP_Client
                 {
                     UsersListBox.Items.Clear();
 
-                    AvailableUsersLabel.Text = $"Dostępni użytownicy: {availableUsers.Count()}";
+                    AvailableUsersLabel.Text = $"Dostępni użytownicy: {_availableUsers.Count()}";
 
-                    UsersListBox.Items.AddRange(availableUsers.Keys.ToArray());
+                    UsersListBox.Items.AddRange(_availableUsers.ToArray());
                 }
             }
         }
@@ -140,11 +215,11 @@ namespace OFTP_Client
 
             //availableUsers = dictionaryService.users;
 
-            UsersListBox.Items.AddRange(availableUsers.Keys.ToArray());
+            UsersListBox.Items.AddRange(_availableUsers.ToArray());
 
             //UsersListBox.SelectedIndex = 0;
 
-            AvailableUsersLabel.Text = $"Dostępni użytownicy: {availableUsers.Count}";
+            AvailableUsersLabel.Text = $"Dostępni użytownicy: {_availableUsers.Count}";
 
             //receiveFilesService = new ReceiveFilesService(dictionaryService);
             //receiveFilesService.IncommingConnection += ReceiveFilesService_IncommingConnection;

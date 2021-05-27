@@ -104,7 +104,7 @@ namespace LoginLibrary.Services
         {
             if ((await _storageService.GetUserDataAsync()).Any(u => u.Login == login))
             {
-                return 7;
+                return 201; //RegistrationLoginExists
             }
 
             try
@@ -119,16 +119,16 @@ namespace LoginLibrary.Services
                         Salt = salt
                     });
 
-                    return 6;
+                    return 104; //CorrectRegisterData
                 }
 
-                return 8;
+                return 202; //RegistrationPasswordWrong
             }
             catch (Exception e)
             {
                 _logger.LogInformation(e.Message);
 
-                return 99;
+                return 999;
             }
         }
     }
