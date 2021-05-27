@@ -45,7 +45,7 @@ namespace OFTP_Client
 
                        if (!cancellationToken.IsCancellationRequested)
                        {
-                           var newUser = (await cryptoService.DecryptData(buffer.Skip(1).Take(buffer[0]).ToArray())).Split('|');
+                           var newUser = (await cryptoService.DecryptData(buffer.Skip(2).Take(buffer[0] * 256 + buffer[1]).ToArray())).Split('|');
                            if (newUser[0] == Resources.CodeNames.NewUser)
                            {
                                UsersChanged(newUser[1]);
@@ -69,13 +69,16 @@ namespace OFTP_Client
                }
            });
         }
-
+        
         private async Task SendMessage(string message)
         {
             var encryptedData = await _cryptoService.EncryptData(message);
-            var encryptedMessage = new byte[encryptedData.Length + 1];
-            Array.Copy(encryptedData, 0, encryptedMessage, 1, encryptedData.Length);
-            encryptedMessage[0] = (byte)encryptedData.Length;
+            var encryptedMessage = new byte[encryptedData.Length + 2];
+            Array.Copy(encryptedData, 0, encryptedMessage, 2, encryptedData.Length);
+            var len = encryptedData.Length;
+
+            encryptedMessage[0] = (byte)(len / 256);
+            encryptedMessage[1] = (byte)(len  %  256);
             await _tcpClient.GetStream().WriteAsync(encryptedMessage);
         }
 

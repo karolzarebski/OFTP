@@ -46,23 +46,25 @@ namespace OFTP_Client
             {
                 var codeBuffer = new byte[256]; //TODO check length
                 await stream.ReadAsync(codeBuffer, 0, codeBuffer.Length);
-                return await _cryptoService.DecryptData(codeBuffer.Skip(1).Take(codeBuffer[0]).ToArray());
+                return await _cryptoService.DecryptData(codeBuffer.Skip(2).Take(codeBuffer[0] * 256 + codeBuffer[1]).ToArray());
             }
             else
             {
                 var messageBuffer = new byte[1024];
                 await stream.ReadAsync(messageBuffer, 0, messageBuffer.Length);
-                return await _cryptoService.DecryptData(messageBuffer.Skip(1)
-                        .Take(messageBuffer[0]).ToArray());
+                return await _cryptoService.DecryptData(messageBuffer.Skip(2)
+                        .Take(messageBuffer[0] * 256 + messageBuffer[1]).ToArray());
             }
         }
 
         private async Task SendMessage(string message)
         {
             var encryptedData = await _cryptoService.EncryptData(message);
-            var encryptedMessage = new byte[encryptedData.Length + 1];
-            Array.Copy(encryptedData, 0, encryptedMessage, 1, encryptedData.Length);
-            encryptedMessage[0] = (byte)encryptedData.Length;
+            var encryptedMessage = new byte[encryptedData.Length + 2];
+            Array.Copy(encryptedData, 0, encryptedMessage, 2, encryptedData.Length);
+            var len = encryptedData.Length;
+            encryptedMessage[0] = (byte)(len / 256);
+            encryptedMessage[1] = (byte)(len % 256);
             await stream.WriteAsync(encryptedMessage);
         }
 
@@ -163,10 +165,11 @@ namespace OFTP_Client
                                 availableUsers.Add(craftedUser);
                             }
 
-                            processedUsersCount -= 3; //server sends 3 users in a row
+                            processedUsersCount -= 100; //server sends 100 users in a row
                         }
 
                     }
+
                     InitMainWindow();
                 }
                 else if (message == Resources.CodeNames.WrongLoginData)

@@ -63,6 +63,12 @@ namespace ServerLibrary.Services
                 { "Alexander", "192.168.251.43"},
                 {"Harper" , "192.168.167.142"}
             };
+
+            for (int i = 0; i < 100; i++)
+            {
+                availableUsers.Add($"Name{i}", $"192.168.99.{i + 1}");
+            }
+     
         }
 
         private async void RefreshAvailableUsers(object sender, UsersCountChangedEvent e)
@@ -71,15 +77,17 @@ namespace ServerLibrary.Services
             {
                 if (e.newClient != client.Key)
                 {
-                    var encryptedData = await client.Value.EncryptData($"{Resources.CodeNames.NewUser}|{e.Username}");
+                    //var encryptedData = await client.Value.EncryptData();
 
-                    var message = new byte[encryptedData.Length + 1];
+                    //var message = new byte[encryptedData.Length + 1];
 
-                    Array.Copy(encryptedData, 0, message, 1, encryptedData.Length);
+                    //Array.Copy(encryptedData, 0, message, 1, encryptedData.Length);
 
-                    message[0] = (byte)encryptedData.Length;
+                    //message[0] = (byte)encryptedData.Length;
 
-                    await client.Key.GetStream().WriteAsync(message);
+                    //await client.Key.GetStream().WriteAsync(message);
+
+                    await SendMessage($"{Resources.CodeNames.NewUser}|{e.Username}", client.Key);
                 }
 
             }
@@ -89,11 +97,14 @@ namespace ServerLibrary.Services
         {
             var encryptedData = await clients[client].EncryptData(message);
 
-            var encryptedMessage = new byte[encryptedData.Length + 1];
+            var encryptedMessage = new byte[encryptedData.Length + 2];
 
-            Array.Copy(encryptedData, 0, encryptedMessage, 1, encryptedData.Length);
+            Array.Copy(encryptedData, 0, encryptedMessage, 2, encryptedData.Length);
 
-            encryptedMessage[0] = (byte)encryptedData.Length;
+            var msgLen = encryptedData.Length;
+
+            encryptedMessage[0] = (byte)(msgLen / 256);
+            encryptedMessage[1] = (byte)(msgLen % 256);
 
             await client.GetStream().WriteAsync(encryptedMessage);
         }
@@ -104,14 +115,14 @@ namespace ServerLibrary.Services
             {
                 var codeBuffer = new byte[256]; //TODO check length
                 await client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
-                return await clients[client].DecryptData(codeBuffer.Skip(1).Take(codeBuffer[0]).ToArray());
+                return await clients[client].DecryptData(codeBuffer.Skip(2).Take(codeBuffer[0] * 256 + codeBuffer[1]).ToArray());
             }
             else
             {
                 var messageBuffer = new byte[1024];
                 await client.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
-                return await clients[client].DecryptData(messageBuffer.Skip(1)
-                        .Take(messageBuffer[0]).ToArray());
+                return await clients[client].DecryptData(messageBuffer.Skip(2)
+                        .Take(messageBuffer[0] * 256 + messageBuffer[1]).ToArray());
             }
         }
 
@@ -225,8 +236,8 @@ namespace ServerLibrary.Services
                                 {
                                     var preparatedData = string.Empty;
 
-                                    var partOfData = tempUsers.Take(3);
-                                    tempUsers = tempUsers.Skip(3).ToDictionary(p => p.Key, p => p.Value);
+                                    var partOfData = tempUsers.Take(100);
+                                    tempUsers = tempUsers.Skip(100).ToDictionary(p => p.Key, p => p.Value);
 
                                     foreach (var user in partOfData)
                                     {
@@ -237,7 +248,8 @@ namespace ServerLibrary.Services
                                     }
 
                                     await SendMessage(preparatedData.Remove(preparatedData.Length - 1), client);
-                                    await Task.Delay(1); //server sends data too fast
+
+                                    await Task.Delay(10); //server sends data too fast
                                 }
                             }
                         }
