@@ -103,20 +103,34 @@ namespace OFTP_Client
             }
         }
 
-        private void ConnectButton_Click(object sender, EventArgs e)
+        private async void ConnectButton_Click(object sender, EventArgs e)
         {
-            var serwerIP = IsServerConfigurationCorrect(ServerIpTextBox.Text);
-
-            if (serwerIP != default)
+            if (connected)
             {
-                ConnectToServer(serwerIP);
+                await SendMessage(Resources.CodeNames.Disconnect);
+                LoginButton.Enabled = false;
+                RegisterButton.Enabled = false;
+                ConnectButton.Text = "Połącz";
+                LoginTextBox.Text = "";
+                PasswordTextBox.Text = "";
+                connected = false;
             }
             else
             {
-                MessageBox.Show("Niepoprawny adres IP serwera\nPodaj inny i spróbuj ponownie", "Błędny adres IP",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                var serwerIP = IsServerConfigurationCorrect(ServerIpTextBox.Text);
+
+                if (serwerIP != default)
+                {
+                    ConnectToServer(serwerIP);
+                }
+                else
+                {
+                    MessageBox.Show("Niepoprawny adres IP serwera\nPodaj inny i spróbuj ponownie", "Błędny adres IP",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
+        
 
         private async void LoginButton_ClickAsync(object sender, EventArgs e)
         {

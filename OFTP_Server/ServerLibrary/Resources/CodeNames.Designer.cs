@@ -97,6 +97,15 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 213.
+        /// </summary>
+        internal static string Disconnect {
+            get {
+                return ResourceManager.GetString("Disconnect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 999.
         /// </summary>
         internal static string GeneralError {

@@ -70,23 +70,6 @@ namespace OFTP_Client
            });
         }
 
-        private async Task<string> ReceiveMessage(bool isCodeReceived = false)
-        {
-            if (isCodeReceived)
-            {
-                var codeBuffer = new byte[256]; //TODO check length
-                await _tcpClient.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
-                return await _cryptoService.DecryptData(codeBuffer.Skip(1).Take(codeBuffer[0]).ToArray());
-            }
-            else
-            {
-                var messageBuffer = new byte[1024];
-                await _tcpClient.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
-                return await _cryptoService.DecryptData(messageBuffer.Skip(1)
-                        .Take(messageBuffer[0]).ToArray());
-            }
-        }
-
         private async Task SendMessage(string message)
         {
             var encryptedData = await _cryptoService.EncryptData(message);

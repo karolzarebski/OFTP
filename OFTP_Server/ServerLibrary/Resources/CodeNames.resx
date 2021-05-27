@@ -129,6 +129,9 @@
   <data name="CorrectRegisterData" xml:space="preserve">
     <value>104</value>
   </data>
+  <data name="Disconnect" xml:space="preserve">
+    <value>213</value>
+  </data>
   <data name="GeneralError" xml:space="preserve">
     <value>999</value>
   </data>

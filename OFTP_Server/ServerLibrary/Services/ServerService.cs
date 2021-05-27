@@ -69,7 +69,7 @@ namespace ServerLibrary.Services
         {
             foreach (var client in clients)
             {
-                if(e.newClient != client.Key)
+                if (e.newClient != client.Key)
                 {
                     var encryptedData = await client.Value.EncryptData($"{Resources.CodeNames.NewUser}|{e.Username}");
 
@@ -131,7 +131,7 @@ namespace ServerLibrary.Services
                 string login = string.Empty;
                 string password = string.Empty;
 
-                 Task.Run(async () => //TODO remove await
+                Task.Run(async () => //TODO remove await
                 {
                     await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(Resources.CodeNames.Connected));
 
@@ -155,10 +155,9 @@ namespace ServerLibrary.Services
                     {
                         var data = (await ReceiveMessage(client, false)).Split('|');
 
-                        login = data[1];
-
                         if (data[0] == Resources.CodeNames.Login)
                         {
+                            login = data[1];
                             if (await _loginService.CheckLoginCredentials(login, data[2]))
                             {
                                 await SendMessage(Resources.CodeNames.CorrectLoginData, client);
@@ -169,8 +168,6 @@ namespace ServerLibrary.Services
                                     availableUsers.Add(login, clientIpAddress.Remove(clientIpAddress.IndexOf(':')));
 
                                     usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
-
-                                    //clients.Add(client, cryptoService);
                                 }
                             }
 
@@ -183,6 +180,7 @@ namespace ServerLibrary.Services
                         }
                         else if (data[0] == Resources.CodeNames.Register)
                         {
+                            login = data[1];
                             int registrationResultCode = await _loginService.RegisterAccount(login, data[2]);
 
                             if (registrationResultCode.ToString() == Resources.CodeNames.CorrectRegisterData)
@@ -194,7 +192,6 @@ namespace ServerLibrary.Services
                                 {
                                     availableUsers.Add(login, clientIpAddress.Remove(clientIpAddress.IndexOf(':')));
                                     usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
-                                    //clients.Add(client, cryptoService);
                                 }
                             }
                             else
@@ -204,63 +201,74 @@ namespace ServerLibrary.Services
                                 clients.Remove(client);
                             }
                         }
-                    }
-
-                    if (availableUsers.Count - 1 != 0)
-                    {
-                        var tempUsers = availableUsers;
-
-                        await SendMessage($"{Resources.CodeNames.ActiveUsers}|{tempUsers.Count - 1}", client);
-
-                        if (await ReceiveMessage(client, true) == Resources.CodeNames.ActiveUsers)
+                        else if (data[0] == Resources.CodeNames.Disconnect)
                         {
-                            while (tempUsers.Any())
-                            {
-                                var preparatedData = string.Empty;
-
-                                var partOfData = tempUsers.Take(3);
-                                tempUsers = tempUsers.Skip(3).ToDictionary(p => p.Key, p => p.Value);
-
-                                foreach (var user in partOfData)
-                                {
-                                    if (user.Key != login)
-                                    {
-                                        preparatedData += $"{user.Key}\n";
-                                    }
-                                }
-
-                                await SendMessage(preparatedData.Remove(preparatedData.Length - 1), client);
-                                await Task.Delay(1); //server sends data too fast
-                            }
-                        }
-                    }
-                    else
-                    {
-                        await SendMessage($"{Resources.CodeNames.ActiveUsers}|0", client);
-                    }
-
-                    while (true)
-                    {
-                        var message = await ReceiveMessage(client, true);
-
-                        if (message == Resources.CodeNames.LogOut)
-                        {
-
-                            usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
-
-                            await SendMessage(Resources.CodeNames.LogOut, client);
-
                             clients.Remove(client);
-                            availableUsers.Remove(login);
-
+                            client.Close();
                             client.Dispose();
-
                             break;
                         }
-                        else if (message == Resources.CodeNames.GetIp)
+                    }
+
+                    if (loggedIn)
+                    {
+
+                        if (availableUsers.Count - 1 != 0)
                         {
-                            var username = await ReceiveMessage(client, false);
-                            await SendMessage(availableUsers[username].ToString(), client);
+                            var tempUsers = availableUsers;
+
+                            await SendMessage($"{Resources.CodeNames.ActiveUsers}|{tempUsers.Count - 1}", client);
+
+                            if (await ReceiveMessage(client, true) == Resources.CodeNames.ActiveUsers)
+                            {
+                                while (tempUsers.Any())
+                                {
+                                    var preparatedData = string.Empty;
+
+                                    var partOfData = tempUsers.Take(3);
+                                    tempUsers = tempUsers.Skip(3).ToDictionary(p => p.Key, p => p.Value);
+
+                                    foreach (var user in partOfData)
+                                    {
+                                        if (user.Key != login)
+                                        {
+                                            preparatedData += $"{user.Key}\n";
+                                        }
+                                    }
+
+                                    await SendMessage(preparatedData.Remove(preparatedData.Length - 1), client);
+                                    await Task.Delay(1); //server sends data too fast
+                                }
+                            }
+                        }
+                        else
+                        {
+                            await SendMessage($"{Resources.CodeNames.ActiveUsers}|0", client);
+                        }
+
+                        while (true)
+                        {
+                            var message = await ReceiveMessage(client, true);
+
+                            if (message == Resources.CodeNames.LogOut)
+                            {
+
+                                usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
+
+                                await SendMessage(Resources.CodeNames.LogOut, client);
+
+                                clients.Remove(client);
+                                availableUsers.Remove(login);
+
+                                client.Dispose();
+
+                                break;
+                            }
+                            else if (message == Resources.CodeNames.GetIp)
+                            {
+                                var username = await ReceiveMessage(client, false);
+                                await SendMessage(availableUsers[username].ToString(), client);
+                            }
                         }
                     }
                 });
