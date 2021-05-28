@@ -26,9 +26,6 @@ namespace ServerLibrary.Services
 
         private event EventHandler<UsersCountChangedEvent> usersCountChangedEvent;
 
-        private bool eventFired = false;
-        private int usersCount = 0;
-
         public ServerService(ServerConfiguration serverConfiguration, ILoginService loginService,
             ILogger<ServerService> logger, IDatabaseService storageService)
         {
