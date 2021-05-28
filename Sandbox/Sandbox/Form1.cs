@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +13,9 @@ namespace Sandbox
 {
     public partial class Form1 : Form
     {
+        string filePath = "";
+        List<string> selectedFilesPath = new List<string>();
+
         public Form1()
         {
             InitializeComponent();
@@ -49,8 +53,6 @@ namespace Sandbox
         {
             using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
             {
-
-             openFileDialog.
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     //Get the path of specified file
@@ -66,6 +68,81 @@ namespace Sandbox
                     //   fileContent = reader.ReadToEnd();
                     //}
                 }
+            }
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            using (FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog())
+            {
+                if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
+                {
+                    filePath = folderBrowserDialog.SelectedPath;
+                    treeView1.Nodes.Clear();
+                    DirectoryInfo di = new DirectoryInfo(filePath);
+                    TreeNode tds = treeView1.Nodes.Add(di.Name);
+                    tds.Tag = di.FullName;
+                    tds.StateImageIndex = 0;
+                    LoadFiles(filePath, tds);
+                    LoadSubDirectories(filePath, tds);
+                }
+            }
+        }
+
+        private void LoadFiles(string dir, TreeNode td)
+        {
+            string[] Files = Directory.GetFiles(dir, "*.*");
+
+            // Loop through them to see files  
+            foreach (string file in Files)
+            {
+                FileInfo fi = new FileInfo(file);
+                TreeNode tds = td.Nodes.Add(fi.Name);
+                tds.Tag = fi.FullName;
+                tds.StateImageIndex = 1;
+            }
+        }
+
+        private void LoadSubDirectories(string dir, TreeNode td)
+        {
+            // Get all subdirectories  
+            string[] subdirectoryEntries = Directory.GetDirectories(dir);
+            // Loop through them to see if they have any other subdirectories  
+            foreach (string subdirectory in subdirectoryEntries)
+            {
+
+                DirectoryInfo di = new DirectoryInfo(subdirectory);
+                TreeNode tds = td.Nodes.Add(di.Name);
+                tds.StateImageIndex = 0;
+                tds.Tag = di.FullName;
+                LoadFiles(subdirectory, tds);
+                LoadSubDirectories(subdirectory, tds);
+
+            }
+        }
+
+        private void treeView1_AfterCheck(object sender, TreeViewEventArgs e)
+        {
+            string path = filePath.Remove(filePath.LastIndexOf('\\') + 1) + e.Node.FullPath;
+
+            if (Directory.Exists(path))
+            {
+                path += "\\";
+            }
+
+            if (e.Node.Checked)
+            {
+                selectedFilesPath.Add(path);
+            }
+            else
+            {
+                selectedFilesPath.Remove(path);
+            }
+
+            label1.Text = "";
+            foreach(var i in selectedFilesPath)
+            {
+                label1.Text += i + "\r\n";
             }
         }
     }
