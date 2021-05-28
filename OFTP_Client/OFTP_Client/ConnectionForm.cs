@@ -199,6 +199,29 @@ namespace OFTP_Client
                 {
                     MessageBox.Show("Pomyślnie zarejestrowano", "Rejestracja",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    var availableUsersCount = (await ReceiveMessage(false)).Split('|');
+
+                    if (availableUsersCount[0] == Resources.CodeNames.ActiveUsers)
+                    {
+                        var processedUsersCount = Convert.ToInt32(availableUsersCount[1]);
+
+                        await SendMessage(Resources.CodeNames.ActiveUsers);
+
+                        while (processedUsersCount >= 0)
+                        {
+                            var users = (await ReceiveMessage(false)).Split('\n');
+
+                            foreach (var craftedUser in users)
+                            {
+                                availableUsers.Add(craftedUser);
+                            }
+
+                            processedUsersCount -= 100; //server sends 100 users in a row
+                        }
+
+                    }
+
                     InitMainWindow();
                 }
                 else if (message == Resources.CodeNames.RegistrationLoginExists)
