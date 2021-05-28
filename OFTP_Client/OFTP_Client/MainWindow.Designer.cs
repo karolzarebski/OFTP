@@ -38,6 +38,8 @@ namespace OFTP_Client
             this.FilterUsersTextBox = new System.Windows.Forms.TextBox();
             this.StateLabel = new System.Windows.Forms.Label();
             this.LoggedInAsLabel = new System.Windows.Forms.Label();
+            this.FilesTreeView = new System.Windows.Forms.TreeView();
+            this.SendButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // UsersListBox
@@ -125,11 +127,32 @@ namespace OFTP_Client
             this.LoggedInAsLabel.TabIndex = 8;
             this.LoggedInAsLabel.Text = "Zalogowano jako:";
             // 
+            // FilesTreeView
+            // 
+            this.FilesTreeView.Location = new System.Drawing.Point(13, 105);
+            this.FilesTreeView.Name = "FilesTreeView";
+            this.FilesTreeView.Size = new System.Drawing.Size(491, 321);
+            this.FilesTreeView.TabIndex = 9;
+            this.FilesTreeView.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.FilesTreeView_AfterCheck);
+            // 
+            // SendButton
+            // 
+            this.SendButton.Enabled = false;
+            this.SendButton.Location = new System.Drawing.Point(409, 71);
+            this.SendButton.Name = "SendButton";
+            this.SendButton.Size = new System.Drawing.Size(86, 23);
+            this.SendButton.TabIndex = 10;
+            this.SendButton.Text = "Wyślij pliki";
+            this.SendButton.UseVisualStyleBackColor = true;
+            this.SendButton.Click += new System.EventHandler(this.SendButton_Click);
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.SendButton);
+            this.Controls.Add(this.FilesTreeView);
             this.Controls.Add(this.LoggedInAsLabel);
             this.Controls.Add(this.StateLabel);
             this.Controls.Add(this.FilterUsersTextBox);
@@ -159,5 +182,7 @@ namespace OFTP_Client
         private System.Windows.Forms.TextBox FilterUsersTextBox;
         private System.Windows.Forms.Label StateLabel;
         private System.Windows.Forms.Label LoggedInAsLabel;
+        private System.Windows.Forms.TreeView FilesTreeView;
+        private System.Windows.Forms.Button SendButton;
     }
 }

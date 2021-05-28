@@ -4,6 +4,7 @@ using OFTP_Client.Resources;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -15,11 +16,14 @@ namespace OFTP_Client
 {
     public partial class MainWindow : Form
     {
-        private bool isConnected = false, isLoggedIn = true;
+        private bool isConnected = false, isLoggedIn = true, isPathSelected = false;
         private List<string> _availableUsers = new List<string>();
         private DictionaryService dictionaryService = new DictionaryService();
         private SendFilesService sendFilesService;
         private ReceiveFilesService receiveFilesService;
+
+        private string filePath = "";
+        private List<string> selectedFilesPath = new List<string>();
 
         public TcpClient _tcpClient;
         private CryptoService _cryptoService;
@@ -81,30 +85,28 @@ namespace OFTP_Client
 
                                if(await sendFilesService.Connect())
                                {
-                                   using (OpenFileDialog openFileDialog = new OpenFileDialog())
+                                   isConnected = true;
+                                   using (FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog())
                                    {
-                                       openFileDialog.InitialDirectory = "c:\\";
-                                       openFileDialog.Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*";
-                                       openFileDialog.FilterIndex = 2;
-                                       openFileDialog.RestoreDirectory = true;
-
-                                       if (openFileDialog.ShowDialog() == DialogResult.OK)
+                                       if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
                                        {
-                                           //Get the path of specified file
-                                           var filePath = openFileDialog.FileName;
+                                           filePath = folderBrowserDialog.SelectedPath;
+                                           FilesTreeView.Nodes.Clear();
+                                           DirectoryInfo di = new DirectoryInfo(filePath);
+                                           TreeNode tds = FilesTreeView.Nodes.Add(di.Name);
+                                           tds.Tag = di.FullName;
+                                           tds.StateImageIndex = 0;
+                                           LoadFiles(filePath, tds);
+                                           LoadSubDirectories(filePath, tds);
 
-                                           //Read the contents of the file into a stream
-                                           //var fileStream = openFileDialog.OpenFile();
-
-                                           //using (StreamReader reader = new StreamReader(fileStream))
-                                           //{
-                                           //   fileContent = reader.ReadToEnd();
-                                           //}
+                                           SendButton.Enabled = true;
                                        }
                                    }
                                }
                                else
                                {
+                                   isConnected = false;
+                                   SendButton.Enabled = false;
                                    MessageBox.Show("Wystąpił błąd podczas łącznia klientem", "Błąd połączenia",
                                        MessageBoxButtons.OK, MessageBoxIcon.Error);
                                }
@@ -290,7 +292,7 @@ namespace OFTP_Client
 
         private async void InitReceiveService()
         {
-            if (await receiveFilesService.WaitForIncommingConnection())
+            if (await receiveFilesService.WaitForIncomingConnection())
             {
                 IncommingConnectionAccepted();
             }
@@ -318,6 +320,67 @@ namespace OFTP_Client
             await SendMessage($"{CodeNames.AskUserForConnection}");
             await SendMessage($"{UsersListBox.SelectedItem}");
             StateLabel.Text = $"Stan: Oczekiwanie na akceptację od {UsersListBox.SelectedItem}";
+        }
+
+        private void FilesTreeView_AfterCheck(object sender, TreeViewEventArgs e)
+        {
+            string path = filePath.Remove(filePath.LastIndexOf('\\') + 1) + e.Node.FullPath;
+
+            if (Directory.Exists(path))
+            {
+                path += "\\";
+            }
+
+            if (e.Node.Checked)
+            {
+                selectedFilesPath.Add(path);
+            }
+            else
+            {
+                selectedFilesPath.Remove(path);
+            }
+        }
+
+        private void SendButton_Click(object sender, EventArgs e)
+        {
+            string allFiles = "";
+            foreach (var i in selectedFilesPath)
+            {
+                allFiles += i + "\r\n";
+            }
+
+            MessageBox.Show("Wybrane pliki : \r\n" + allFiles, "Wybrane pliki", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            SendButton.Enabled = false;
+            FilesTreeView.Nodes.Clear();
+        }
+
+        private void LoadFiles(string dir, TreeNode td)
+        {
+            string[] Files = Directory.GetFiles(dir, "*.*");
+
+            foreach (string file in Files)
+            {
+                FileInfo fi = new FileInfo(file);
+                TreeNode tds = td.Nodes.Add(fi.Name);
+                tds.Tag = fi.FullName;
+                tds.StateImageIndex = 1;
+            }
+        }
+
+        private void LoadSubDirectories(string dir, TreeNode td)
+        {
+            string[] subdirectoryEntries = Directory.GetDirectories(dir);
+            foreach (string subdirectory in subdirectoryEntries)
+            {
+                DirectoryInfo di = new DirectoryInfo(subdirectory);
+                TreeNode tds = td.Nodes.Add(di.Name);
+                tds.StateImageIndex = 0;
+                tds.Tag = di.FullName;
+                LoadFiles(subdirectory, tds);
+                LoadSubDirectories(subdirectory, tds);
+
+            }
         }
 
         private void ReceiveFilesService_IncommingConnection(object sender, IncommingConnectionEvent e)
