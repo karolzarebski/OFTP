@@ -22,6 +22,9 @@ namespace OFTP_Client.FilesService
             {
                 await (_client = new TcpClient()).ConnectAsync(_serverIP, 12138);
 
+                var code = new byte[3]; //TODO check size
+                await _client.GetStream().ReadAsync(code, 0, code.Length);
+
                 byte[] publicKey = new byte[72];
                 await _client.GetStream().ReadAsync(publicKey, 0, publicKey.Length);
 

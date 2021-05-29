@@ -19,6 +19,8 @@ namespace ServerLibrary.Services
         private readonly ILogger<ServerService> _logger;
         private readonly IDatabaseService _storageService;
 
+        private UsersConnection _uc;
+
 
         private readonly ServerConfiguration _serverConfiguration;
         private Dictionary<string, string> availableUsers = new Dictionary<string, string>();
@@ -282,29 +284,54 @@ namespace ServerLibrary.Services
 
                             else if (message == CodeNames.AskUserForConnection)
                             {
-                                var tempClientIp = availableUsers[await ReceiveMessage(client)];
+                                var tempClientLogin = await ReceiveMessage(client);
+                                var tempClientIp = availableUsers[tempClientLogin];
 
                                 var tempClient = clients.Keys.Where(x => x.Client.RemoteEndPoint.ToString().StartsWith(tempClientIp)).FirstOrDefault();
+
+                                _uc = new UsersConnection(login, availableUsers[login], tempClientLogin, tempClientIp); 
 
                                 await SendMessage($"{CodeNames.AskUserForConnection}|{login}", tempClient);
 
                                 Console.WriteLine("Wysłałem 501 do " + tempClient.Client.RemoteEndPoint);
 
-                                Console.WriteLine("Czekam na kod od " + tempClient.Client.RemoteEndPoint);
-                                var responseCode = await ReceiveMessage(tempClient, true);
-                                Console.WriteLine("Odebrałem kod od " + tempClient.Client.RemoteEndPoint);
+                                //Console.WriteLine("Czekam na kod od " + tempClient.Client.RemoteEndPoint);
+                                //var responseCode = await ReceiveMessage(tempClient, true);
+
+                                while  (!_uc._userAccepted)  ;
+
+                                await SendMessage(CodeNames.AcceptedIncomingConnection, client);
+                                await SendMessage(tempClientIp, client);
 
 
-                                if (responseCode == CodeNames.AcceptedIncomingConnection)
+                                //var buffer = new byte[18];
+
+                                //await tempClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
+
+
+
+                                //Console.WriteLine("Odebrałem kod od " + tempClient.Client.RemoteEndPoint);
+
+                                //var responseCode = "4354";
+
+                                //if (responseCode == CodeNames.AcceptedIncomingConnection)
+                                //{
+
+                                //}
+                                //else if (responseCode == CodeNames.RejectedIncomingConnection)
+                                //{
+                                //    await SendMessage(CodeNames.RejectedIncomingConnection, client);
+                                //}
+                            }
+                            else if (message == CodeNames.AcceptedIncomingConnection)
+                            {
+                                if(_uc.IsMe(login, availableUsers[login]))
                                 {
-                                    await SendMessage(availableUsers[login], tempClient);
-                                    await SendMessage(CodeNames.AcceptedIncomingConnection, client);
-                                    await SendMessage(tempClientIp, client);
+                                     _uc._userAccepted = true;
+                                    SendMessage(_uc._userStartingConnectionIP, client);
                                 }
-                                else if (responseCode == CodeNames.RejectedIncomingConnection)
-                                {
-                                    await SendMessage(CodeNames.RejectedIncomingConnection, client);
-                                }
+                                //await SendMessage(availableUsers[login], tempClient);
+                                //Console.WriteLine("OK");
                             }
                         }
                     }

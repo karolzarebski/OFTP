@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -83,24 +82,43 @@ namespace OFTP_Client
 
                                sendFilesService = new SendFilesService(ip);
 
-                               if(await sendFilesService.Connect())
+                               if (await sendFilesService.Connect())
                                {
                                    isConnected = true;
-                                   using (FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog())
+
+                                   string selectedPath = string.Empty;
+
+                                   var t = new Thread(() =>
                                    {
-                                       if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
+                                       FolderBrowserDialog fbd = new FolderBrowserDialog();
+                                       fbd.RootFolder = Environment.SpecialFolder.MyComputer;
+                                       fbd.ShowNewFolderButton = true;
+                                       if (fbd.ShowDialog() == DialogResult.Cancel)
+                                           return;
+
+                                       selectedPath = fbd.SelectedPath;
+                                   });
+
+                                   t.SetApartmentState(ApartmentState.STA);
+                                   t.Start();
+                                   t.Join();
+
+                                   if (selectedPath != string.Empty)
+                                   {
+                                       FilesTreeView.Nodes.Clear();
+                                       DirectoryInfo di = new DirectoryInfo(selectedPath);
+
+                                       FilesTreeView.Invoke((MethodInvoker)delegate
                                        {
-                                           filePath = folderBrowserDialog.SelectedPath;
-                                           FilesTreeView.Nodes.Clear();
-                                           DirectoryInfo di = new DirectoryInfo(filePath);
                                            TreeNode tds = FilesTreeView.Nodes.Add(di.Name);
+
                                            tds.Tag = di.FullName;
                                            tds.StateImageIndex = 0;
-                                           LoadFiles(filePath, tds);
-                                           LoadSubDirectories(filePath, tds);
-
+                                           LoadFiles(selectedPath, tds);
+                                           LoadSubDirectories(selectedPath, tds);
                                            SendButton.Enabled = true;
-                                       }
+
+                                       });
                                    }
                                }
                                else
@@ -118,7 +136,7 @@ namespace OFTP_Client
                        if (ex is OperationCanceledException)
                        {
                            isLoggedIn = false;
-                           MessageBox.Show("Pomyślnie wylogowano", "Wylogowywanie", 
+                           MessageBox.Show("Pomyślnie wylogowano", "Wylogowywanie",
                                MessageBoxButtons.OK, MessageBoxIcon.Information);
                        }
                        else
@@ -129,7 +147,7 @@ namespace OFTP_Client
                }
            });
         }
-        
+
         private async Task SendMessage(string message)
         {
             var encryptedData = await _cryptoService.EncryptData(message);
@@ -138,7 +156,7 @@ namespace OFTP_Client
             var len = encryptedData.Length;
 
             encryptedMessage[0] = (byte)(len / 256);
-            encryptedMessage[1] = (byte)(len  %  256);
+            encryptedMessage[1] = (byte)(len % 256);
             await _tcpClient.GetStream().WriteAsync(encryptedMessage);
         }
 
