@@ -129,6 +129,7 @@ namespace OFTP_Client
             // 
             // FilesTreeView
             // 
+            this.FilesTreeView.CheckBoxes = true;
             this.FilesTreeView.Location = new System.Drawing.Point(13, 105);
             this.FilesTreeView.Name = "FilesTreeView";
             this.FilesTreeView.Size = new System.Drawing.Size(491, 321);

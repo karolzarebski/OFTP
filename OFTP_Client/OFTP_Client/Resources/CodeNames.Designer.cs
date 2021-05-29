@@ -70,6 +70,15 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 602.
+        /// </summary>
+        internal static string AcceptFileTransmission {
+            get {
+                return ResourceManager.GetString("AcceptFileTransmission", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 107.
         /// </summary>
         internal static string ActiveUsers {
@@ -84,6 +93,15 @@ namespace OFTP_Client.Resources {
         internal static string AskUserForConnection {
             get {
                 return ResourceManager.GetString("AskUserForConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 601.
+        /// </summary>
+        internal static string BeginFileTransmission {
+            get {
+                return ResourceManager.GetString("BeginFileTransmission", resourceCulture);
             }
         }
         
@@ -183,6 +201,15 @@ namespace OFTP_Client.Resources {
         internal static string RejectedIncomingConnection {
             get {
                 return ResourceManager.GetString("RejectedIncomingConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 603.
+        /// </summary>
+        internal static string RejectFileTransmission {
+            get {
+                return ResourceManager.GetString("RejectFileTransmission", resourceCulture);
             }
         }
         

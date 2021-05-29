@@ -120,11 +120,17 @@
   <data name="AcceptedIncomingConnection" xml:space="preserve">
     <value>502</value>
   </data>
+  <data name="AcceptFileTransmission" xml:space="preserve">
+    <value>602</value>
+  </data>
   <data name="ActiveUsers" xml:space="preserve">
     <value>107</value>
   </data>
   <data name="AskUserForConnection" xml:space="preserve">
     <value>501</value>
+  </data>
+  <data name="BeginFileTransmission" xml:space="preserve">
+    <value>601</value>
   </data>
   <data name="Connected" xml:space="preserve">
     <value>100</value>
@@ -158,6 +164,9 @@
   </data>
   <data name="RejectedIncomingConnection" xml:space="preserve">
     <value>503</value>
+  </data>
+  <data name="RejectFileTransmission" xml:space="preserve">
+    <value>603</value>
   </data>
   <data name="WrongLoginData" xml:space="preserve">
     <value>200</value>

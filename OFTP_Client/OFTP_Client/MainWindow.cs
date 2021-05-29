@@ -74,7 +74,9 @@ namespace OFTP_Client
 
                                receiveFilesService = new ReceiveFilesService(ip);
 
-                               await receiveFilesService.WaitForIncomingConnection(); //FIX THIS SHIT
+                               if (await receiveFilesService.WaitForIncomingConnection()) //FIX THIS SHIT
+                                   if (await receiveFilesService.AcceptFiles()) // Maybe this shit too //si si torro
+                                       await receiveFilesService.ReceiveFiles();
                            }
                            else if (data[0] == CodeNames.AcceptedIncomingConnection)
                            {
@@ -362,12 +364,15 @@ namespace OFTP_Client
         private void SendButton_Click(object sender, EventArgs e)
         {
             string allFiles = "";
+
             foreach (var i in selectedFilesPath)
             {
                 allFiles += i + "\r\n";
             }
 
             MessageBox.Show("Wybrane pliki : \r\n" + allFiles, "Wybrane pliki", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+
 
             SendButton.Enabled = false;
             FilesTreeView.Nodes.Clear();

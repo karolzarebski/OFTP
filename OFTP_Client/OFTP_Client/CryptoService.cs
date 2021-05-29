@@ -52,6 +52,19 @@ namespace OFTP_Client
             }
         }
 
+        public Task<byte[]> DecryptDataB(byte[] encryptedData)
+        {
+            using (MemoryStream msDecrypt = new MemoryStream(encryptedData))
+            {
+                using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aes.CreateDecryptor(aes.Key, aes.IV), CryptoStreamMode.Read))
+                {
+                    csDecrypt.Read(encryptedData, 0, encryptedData.Length);
+                    csDecrypt.FlushFinalBlock();
+                    return Task.FromResult(msDecrypt.ToArray());
+                }
+            }
+        }
+
         public Task<byte[]> EncryptData(string dataToEncrypt)
         {
             using (MemoryStream msEncrypt = new MemoryStream())
@@ -63,6 +76,18 @@ namespace OFTP_Client
                         swEncrypt.Write(dataToEncrypt);
                     }
 
+                    return Task.FromResult(msEncrypt.ToArray());
+                }
+            }
+        }
+
+        public Task<byte[]> EncryptData(byte[] dataToEncrypt)
+        {
+            using (MemoryStream msEncrypt = new MemoryStream())
+            {
+                using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, aes.CreateEncryptor(aes.Key, aes.IV), CryptoStreamMode.Write))
+                {
+                    csEncrypt.Write(dataToEncrypt, 0, dataToEncrypt.Length);
                     return Task.FromResult(msEncrypt.ToArray());
                 }
             }
