@@ -13,7 +13,7 @@ namespace OFTP_Client
 {
     public partial class ConnectionForm : Form
     {
-        private TcpClient client;
+        private TcpClient client = new TcpClient();
         private NetworkStream stream;
         private CryptoService _cryptoService = new CryptoService();
         private List<string> availableUsers = new List<string>();
@@ -72,7 +72,7 @@ namespace OFTP_Client
         {
             try
             {
-                await (client = new TcpClient()).ConnectAsync(ipAddress, 12137);
+                await client.ConnectAsync(ipAddress, 12137);
             }
             catch (Exception ex)
             {
@@ -147,6 +147,8 @@ namespace OFTP_Client
                 if (message == Resources.CodeNames.CorrectLoginData)
                 {
                     MessageBox.Show("Zalogowano", "OK", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    await SendMessage(Resources.CodeNames.ActiveUsers);
 
                     var availableUsersCount = (await ReceiveMessage(false)).Split('|');
 

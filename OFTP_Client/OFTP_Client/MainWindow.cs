@@ -49,7 +49,7 @@ namespace OFTP_Client
                {
                    try
                    {
-                       await tcpClient.GetStream().ReadAsync(buffer, 0, buffer.Length, cancellationToken);
+                       await _tcpClient.GetStream().ReadAsync(buffer, 0, buffer.Length, cancellationToken);
 
                        if (!cancellationToken.IsCancellationRequested)
                        {

@@ -222,38 +222,43 @@ namespace ServerLibrary.Services
                     if (loggedIn)
                     {
 
-                        if (availableUsers.Count - 1 != 0)
+                        var usersCode = await ReceiveMessage(client, true);
+
+                        if (usersCode == CodeNames.ActiveUsers)
                         {
-                            var tempUsers = availableUsers;
-
-                            await SendMessage($"{CodeNames.ActiveUsers}|{tempUsers.Count - 1}", client);
-
-                            if (await ReceiveMessage(client, true) == CodeNames.ActiveUsers)
+                            if (availableUsers.Count - 1 != 0)
                             {
-                                while (tempUsers.Any())
+                                var tempUsers = availableUsers;
+
+                                await SendMessage($"{CodeNames.ActiveUsers}|{tempUsers.Count - 1}", client);
+
+                                if (await ReceiveMessage(client, true) == CodeNames.ActiveUsers)
                                 {
-                                    var preparatedData = string.Empty;
-
-                                    var partOfData = tempUsers.Take(100);
-                                    tempUsers = tempUsers.Skip(100).ToDictionary(p => p.Key, p => p.Value);
-
-                                    foreach (var user in partOfData)
+                                    while (tempUsers.Any())
                                     {
-                                        if (user.Key != login)
+                                        var preparatedData = string.Empty;
+
+                                        var partOfData = tempUsers.Take(100);
+                                        tempUsers = tempUsers.Skip(100).ToDictionary(p => p.Key, p => p.Value);
+
+                                        foreach (var user in partOfData)
                                         {
-                                            preparatedData += $"{user.Key}\n";
+                                            if (user.Key != login)
+                                            {
+                                                preparatedData += $"{user.Key}\n";
+                                            }
                                         }
+
+                                        await SendMessage(preparatedData.Remove(preparatedData.Length - 1), client);
+
+                                        await Task.Delay(1); //server sends data too fast
                                     }
-
-                                    await SendMessage(preparatedData.Remove(preparatedData.Length - 1), client);
-
-                                    await Task.Delay(1); //server sends data too fast
                                 }
                             }
-                        }
-                        else
-                        {
-                            await SendMessage($"{CodeNames.ActiveUsers}|0", client);
+                            else
+                            {
+                                await SendMessage($"{CodeNames.ActiveUsers}|0", client);
+                            }
                         }
 
                         while (true)
