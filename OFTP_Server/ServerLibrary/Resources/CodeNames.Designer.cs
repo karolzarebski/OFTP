@@ -63,9 +63,9 @@ namespace ServerLibrary.Resources {
         /// <summary>
         ///   Looks up a localized string similar to 502.
         /// </summary>
-        internal static string AcceptedIncommingConnection {
+        internal static string AcceptedIncomingConnection {
             get {
-                return ResourceManager.GetString("AcceptedIncommingConnection", resourceCulture);
+                return ResourceManager.GetString("AcceptedIncomingConnection", resourceCulture);
             }
         }
         
@@ -79,7 +79,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 502.
+        ///   Looks up a localized string similar to 501.
         /// </summary>
         internal static string AskUserForConnection {
             get {
@@ -120,33 +120,6 @@ namespace ServerLibrary.Resources {
         internal static string Disconnect {
             get {
                 return ResourceManager.GetString("Disconnect", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 999.
-        /// </summary>
-        internal static string GeneralError {
-            get {
-                return ResourceManager.GetString("GeneralError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 300.
-        /// </summary>
-        internal static string GetIp {
-            get {
-                return ResourceManager.GetString("GetIp", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 501.
-        /// </summary>
-        internal static string GetUserIP {
-            get {
-                return ResourceManager.GetString("GetUserIP", resourceCulture);
             }
         }
         
@@ -207,9 +180,9 @@ namespace ServerLibrary.Resources {
         /// <summary>
         ///   Looks up a localized string similar to 503.
         /// </summary>
-        internal static string RejectedIncommingConnection {
+        internal static string RejectedIncomingConnection {
             get {
-                return ResourceManager.GetString("RejectedIncommingConnection", resourceCulture);
+                return ResourceManager.GetString("RejectedIncomingConnection", resourceCulture);
             }
         }
         

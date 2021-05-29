@@ -117,14 +117,14 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AcceptedIncommingConnection" xml:space="preserve">
+  <data name="AcceptedIncomingConnection" xml:space="preserve">
     <value>502</value>
   </data>
   <data name="ActiveUsers" xml:space="preserve">
     <value>107</value>
   </data>
   <data name="AskUserForConnection" xml:space="preserve">
-    <value>502</value>
+    <value>501</value>
   </data>
   <data name="Connected" xml:space="preserve">
     <value>100</value>
@@ -137,15 +137,6 @@
   </data>
   <data name="Disconnect" xml:space="preserve">
     <value>213</value>
-  </data>
-  <data name="GeneralError" xml:space="preserve">
-    <value>999</value>
-  </data>
-  <data name="GetIp" xml:space="preserve">
-    <value>300</value>
-  </data>
-  <data name="GetUserIP" xml:space="preserve">
-    <value>501</value>
   </data>
   <data name="Login" xml:space="preserve">
     <value>101</value>
@@ -165,7 +156,7 @@
   <data name="RegistrationPasswordWrong" xml:space="preserve">
     <value>202</value>
   </data>
-  <data name="RejectedIncommingConnection" xml:space="preserve">
+  <data name="RejectedIncomingConnection" xml:space="preserve">
     <value>503</value>
   </data>
   <data name="WrongLoginData" xml:space="preserve">

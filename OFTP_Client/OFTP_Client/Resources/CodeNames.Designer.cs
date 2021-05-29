@@ -61,7 +61,7 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 503.
+        ///   Looks up a localized string similar to 502.
         /// </summary>
         internal static string AcceptedIncomingConnection {
             get {
@@ -79,7 +79,7 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 502.
+        ///   Looks up a localized string similar to 501.
         /// </summary>
         internal static string AskUserForConnection {
             get {
@@ -120,15 +120,6 @@ namespace OFTP_Client.Resources {
         internal static string Disconnect {
             get {
                 return ResourceManager.GetString("Disconnect", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 501.
-        /// </summary>
-        internal static string GetUserIp {
-            get {
-                return ResourceManager.GetString("GetUserIp", resourceCulture);
             }
         }
         
@@ -187,7 +178,7 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 504.
+        ///   Looks up a localized string similar to 503.
         /// </summary>
         internal static string RejectedIncomingConnection {
             get {
