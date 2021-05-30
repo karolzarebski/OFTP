@@ -85,6 +85,7 @@ namespace OFTP_Client
                                string ip = await ReceiveMessage();
 
                                sendFilesService = new SendFilesService(ip);
+                               sendFilesService.SendFileProgress += SendFilesService_SendFileProgress;
 
                                if (await sendFilesService.Connect())
                                {
@@ -149,6 +150,21 @@ namespace OFTP_Client
                    }
                }
            });
+        }
+
+        private void SendFilesService_SendFileProgress(object sender, SendProgressEvent e)
+        {
+            SendFileProgressBar.Invoke((MethodInvoker)delegate
+            {
+                SendFileProgressBar.Value = e.Value;
+                SendFileProgressLabel.Text = $"Postęp: {e.Value} %";
+
+                if (e.Value == 100)
+                {
+                    MessageBox.Show("Pomyślnie wysłano plik", "Transfer zakończony", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
+                }
+            });
         }
 
         private async Task SendMessage(string message)
@@ -297,43 +313,9 @@ namespace OFTP_Client
             MaximumSize = Size;
             MinimumSize = Size;
 
-            //availableUsers = dictionaryService.users;
-
             UsersListBox.Items.AddRange(_availableUsers.ToArray());
 
-            //UsersListBox.SelectedIndex = 0;
-
             AvailableUsersLabel.Text = $"Dostępni użytownicy: {_availableUsers.Count}";
-
-            //receiveFilesService = new ReceiveFilesService(dictionaryService);
-            //receiveFilesService.IncommingConnection += ReceiveFilesService_IncommingConnection;
-
-            //InitReceiveService();
-        }
-
-        private async void InitReceiveService()
-        {
-            if (await receiveFilesService.WaitForIncomingConnection())
-            {
-                IncommingConnectionAccepted();
-            }
-            else
-            {
-                InitReceiveService();
-
-                await Task.Delay(2000);
-                StateLabel.Text = "Stan: oczekiwanie";
-            }
-        }
-
-        private void IncommingConnectionAccepted()
-        {
-            UsersListBox.SelectedItem = dictionaryService.GetKeyByValue(receiveFilesService.IncommingConnectionAddress);
-
-            isConnected = true;
-            ConnectButton.Text = "Rozłącz";
-
-            sendFilesService = new SendFilesService(receiveFilesService.IncommingConnectionAddress);
         }
 
         private async void ConnectButton_Click(object sender, EventArgs e)
@@ -375,8 +357,8 @@ namespace OFTP_Client
 
             MessageBox.Show("Wybrane pliki : \r\n" + allFiles, "Wybrane pliki", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-            SendButton.Enabled = false;
-            FilesTreeView.Nodes.Clear();
+            //SendButton.Enabled = false;
+            //FilesTreeView.Nodes.Clear();
 
             await sendFilesService.SendFiles(selectedFilesPath);
         }
@@ -405,7 +387,6 @@ namespace OFTP_Client
                 tds.Tag = di.FullName;
                 LoadFiles(subdirectory, tds);
                 LoadSubDirectories(subdirectory, tds);
-
             }
         }
 

@@ -151,9 +151,9 @@ namespace OFTP_Client
             // 
             // SendFileProgressBar
             // 
-            this.SendFileProgressBar.Location = new System.Drawing.Point(119, 403);
+            this.SendFileProgressBar.Location = new System.Drawing.Point(99, 403);
             this.SendFileProgressBar.Name = "SendFileProgressBar";
-            this.SendFileProgressBar.Size = new System.Drawing.Size(385, 23);
+            this.SendFileProgressBar.Size = new System.Drawing.Size(405, 23);
             this.SendFileProgressBar.TabIndex = 11;
             // 
             // SendFileProgressLabel

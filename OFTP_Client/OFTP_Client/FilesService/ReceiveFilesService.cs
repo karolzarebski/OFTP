@@ -61,16 +61,22 @@ namespace OFTP_Client.FilesService
 
         private async Task<byte[]> ReceiveData()
         {
-            var len = new byte[2];
-            await _client.GetStream().ReadAsync(len, 0, 2);
+            //var len = new byte[2];
+            //await _client.GetStream().ReadAsync(len, 0, 2);
 
-            int bufLen = len[0] * 256 + len[1];
+            //int bufLen = len[0] * 256 + len[1];
 
-            Debug.WriteLine(""); //why !?
+            //Debug.WriteLine(bufLen); //why !?
 
-            var codeBuffer = new byte[bufLen]; //TODO check length // I think we done it :P
+            //var codeBuffer = new byte[bufLen]; //TODO check length // I think we done it :P
+            //await _client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
+            //return await _cryptoService.DecryptDataB(codeBuffer.Skip(2).Take(codeBuffer[0] * 256 + codeBuffer[1]).ToArray());
+
+            var codeBuffer = new byte[51220];
+
             await _client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
-            return await _cryptoService.DecryptDataB(codeBuffer.Skip(2).Take(codeBuffer[0] * 256 + codeBuffer[1]).ToArray());
+
+            return await _cryptoService.DecryptDataB(codeBuffer.Skip(4).Take(codeBuffer[2] * 256 + codeBuffer[3]).ToArray());
         }
 
         public async Task<bool> WaitForIncomingConnection()
@@ -150,13 +156,11 @@ namespace OFTP_Client.FilesService
                 {
                     await SendMessage(CodeNames.NextPartialData);
 
-
-
                     byte[] partialData = await ReceiveData();
 
                     var dataToWrite = partialData.Skip(2).Take(partialData[0] * 256 + partialData[1]).ToArray();
 
-                    var code = Encoding.UTF8.GetString(dataToWrite);
+                    var code = Encoding.UTF8.GetString(partialData).Substring(0, 3);
 
                     if (code != CodeNames.EndFileTransmission)
                     {
