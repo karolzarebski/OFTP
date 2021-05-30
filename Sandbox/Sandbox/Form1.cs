@@ -127,22 +127,39 @@ namespace Sandbox
 
             if (Directory.Exists(path))
             {
-                path += "\\";
-            }
-
-            if (e.Node.Checked)
-            {
-                selectedFilesPath.Add(path);
+                if (e.Node.Checked)
+                {
+                    foreach (TreeNode i in e.Node.Nodes)
+                    {
+                        if (!i.Checked)
+                            i.Checked = true;
+                    }
+                }
+                else
+                {
+                    foreach (TreeNode i in e.Node.Nodes)
+                    {
+                        if (i.Checked)
+                            i.Checked = false;
+                    }
+                }
             }
             else
             {
-                selectedFilesPath.Remove(path);
-            }
+                if (e.Node.Checked)
+                {
+                    selectedFilesPath.Add(path);
+                }
+                else
+                {
+                    selectedFilesPath.Remove(path);
+                }
 
-            label1.Text = "";
-            foreach(var i in selectedFilesPath)
-            {
-                label1.Text += i + "\r\n";
+                label1.Text = "";
+                foreach (var i in selectedFilesPath)
+                {
+                    label1.Text += i + "\r\n";
+                }
             }
         }
     }
