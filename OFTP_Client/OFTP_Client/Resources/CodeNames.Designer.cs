@@ -142,6 +142,15 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 604.
+        /// </summary>
+        internal static string EndFileTransmission {
+            get {
+                return ResourceManager.GetString("EndFileTransmission", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 101.
         /// </summary>
         internal static string Login {
@@ -165,6 +174,15 @@ namespace OFTP_Client.Resources {
         internal static string NewUser {
             get {
                 return ResourceManager.GetString("NewUser", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 605.
+        /// </summary>
+        internal static string NextPartialData {
+            get {
+                return ResourceManager.GetString("NextPartialData", resourceCulture);
             }
         }
         

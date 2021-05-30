@@ -40,6 +40,8 @@ namespace OFTP_Client
             this.LoggedInAsLabel = new System.Windows.Forms.Label();
             this.FilesTreeView = new System.Windows.Forms.TreeView();
             this.SendButton = new System.Windows.Forms.Button();
+            this.SendFileProgressBar = new System.Windows.Forms.ProgressBar();
+            this.SendFileProgressLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // UsersListBox
@@ -132,7 +134,7 @@ namespace OFTP_Client
             this.FilesTreeView.CheckBoxes = true;
             this.FilesTreeView.Location = new System.Drawing.Point(13, 105);
             this.FilesTreeView.Name = "FilesTreeView";
-            this.FilesTreeView.Size = new System.Drawing.Size(491, 321);
+            this.FilesTreeView.Size = new System.Drawing.Size(491, 291);
             this.FilesTreeView.TabIndex = 9;
             this.FilesTreeView.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.FilesTreeView_AfterCheck);
             // 
@@ -147,11 +149,29 @@ namespace OFTP_Client
             this.SendButton.UseVisualStyleBackColor = true;
             this.SendButton.Click += new System.EventHandler(this.SendButton_Click);
             // 
+            // SendFileProgressBar
+            // 
+            this.SendFileProgressBar.Location = new System.Drawing.Point(119, 403);
+            this.SendFileProgressBar.Name = "SendFileProgressBar";
+            this.SendFileProgressBar.Size = new System.Drawing.Size(385, 23);
+            this.SendFileProgressBar.TabIndex = 11;
+            // 
+            // SendFileProgressLabel
+            // 
+            this.SendFileProgressLabel.AutoSize = true;
+            this.SendFileProgressLabel.Location = new System.Drawing.Point(13, 406);
+            this.SendFileProgressLabel.Name = "SendFileProgressLabel";
+            this.SendFileProgressLabel.Size = new System.Drawing.Size(49, 15);
+            this.SendFileProgressLabel.TabIndex = 12;
+            this.SendFileProgressLabel.Text = "Postęp: ";
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.SendFileProgressLabel);
+            this.Controls.Add(this.SendFileProgressBar);
             this.Controls.Add(this.SendButton);
             this.Controls.Add(this.FilesTreeView);
             this.Controls.Add(this.LoggedInAsLabel);
@@ -185,5 +205,7 @@ namespace OFTP_Client
         private System.Windows.Forms.Label LoggedInAsLabel;
         private System.Windows.Forms.TreeView FilesTreeView;
         private System.Windows.Forms.Button SendButton;
+        private System.Windows.Forms.ProgressBar SendFileProgressBar;
+        private System.Windows.Forms.Label SendFileProgressLabel;
     }
 }

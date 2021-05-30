@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -123,6 +124,8 @@ namespace Sandbox
 
         private void treeView1_AfterCheck(object sender, TreeViewEventArgs e)
         {
+            //Debug.WriteLine("OK");
+
             string path = filePath.Remove(filePath.LastIndexOf('\\') + 1) + e.Node.FullPath;
 
             if (Directory.Exists(path))

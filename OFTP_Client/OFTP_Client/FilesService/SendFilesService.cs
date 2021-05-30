@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -14,7 +15,7 @@ namespace OFTP_Client.FilesService
         private readonly string _serverIP;
         private TcpClient _client;
         private CryptoService _cryptoService;
-        private int bufferLen = 51200; //50 KB
+        private int bufferLen = 51200; //100 KB
 
         public SendFilesService(string serverIP)
         {
@@ -65,11 +66,13 @@ namespace OFTP_Client.FilesService
         private async Task SendData(byte[] data)
         {
             var encryptedData = await _cryptoService.EncryptData(data);
-            var encryptedMessage = new byte[encryptedData.Length + 2];
-            Array.Copy(encryptedData, 0, encryptedMessage, 2, encryptedData.Length);
+            var encryptedMessage = new byte[encryptedData.Length + 4];
+            Array.Copy(encryptedData, 0, encryptedMessage, 4, encryptedData.Length);
             var len = encryptedData.Length;
-            encryptedMessage[0] = (byte)(len / 256);
-            encryptedMessage[1] = (byte)(len % 256);
+            encryptedMessage[0] = (byte)((encryptedData.Length + 2) / 256);
+            encryptedMessage[1] = (byte)((encryptedData.Length + 2) % 256);
+            encryptedMessage[2] = (byte)(len / 256);
+            encryptedMessage[3] = (byte)(len % 256);
             await _client.GetStream().WriteAsync(encryptedMessage);
         }
 
@@ -101,32 +104,37 @@ namespace OFTP_Client.FilesService
                 foreach (var file in files)
                 {
                     FileInfo fi = new FileInfo(file);
-                    await SendMessage($"{fi.Name}|{fi.Length}");
+                    await SendMessage($"{fi.Name}|");
 
                     using var fileStream = File.OpenRead(file);
 
                     while(fileStream.Position != fi.Length)
                     {
-                        if(fi.Length - fileStream.Position < bufferLen)
+                        if (await ReceiveMessage(true) == CodeNames.NextPartialData)
                         {
-                            int len = Convert.ToInt32(fi.Length - fileStream.Position);
-                            var buffer = new byte[len + 2];
+                            if (fi.Length - fileStream.Position < bufferLen)
+                            {
+                                int len = Convert.ToInt32(fi.Length - fileStream.Position);
+                                var buffer = new byte[len + 2];
 
-                            buffer[0] = (byte)(len / 256);
-                            buffer[1] = (byte)(len % 256);
+                                buffer[0] = (byte)(len / 256);
+                                buffer[1] = (byte)(len % 256);
 
-                            fileStream.Read(buffer, 2, buffer.Length - 2);
-                            await SendData(buffer);
+                                fileStream.Read(buffer, 2, buffer.Length - 2);
+                                await SendData(buffer);
+                            }
+                            else
+                            {
+                                var buffer = new byte[bufferLen + 2];
+                                buffer[0] = (byte)(bufferLen / 256);
+                                buffer[1] = (byte)(bufferLen % 256);
+                                fileStream.Read(buffer, 2, buffer.Length - 2);
+                                await SendData(buffer);
+                            }
                         }
-                        else
-                        {
-                            var buffer = new byte[bufferLen + 2];
-                            buffer[0] = (byte)(bufferLen / 256);
-                            buffer[1] = (byte)(bufferLen % 256);
-                            fileStream.Read(buffer, 0, buffer.Length);
-                            await SendData(buffer);
-                        }
+                        //await Task.Delay(15);
                     }
+                    await SendData(Encoding.UTF8.GetBytes(CodeNames.EndFileTransmission));
                 }
             }
             else

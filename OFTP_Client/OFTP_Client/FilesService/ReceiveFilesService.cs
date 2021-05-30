@@ -18,7 +18,7 @@ namespace OFTP_Client.FilesService
         private CryptoService _cryptoService;
         private string _ipAddress;
         private int fileCount;
-        private int bufferLen = 51200; //50 KB
+        private int bufferLen = 102400; //50 KB
 
         public string IncommingConnectionAddress { get; private set; }
         public event EventHandler<IncommingConnectionEvent> IncommingConnection;
@@ -60,7 +60,12 @@ namespace OFTP_Client.FilesService
 
         private async Task<byte[]> ReceiveData()
         {
-            var codeBuffer = new byte[bufferLen]; //TODO check length
+            var len = new byte[2];
+            await _client.GetStream().ReadAsync(len, 0, 2);
+
+            int bufLen = len[0] * 256 + len[1];
+
+            var codeBuffer = new byte[bufLen]; //TODO check length // I think we done it :P
             await _client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
             return await _cryptoService.DecryptDataB(codeBuffer.Skip(2).Take(codeBuffer[0] * 256 + codeBuffer[1]).ToArray());
         }
@@ -83,7 +88,7 @@ namespace OFTP_Client.FilesService
                 {
                     isClientOk = true;
 
-                    await _client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(Resources.CodeNames.Connected));
+                    await _client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(CodeNames.Connected));
 
                     _cryptoService = new CryptoService();
 
@@ -134,15 +139,29 @@ namespace OFTP_Client.FilesService
             {
                 var fileInfo = (await ReceiveMessage(true)).Split("|");
 
-                int fileLen = Convert.ToInt32(fileInfo[1]);
-                int receivedDataLen = 0;
+                //int fileLen = Convert.ToInt32(fileInfo[1]);
+                //int receivedDataLen = 0;
 
                 using FileStream fs = File.Create(fileInfo[0]);
-                while (receivedDataLen <= fileLen)
+                while (true)
                 {
+                    await SendMessage(CodeNames.NextPartialData);
+
                     byte[] partialData = await ReceiveData();
-                    fs.Write(partialData.Skip(2).Take(partialData[0] * 256 + partialData[1]).ToArray());
-                    receivedDataLen += partialData[0] * 256 + partialData[1];
+
+                    var dataToWrite = partialData.Skip(2).Take(partialData[0] * 256 + partialData[1]).ToArray();
+
+                    var code = Encoding.UTF8.GetString(dataToWrite);
+
+                    if (code != CodeNames.EndFileTransmission)
+                    {
+                        fs.Write(dataToWrite);
+                        //receivedDataLen += partialData[0] * 256 + partialData[1];
+                    }
+                    else
+                    {
+                        break;
+                    }
 
                     //Array.Copy(partialData, 0, receivedData, receivedDataLen, partialData.Length);
                 }

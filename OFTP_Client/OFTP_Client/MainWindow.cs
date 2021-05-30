@@ -80,6 +80,8 @@ namespace OFTP_Client
                            }
                            else if (data[0] == CodeNames.AcceptedIncomingConnection)
                            {
+                               //StateLabel.Text = $"Połączono z: {data[1]}"; //don't know if it's correct
+
                                string ip = await ReceiveMessage();
 
                                sendFilesService = new SendFilesService(ip);
@@ -118,8 +120,7 @@ namespace OFTP_Client
                                            tds.StateImageIndex = 0;
                                            LoadFiles(filePath, tds);
                                            LoadSubDirectories(filePath, tds);
-                                           SendButton.Enabled = true;
-
+                                           //SendButton.Enabled = true;
                                        });
                                    }
                                }
@@ -344,6 +345,8 @@ namespace OFTP_Client
 
         private void FilesTreeView_AfterCheck(object sender, TreeViewEventArgs e)
         {
+            SendButton.Enabled = true;
+
             string path = filePath.Remove(filePath.LastIndexOf('\\') + 1) + e.Node.FullPath;
 
             if (Directory.Exists(path))
@@ -375,7 +378,7 @@ namespace OFTP_Client
             SendButton.Enabled = false;
             FilesTreeView.Nodes.Clear();
 
-            await sendFilesService.SendFiles(selectedFilesPath);            
+            await sendFilesService.SendFiles(selectedFilesPath);
         }
 
         private void LoadFiles(string dir, TreeNode td)
