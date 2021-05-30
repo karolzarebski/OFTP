@@ -1,6 +1,7 @@
 ﻿using OFTP_Client.Resources;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
@@ -69,11 +70,13 @@ namespace OFTP_Client.FilesService
             var encryptedMessage = new byte[encryptedData.Length + 4];
             Array.Copy(encryptedData, 0, encryptedMessage, 4, encryptedData.Length);
             var len = encryptedData.Length;
+
             encryptedMessage[0] = (byte)((encryptedData.Length + 2) / 256);
             encryptedMessage[1] = (byte)((encryptedData.Length + 2) % 256);
             encryptedMessage[2] = (byte)(len / 256);
             encryptedMessage[3] = (byte)(len % 256);
             await _client.GetStream().WriteAsync(encryptedMessage);
+            await _client.GetStream().FlushAsync();
         }
 
         private async Task<string> ReceiveMessage(bool isCodeReceived = false)

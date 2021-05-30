@@ -1,6 +1,7 @@
 ﻿using OFTP_Client.Events;
 using OFTP_Client.Resources;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -64,6 +65,8 @@ namespace OFTP_Client.FilesService
             await _client.GetStream().ReadAsync(len, 0, 2);
 
             int bufLen = len[0] * 256 + len[1];
+
+            Debug.WriteLine(""); //why !?
 
             var codeBuffer = new byte[bufLen]; //TODO check length // I think we done it :P
             await _client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
@@ -146,6 +149,8 @@ namespace OFTP_Client.FilesService
                 while (true)
                 {
                     await SendMessage(CodeNames.NextPartialData);
+
+
 
                     byte[] partialData = await ReceiveData();
 
