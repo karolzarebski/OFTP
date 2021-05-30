@@ -59,7 +59,7 @@ namespace OFTP_Client
                 using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aes.CreateDecryptor(aes.Key, aes.IV), CryptoStreamMode.Read))
                 {
                     csDecrypt.Read(encryptedData, 0, encryptedData.Length);
-                    csDecrypt.FlushFinalBlock();
+                    //csDecrypt.FlushFinalBlock();
                     return Task.FromResult(msDecrypt.ToArray());
                 }
             }
@@ -88,6 +88,7 @@ namespace OFTP_Client
                 using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, aes.CreateEncryptor(aes.Key, aes.IV), CryptoStreamMode.Write))
                 {
                     csEncrypt.Write(dataToEncrypt, 0, dataToEncrypt.Length);
+                    csEncrypt.FlushFinalBlock();
                     return Task.FromResult(msEncrypt.ToArray());
                 }
             }

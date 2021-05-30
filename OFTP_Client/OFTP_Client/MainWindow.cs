@@ -88,7 +88,7 @@ namespace OFTP_Client
                                {
                                    isConnected = true;
 
-                                   string selectedPath = string.Empty;
+                                   filePath = string.Empty;
 
                                    var t = new Thread(() =>
                                    {
@@ -98,17 +98,17 @@ namespace OFTP_Client
                                        if (fbd.ShowDialog() == DialogResult.Cancel)
                                            return;
 
-                                       selectedPath = fbd.SelectedPath;
+                                       filePath = fbd.SelectedPath;
                                    });
 
                                    t.SetApartmentState(ApartmentState.STA);
                                    t.Start();
                                    t.Join();
 
-                                   if (selectedPath != string.Empty)
+                                   if (filePath != string.Empty)
                                    {
                                        FilesTreeView.Nodes.Clear();
-                                       DirectoryInfo di = new DirectoryInfo(selectedPath);
+                                       DirectoryInfo di = new DirectoryInfo(filePath);
 
                                        FilesTreeView.Invoke((MethodInvoker)delegate
                                        {
@@ -116,8 +116,8 @@ namespace OFTP_Client
 
                                            tds.Tag = di.FullName;
                                            tds.StateImageIndex = 0;
-                                           LoadFiles(selectedPath, tds);
-                                           LoadSubDirectories(selectedPath, tds);
+                                           LoadFiles(filePath, tds);
+                                           LoadSubDirectories(filePath, tds);
                                            SendButton.Enabled = true;
 
                                        });
@@ -361,7 +361,7 @@ namespace OFTP_Client
             }
         }
 
-        private void SendButton_Click(object sender, EventArgs e)
+        private async void SendButton_Click(object sender, EventArgs e)
         {
             string allFiles = "";
 
@@ -372,10 +372,10 @@ namespace OFTP_Client
 
             MessageBox.Show("Wybrane pliki : \r\n" + allFiles, "Wybrane pliki", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-
-
             SendButton.Enabled = false;
             FilesTreeView.Nodes.Clear();
+
+            await sendFilesService.SendFiles(selectedFilesPath);            
         }
 
         private void LoadFiles(string dir, TreeNode td)

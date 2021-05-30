@@ -90,7 +90,7 @@ namespace OFTP_Client.FilesService
             }
         }
 
-        public async void SendFile(List<string> files)
+        public async Task SendFiles(List<string> files)
         {
             await SendMessage($"{CodeNames.BeginFileTransmission}|{files.Count}");
 
@@ -110,13 +110,19 @@ namespace OFTP_Client.FilesService
                         if(fi.Length - fileStream.Position < bufferLen)
                         {
                             int len = Convert.ToInt32(fi.Length - fileStream.Position);
-                            var buffer = new byte[len];
-                            fileStream.Read(buffer, 0, buffer.Length);
+                            var buffer = new byte[len + 2];
+
+                            buffer[0] = (byte)(len / 256);
+                            buffer[1] = (byte)(len % 256);
+
+                            fileStream.Read(buffer, 2, buffer.Length - 2);
                             await SendData(buffer);
                         }
                         else
                         {
-                            var buffer = new byte[bufferLen];
+                            var buffer = new byte[bufferLen + 2];
+                            buffer[0] = (byte)(bufferLen / 256);
+                            buffer[1] = (byte)(bufferLen % 256);
                             fileStream.Read(buffer, 0, buffer.Length);
                             await SendData(buffer);
                         }

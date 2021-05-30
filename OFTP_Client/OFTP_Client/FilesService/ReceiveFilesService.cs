@@ -95,6 +95,7 @@ namespace OFTP_Client.FilesService
 
                     await _client.GetStream().WriteAsync(_cryptoService.GenerateIV(clientPublicKey));
 
+                    return true;
                     //Odbierz nazwę pliku
                     //Wyświetl czy chce taki plik
                     //Zacznij odbieranie pliku
@@ -116,6 +117,7 @@ namespace OFTP_Client.FilesService
                 {
                     case DialogResult.Yes:
                         await SendMessage(CodeNames.AcceptFileTransmission);
+                        fileCount = Convert.ToInt32(response[1]);
                         return true;
                     case DialogResult.No:
                         await SendMessage(CodeNames.RejectFileTransmission);
@@ -136,15 +138,16 @@ namespace OFTP_Client.FilesService
                 int receivedDataLen = 0;
 
                 using FileStream fs = File.Create(fileInfo[0]);
-                while (receivedDataLen != fileLen)
+                while (receivedDataLen <= fileLen)
                 {
                     byte[] partialData = await ReceiveData();
-                    fs.Write(partialData);
-                    receivedDataLen += partialData.Length;
+                    fs.Write(partialData.Skip(2).Take(partialData[0] * 256 + partialData[1]).ToArray());
+                    receivedDataLen += partialData[0] * 256 + partialData[1];
 
                     //Array.Copy(partialData, 0, receivedData, receivedDataLen, partialData.Length);
                 }
                 fs.Flush();
+                MessageBox.Show($"Odebrano plik {fileInfo[0]}");
             }
         }
     }
