@@ -157,13 +157,14 @@ namespace OFTP_Client.FilesService
 
                     int i = 0;
 
+                    SendFileProgress.Invoke(this, new SendProgressEvent { Value = Map(filesSent++, 0, files.Count, 0, 100), General = true, Receive = false });
+
                     while (fileStream.Position != fi.Length)
                     {
                         if (await ReceiveMessage(true) == CodeNames.NextPartialData)
                         {
                             if (fi.Length - fileStream.Position < bufferLen)
                             {
-                                Debug.WriteLine("ostatni");
                                 int len = Convert.ToInt32(fi.Length - fileStream.Position);
                                 var buffer = new byte[len + 2];
 
@@ -185,14 +186,15 @@ namespace OFTP_Client.FilesService
                                 await SendData(buffer);
                             }
 
-                            SendFileProgress.Invoke(this, new SendProgressEvent { Value = Map(++i, 0, count, 0, 100), General = false, Receive = false});
+                            SendFileProgress.Invoke(this, new SendProgressEvent { Value = Map(++i, 0, count, 0, 100), General = false, Receive = false });
                         }
                     }
 
                     await SendData(Encoding.UTF8.GetBytes(CodeNames.EndFileTransmission));
 
-                    SendFileProgress.Invoke(this, new SendProgressEvent { Value = ++filesSent, General = true, Receive = false });
                 }
+
+                SendFileProgress.Invoke(this, new SendProgressEvent { Value = Map(filesSent, 0, files.Count, 0, 100), General = true, Receive = false });
             }
             else
             {

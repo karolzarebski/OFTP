@@ -158,7 +158,7 @@ namespace OFTP_Client.FilesService
 
                 using FileStream fs = File.Create(fileInfo[0]);
 
-                SendFileProgressEvent.Invoke(this, new SendProgressEvent { Value = i, General = true, Receive = true, FilesCount = fileCount });
+                SendFileProgressEvent.Invoke(this, new SendProgressEvent { Value = Map(i, 0, fileCount, 0, 100), General = true, Receive = true, FilesCount = fileCount });
 
                 while (true)
                 {
@@ -194,7 +194,7 @@ namespace OFTP_Client.FilesService
                 MessageBox.Show($"Odebrano plik {fileInfo[0]}");
             }
 
-            SendFileProgressEvent.Invoke(this, new SendProgressEvent { Value = fileCount, General = true, Receive = true, FilesCount = fileCount });
+            SendFileProgressEvent.Invoke(this, new SendProgressEvent { Value = Map(fileCount, 0, fileCount, 0, 100), General = true, Receive = true, FilesCount = fileCount });
         }
     }
 }

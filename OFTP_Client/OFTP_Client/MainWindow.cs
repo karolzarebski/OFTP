@@ -77,6 +77,8 @@ namespace OFTP_Client
 
                                receiveFilesService = new ReceiveFilesService(ip);
 
+                               receiveFilesService.SendFileProgressEvent += SendFilesService_SendFileProgress;
+
                                if (await receiveFilesService.WaitForIncomingConnection()) //FIX THIS SHIT
                                    if (await receiveFilesService.AcceptFiles()) // Maybe this shit too //si si torro
                                        await receiveFilesService.ReceiveFiles();
@@ -127,7 +129,6 @@ namespace OFTP_Client
                                            tds.StateImageIndex = 0;
                                            LoadFiles(filePath, tds);
                                            LoadSubDirectories(filePath, tds);
-                                           //SendButton.Enabled = true;
                                        });
                                    }
                                }
@@ -178,7 +179,7 @@ namespace OFTP_Client
                         if (e.Value == e.FilesCount)
                         {
                             MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
+                            receiveFilesService.SendFileProgressEvent -= SendFilesService_SendFileProgress;
                         }
                     }
                     else
