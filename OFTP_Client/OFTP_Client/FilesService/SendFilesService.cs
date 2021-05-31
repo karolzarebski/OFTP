@@ -137,6 +137,8 @@ namespace OFTP_Client.FilesService
 
         public async Task SendFiles(List<string> files)
         {
+            int filesSent = 0;
+
             await SendMessage($"{CodeNames.BeginFileTransmission}|{files.Count}");
 
             var responseCode = await ReceiveMessage(true);
@@ -182,11 +184,13 @@ namespace OFTP_Client.FilesService
                                 await SendData(buffer);
                             }
 
-                            //SendFileProgress.Invoke(this, new SendProgressEvent { Value = Map(i++, 0, count, 0, 100) });      
+                            SendFileProgress.Invoke(this, new SendProgressEvent { Value = Map(i++, 0, count, 0, 100), General = false });
                         }
                     }
 
                     await SendData(Encoding.UTF8.GetBytes(CodeNames.EndFileTransmission));
+
+                    SendFileProgress.Invoke(this, new SendProgressEvent { Value = filesSent++, General = true });
                 }
             }
             else

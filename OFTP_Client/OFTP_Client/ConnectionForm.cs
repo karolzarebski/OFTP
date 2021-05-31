@@ -1,11 +1,11 @@
-﻿using OFTP_Client.Events;
+﻿using OFTP_Client.Resources;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -72,10 +72,25 @@ namespace OFTP_Client
         {
             try
             {
-                await client.ConnectAsync(ipAddress, 12137);
+                ConnectButton.Text = "Łączenie";
+                ConnectButton.Enabled = false;
+
+                ServerConnectionLabel.Text = "Stan: Łączenie";
+                ServerConnectionLabel.ForeColor = Color.Orange;
+
+                await (client = new TcpClient()).ConnectAsync(ipAddress, 12137);
+
+                ServerConnectionLabel.ForeColor = Color.Green;
+                ServerConnectionLabel.Text = "Stan: Połączono";
             }
             catch (Exception ex)
             {
+                ConnectButton.Text = "Połącz";
+                ConnectButton.Enabled = true;
+
+                ServerConnectionLabel.ForeColor = Color.Red;
+                ServerConnectionLabel.Text = "Stan: Rozłączono";
+
                 MessageBox.Show($"Błąd podczas łączenia się z serwerem\nTreść błędu: {ex.Message}",
                     "Błąd połączenia", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
@@ -86,11 +101,12 @@ namespace OFTP_Client
             var code = new byte[3]; //TODO check size
             await stream.ReadAsync(code, 0, code.Length);
 
-            if (Encoding.UTF8.GetString(code) == Resources.CodeNames.Connected)
+            if (Encoding.UTF8.GetString(code) == CodeNames.Connected)
             {
                 LoginButton.Enabled = true;
                 RegisterButton.Enabled = true;
                 ConnectButton.Text = "Rozłącz";
+                ConnectButton.Enabled = true;
                 connected = true;
 
                 byte[] publicKey = new byte[72];
@@ -109,7 +125,11 @@ namespace OFTP_Client
         {
             if (connected)
             {
-                await SendMessage(Resources.CodeNames.Disconnect);
+                await SendMessage(CodeNames.Disconnect);
+
+                ServerConnectionLabel.ForeColor = Color.Red;
+                ServerConnectionLabel.Text = "Stan: Rozłączno";
+
                 LoginButton.Enabled = false;
                 RegisterButton.Enabled = false;
                 ConnectButton.Text = "Połącz";
@@ -132,7 +152,7 @@ namespace OFTP_Client
                 }
             }
         }
-        
+
 
         private async void LoginButton_ClickAsync(object sender, EventArgs e)
         {
@@ -141,22 +161,22 @@ namespace OFTP_Client
 
             if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
-                await SendMessage($"{Resources.CodeNames.Login}|{login}|{password}");
+                await SendMessage($"{CodeNames.Login}|{login}|{password}");
                 var message = await ReceiveMessage(true);
 
-                if (message == Resources.CodeNames.CorrectLoginData)
+                if (message == CodeNames.CorrectLoginData)
                 {
-                    MessageBox.Show("Zalogowano", "OK", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Pomyślnie zalogowano do serwera", "Logowanie", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    await SendMessage(Resources.CodeNames.ActiveUsers);
+                    await SendMessage(CodeNames.ActiveUsers);
 
                     var availableUsersCount = (await ReceiveMessage(false)).Split('|');
 
-                    if (availableUsersCount[0] == Resources.CodeNames.ActiveUsers)
+                    if (availableUsersCount[0] == CodeNames.ActiveUsers)
                     {
                         var processedUsersCount = Convert.ToInt32(availableUsersCount[1]);
 
-                        await SendMessage(Resources.CodeNames.ActiveUsers);
+                        await SendMessage(CodeNames.ActiveUsers);
 
                         while (processedUsersCount >= 0)
                         {
@@ -174,10 +194,15 @@ namespace OFTP_Client
 
                     InitMainWindow();
                 }
-                else if (message == Resources.CodeNames.WrongLoginData)
+                else if (message == CodeNames.WrongLoginData)
                 {
                     MessageBox.Show("Błędne dane logowania\nPodaj nowe i spróbuj ponowne",
                         "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else if (message == CodeNames.UserAlreadyLoggedIn)
+                {
+                    MessageBox.Show($"Użytkownik {login} jest już zalogowany", "Błąd logowania",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             else
@@ -244,6 +269,11 @@ namespace OFTP_Client
             }
         }
 
+        private void ConnectionForm_Load(object sender, EventArgs e)
+        {
+            ServerConnectionLabel.ForeColor = Color.Red;
+        }
+
         private void InitMainWindow()
         {
             isLoggedIn = true;
@@ -251,6 +281,8 @@ namespace OFTP_Client
 
             mainWindow.FormClosing += (sender, e) =>
             {
+                ServerConnectionLabel.ForeColor = Color.Red;
+                ServerConnectionLabel.Text = "Stan: Rozłączono";
 
                 Show();
                 LoginButton.Enabled = false;

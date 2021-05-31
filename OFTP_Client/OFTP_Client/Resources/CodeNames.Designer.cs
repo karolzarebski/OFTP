@@ -232,6 +232,15 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 108.
+        /// </summary>
+        internal static string UserAlreadyLoggedIn {
+            get {
+                return ResourceManager.GetString("UserAlreadyLoggedIn", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 200.
         /// </summary>
         internal static string WrongLoginData {

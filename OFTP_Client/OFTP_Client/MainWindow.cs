@@ -53,13 +53,16 @@ namespace OFTP_Client
                        if (!cancellationToken.IsCancellationRequested)
                        {
                            var data = (await cryptoService.DecryptData(buffer.Skip(2).Take(buffer[0] * 256 + buffer[1]).ToArray())).Split('|');
+                           var login = string.Empty;
+
                            if (data[0] == CodeNames.NewUser)
                            {
-                               UsersChanged(data[1]);
+                               login = data[1];
+                               UsersChanged(login);
                            }
                            else if (data[0] == CodeNames.AskUserForConnection)
                            {
-                               switch (MessageBox.Show($"Czy chcesz akceptować połączenie od: {data[1]}?", "Połączenie przychodzące",
+                               switch (MessageBox.Show($"Czy chcesz akceptować połączenie od: {login}?", "Połączenie przychodzące",
                                    MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                                {
                                    case DialogResult.Yes:
@@ -80,7 +83,10 @@ namespace OFTP_Client
                            }
                            else if (data[0] == CodeNames.AcceptedIncomingConnection)
                            {
-                               //StateLabel.Text = $"Połączono z: {data[1]}"; //don't know if it's correct
+                               StateLabel.Invoke((MethodInvoker)delegate
+                               {
+                                   StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
+                               });
 
                                string ip = await ReceiveMessage();
 
@@ -140,6 +146,7 @@ namespace OFTP_Client
                        if (ex is OperationCanceledException)
                        {
                            isLoggedIn = false;
+
                            MessageBox.Show("Pomyślnie wylogowano", "Wylogowywanie",
                                MessageBoxButtons.OK, MessageBoxIcon.Information);
                        }
@@ -156,13 +163,23 @@ namespace OFTP_Client
         {
             SendFileProgressBar.Invoke((MethodInvoker)delegate
             {
-                SendFileProgressBar.Value = e.Value;
-                SendFileProgressLabel.Text = $"Postęp: {e.Value} %";
-
-                if (e.Value == 100)
+                if (!e.General)
                 {
-                    MessageBox.Show("Pomyślnie wysłano plik", "Transfer zakończony", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
+                    SendFileProgressBar.Value = e.Value;
+                    SendFileProgressLabel.Text = $"Postęp: {e.Value} %";
+                }
+                else
+                {
+                    GeneralProgressBar.Value = e.Value;
+                    GeneralProgressLabel.Text = $"Wysłano pliów: {e.Value}/{selectedFilesPath.Count}";
+
+                    if (e.Value == selectedFilesPath.Count)
+                    {
+                        MessageBox.Show("Pomyślnie wysłano plik", "Transfer zakończony", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
+
+                        selectedFilesPath.Clear();
+                    }
                 }
             });
         }
@@ -238,7 +255,12 @@ namespace OFTP_Client
             await SendMessage(CodeNames.LogOut);
 
             cancellationTokenSource.Cancel();
+            _tcpClient.Close();
+
+            _tcpClient.Dispose();
             isLoggedIn = false;
+
+            UsersListBox.Items.Clear();
         }
 
         private void LogoutButton_Click(object sender, EventArgs e)

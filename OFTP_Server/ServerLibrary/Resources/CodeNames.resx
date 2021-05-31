@@ -159,6 +159,9 @@
   <data name="RejectedIncomingConnection" xml:space="preserve">
     <value>503</value>
   </data>
+  <data name="UserAlreadyLoggedIn" xml:space="preserve">
+    <value>108</value>
+  </data>
   <data name="WrongLoginData" xml:space="preserve">
     <value>200</value>
   </data>

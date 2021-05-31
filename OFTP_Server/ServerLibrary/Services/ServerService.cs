@@ -21,7 +21,6 @@ namespace ServerLibrary.Services
 
         private UsersConnection _uc;
 
-
         private readonly ServerConfiguration _serverConfiguration;
         private Dictionary<string, string> availableUsers = new Dictionary<string, string>();
         Dictionary<TcpClient, CryptoService> clients = new Dictionary<TcpClient, CryptoService>();
@@ -73,6 +72,8 @@ namespace ServerLibrary.Services
 
         private async void RefreshAvailableUsers(object sender, UsersCountChangedEvent e)
         {
+            _logger.LogInformation($"Refreshing users ({clients.Count} available users)");
+
             foreach (var client in clients)
             {
                 if (e.newClient != client.Key)
@@ -89,7 +90,6 @@ namespace ServerLibrary.Services
 
                     await SendMessage($"{CodeNames.NewUser}|{e.Username}", client.Key);
                 }
-
             }
         }
 
@@ -130,6 +130,8 @@ namespace ServerLibrary.Services
         {
             TcpListener server = new TcpListener(IPAddress.Parse(_serverConfiguration.IpAddress), _serverConfiguration.Port);
 
+            _logger.LogInformation("Starting server");
+
             server.Start();
 
             while (true)
@@ -169,25 +171,35 @@ namespace ServerLibrary.Services
                         if (data[0] == CodeNames.Login)
                         {
                             login = data[1];
-                            if (await _loginService.CheckLoginCredentials(login, data[2]))
+
+                            if (!availableUsers.ContainsKey(login))
                             {
-                                await SendMessage(CodeNames.CorrectLoginData, client);
-                                loggedIn = true;
-
-                                if (!availableUsers.ContainsKey(login))
+                                if (await _loginService.CheckLoginCredentials(login, data[2]))
                                 {
-                                    availableUsers.Add(login, clientIpAddress.Remove(clientIpAddress.IndexOf(':')));
+                                    await SendMessage(CodeNames.CorrectLoginData, client);
+                                    loggedIn = true;
 
-                                    usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
+                                    if (!availableUsers.ContainsKey(login))
+                                    {
+                                        availableUsers.Add(login, clientIpAddress.Remove(clientIpAddress.IndexOf(':')));
+                                        _logger.LogInformation($"User {login} logged in");
+                                        usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
+                                    }
+                                }
+
+                                else
+                                {
+                                    await SendMessage(CodeNames.WrongLoginData, client);
+                                    loggedIn = false;
+                                    clients.Remove(client);
                                 }
                             }
-
                             else
                             {
-                                await SendMessage(CodeNames.WrongLoginData, client);
                                 loggedIn = false;
-                                clients.Remove(client);
+                                await SendMessage(CodeNames.UserAlreadyLoggedIn, client);
                             }
+
                         }
                         else if (data[0] == CodeNames.Register)
                         {
@@ -202,6 +214,7 @@ namespace ServerLibrary.Services
                                 if (!availableUsers.ContainsKey(login))
                                 {
                                     availableUsers.Add(login, clientIpAddress.Remove(clientIpAddress.IndexOf(':')));
+                                    _logger.LogInformation($"User {login} registered");
                                     usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
                                 }
                             }
@@ -223,7 +236,6 @@ namespace ServerLibrary.Services
 
                     if (loggedIn)
                     {
-
                         var usersCode = await ReceiveMessage(client, true);
 
                         if (usersCode == CodeNames.ActiveUsers)
@@ -269,6 +281,7 @@ namespace ServerLibrary.Services
 
                             if (message == CodeNames.LogOut)
                             {
+                                _logger.LogInformation("User logged out");
 
                                 usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
 
@@ -289,7 +302,7 @@ namespace ServerLibrary.Services
 
                                 var tempClient = clients.Keys.Where(x => x.Client.RemoteEndPoint.ToString().StartsWith(tempClientIp)).FirstOrDefault();
 
-                                _uc = new UsersConnection(login, availableUsers[login], tempClientLogin, tempClientIp); 
+                                _uc = new UsersConnection(login, availableUsers[login], tempClientLogin, tempClientIp);
 
                                 await SendMessage($"{CodeNames.AskUserForConnection}|{login}", tempClient);
 
@@ -298,7 +311,7 @@ namespace ServerLibrary.Services
                                 //Console.WriteLine("Czekam na kod od " + tempClient.Client.RemoteEndPoint);
                                 //var responseCode = await ReceiveMessage(tempClient, true);
 
-                                while  (!_uc._userAccepted)  ;
+                                while (!_uc._userAccepted) ;
 
                                 await SendMessage(CodeNames.AcceptedIncomingConnection, client);
                                 await SendMessage(tempClientIp, client);
@@ -325,9 +338,9 @@ namespace ServerLibrary.Services
                             }
                             else if (message == CodeNames.AcceptedIncomingConnection)
                             {
-                                if(_uc.IsMe(login, availableUsers[login]))
+                                if (_uc.IsMe(login, availableUsers[login]))
                                 {
-                                     _uc._userAccepted = true;
+                                    _uc._userAccepted = true;
                                     SendMessage(_uc._userStartingConnectionIP, client);
                                 }
                                 //await SendMessage(availableUsers[login], tempClient);

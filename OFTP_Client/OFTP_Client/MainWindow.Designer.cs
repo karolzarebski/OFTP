@@ -42,6 +42,8 @@ namespace OFTP_Client
             this.SendButton = new System.Windows.Forms.Button();
             this.SendFileProgressBar = new System.Windows.Forms.ProgressBar();
             this.SendFileProgressLabel = new System.Windows.Forms.Label();
+            this.GeneralProgressBar = new System.Windows.Forms.ProgressBar();
+            this.GeneralProgressLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // UsersListBox
@@ -50,7 +52,7 @@ namespace OFTP_Client
             this.UsersListBox.ItemHeight = 15;
             this.UsersListBox.Location = new System.Drawing.Point(522, 32);
             this.UsersListBox.Name = "UsersListBox";
-            this.UsersListBox.Size = new System.Drawing.Size(266, 364);
+            this.UsersListBox.Size = new System.Drawing.Size(266, 379);
             this.UsersListBox.TabIndex = 0;
             this.UsersListBox.SelectedIndexChanged += new System.EventHandler(this.UsersListBox_SelectedIndexChanged);
             this.UsersListBox.DoubleClick += new System.EventHandler(this.UsersListBox_DoubleClick);
@@ -102,7 +104,7 @@ namespace OFTP_Client
             // 
             // FilterUsersTextBox
             // 
-            this.FilterUsersTextBox.Location = new System.Drawing.Point(522, 403);
+            this.FilterUsersTextBox.Location = new System.Drawing.Point(522, 427);
             this.FilterUsersTextBox.Name = "FilterUsersTextBox";
             this.FilterUsersTextBox.Size = new System.Drawing.Size(266, 23);
             this.FilterUsersTextBox.TabIndex = 6;
@@ -151,25 +153,43 @@ namespace OFTP_Client
             // 
             // SendFileProgressBar
             // 
-            this.SendFileProgressBar.Location = new System.Drawing.Point(99, 403);
+            this.SendFileProgressBar.Location = new System.Drawing.Point(99, 408);
             this.SendFileProgressBar.Name = "SendFileProgressBar";
-            this.SendFileProgressBar.Size = new System.Drawing.Size(405, 23);
+            this.SendFileProgressBar.Size = new System.Drawing.Size(405, 18);
             this.SendFileProgressBar.TabIndex = 11;
             // 
             // SendFileProgressLabel
             // 
             this.SendFileProgressLabel.AutoSize = true;
-            this.SendFileProgressLabel.Location = new System.Drawing.Point(13, 406);
+            this.SendFileProgressLabel.Location = new System.Drawing.Point(15, 408);
             this.SendFileProgressLabel.Name = "SendFileProgressLabel";
             this.SendFileProgressLabel.Size = new System.Drawing.Size(49, 15);
             this.SendFileProgressLabel.TabIndex = 12;
             this.SendFileProgressLabel.Text = "Postęp: ";
             // 
+            // GeneralProgressBar
+            // 
+            this.GeneralProgressBar.Location = new System.Drawing.Point(159, 432);
+            this.GeneralProgressBar.Name = "GeneralProgressBar";
+            this.GeneralProgressBar.Size = new System.Drawing.Size(345, 18);
+            this.GeneralProgressBar.TabIndex = 13;
+            // 
+            // GeneralProgressLabel
+            // 
+            this.GeneralProgressLabel.AutoSize = true;
+            this.GeneralProgressLabel.Location = new System.Drawing.Point(15, 435);
+            this.GeneralProgressLabel.Name = "GeneralProgressLabel";
+            this.GeneralProgressLabel.Size = new System.Drawing.Size(96, 15);
+            this.GeneralProgressLabel.TabIndex = 14;
+            this.GeneralProgressLabel.Text = "Wysłano plików: ";
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(800, 460);
+            this.Controls.Add(this.GeneralProgressLabel);
+            this.Controls.Add(this.GeneralProgressBar);
             this.Controls.Add(this.SendFileProgressLabel);
             this.Controls.Add(this.SendFileProgressBar);
             this.Controls.Add(this.SendButton);
@@ -184,7 +204,8 @@ namespace OFTP_Client
             this.Controls.Add(this.AvailableUsersLabel);
             this.Controls.Add(this.UsersListBox);
             this.Name = "MainWindow";
-            this.Text = "FileTransferForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.Text = "OFTP";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainWindow_FormClosing);
             this.Load += new System.EventHandler(this.MainWindow_Load);
             this.ResumeLayout(false);
@@ -207,5 +228,7 @@ namespace OFTP_Client
         private System.Windows.Forms.Button SendButton;
         private System.Windows.Forms.ProgressBar SendFileProgressBar;
         private System.Windows.Forms.Label SendFileProgressLabel;
+        private System.Windows.Forms.ProgressBar GeneralProgressBar;
+        private System.Windows.Forms.Label GeneralProgressLabel;
     }
 }

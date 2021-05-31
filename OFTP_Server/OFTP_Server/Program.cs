@@ -53,7 +53,7 @@ namespace OFTP_Server
                 .AddSingleton<IDatabaseService, DatabaseService>()
                 .AddSingleton<ICryptoService, CryptoService>()
                 .AddSingleton<ILoginService, LoginService>()
-                .AddLogging(builder => builder.AddFile(_configuration.GetSection("Logs")));
+                .AddLogging(builder => builder.AddFile(_configuration.GetSection("Logging")));
 
             servicesCollection.RegisterDALDependiences();
         }
