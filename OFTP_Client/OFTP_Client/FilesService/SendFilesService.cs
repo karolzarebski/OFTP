@@ -148,7 +148,8 @@ namespace OFTP_Client.FilesService
                 foreach (var file in files)
                 {
                     FileInfo fi = new FileInfo(file);
-                    await SendMessage($"{fi.Name}|");
+
+                    await SendMessage($"{fi.Name}|{fi.Length}");
 
                     using var fileStream = File.OpenRead(file);
 
@@ -184,13 +185,13 @@ namespace OFTP_Client.FilesService
                                 await SendData(buffer);
                             }
 
-                            SendFileProgress.Invoke(this, new SendProgressEvent { Value = Map(i++, 0, count, 0, 100), General = false });
+                            SendFileProgress.Invoke(this, new SendProgressEvent { Value = Map(++i, 0, count, 0, 100), General = false, Receive = false});
                         }
                     }
 
                     await SendData(Encoding.UTF8.GetBytes(CodeNames.EndFileTransmission));
 
-                    SendFileProgress.Invoke(this, new SendProgressEvent { Value = filesSent++, General = true });
+                    SendFileProgress.Invoke(this, new SendProgressEvent { Value = ++filesSent, General = true, Receive = false });
                 }
             }
             else

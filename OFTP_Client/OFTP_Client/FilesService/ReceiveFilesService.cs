@@ -1,7 +1,6 @@
 ﻿using OFTP_Client.Events;
 using OFTP_Client.Resources;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -23,6 +22,7 @@ namespace OFTP_Client.FilesService
 
         public string IncommingConnectionAddress { get; private set; }
         public event EventHandler<IncommingConnectionEvent> IncommingConnection;
+        public event EventHandler<SendProgressEvent> SendFileProgressEvent;
 
         public ReceiveFilesService(string ipAddress)
         {
@@ -79,6 +79,11 @@ namespace OFTP_Client.FilesService
             return await _cryptoService.DecryptDataB(codeBuffer.Skip(4).Take(codeBuffer[2] * 256 + codeBuffer[3]).ToArray());
         }
 
+        private int Map(long x, long in_min, long in_max, long out_min, long out_max)
+        {
+            return Convert.ToInt32((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
+        }
+
         public async Task<bool> WaitForIncomingConnection()
         {
             var isClientOk = false;
@@ -116,7 +121,7 @@ namespace OFTP_Client.FilesService
                     //Podziękuj drugiemu użytkownikowi za nowe wirusy <3 ++1
                     //Rozłącz się
                 }
-            }          
+            }
             return false;
         }
 
@@ -124,9 +129,9 @@ namespace OFTP_Client.FilesService
         {
             var response = (await ReceiveMessage(true)).Split("|");
 
-            if(response[0] == CodeNames.BeginFileTransmission)
+            if (response[0] == CodeNames.BeginFileTransmission)
             {
-                switch(MessageBox.Show($"Czy chcesz odebrać {response[1]} plików?", "Odbiór plików",
+                switch (MessageBox.Show($"Czy chcesz odebrać {response[1]} plików?", "Odbiór plików",
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                 {
                     case DialogResult.Yes:
@@ -144,14 +149,17 @@ namespace OFTP_Client.FilesService
 
         public async Task ReceiveFiles()
         {
-            for(int i = 0; i < fileCount; i++)
+            for (int i = 0; i < fileCount; i++)
             {
                 var fileInfo = (await ReceiveMessage(true)).Split("|");
 
-                //int fileLen = Convert.ToInt32(fileInfo[1]);
-                //int receivedDataLen = 0;
+                int fileLen = Convert.ToInt32(fileInfo[1]);
+                int receivedDataLen = 0;
 
                 using FileStream fs = File.Create(fileInfo[0]);
+
+                SendFileProgressEvent.Invoke(this, new SendProgressEvent { Value = i, General = true, Receive = true, FilesCount = fileCount });
+
                 while (true)
                 {
                     await SendMessage(CodeNames.NextPartialData);
@@ -165,6 +173,13 @@ namespace OFTP_Client.FilesService
                     if (code != CodeNames.EndFileTransmission)
                     {
                         fs.Write(dataToWrite);
+                        receivedDataLen += dataToWrite.Length;
+                        SendFileProgressEvent.Invoke(this, new SendProgressEvent
+                        {
+                            Value = Map(receivedDataLen, 0, fileLen, 0, 100),
+                            General = false,
+                            Receive = true
+                        });
                         //receivedDataLen += partialData[0] * 256 + partialData[1];
                     }
                     else
@@ -174,9 +189,12 @@ namespace OFTP_Client.FilesService
 
                     //Array.Copy(partialData, 0, receivedData, receivedDataLen, partialData.Length);
                 }
+
                 fs.Flush();
                 MessageBox.Show($"Odebrano plik {fileInfo[0]}");
             }
+
+            SendFileProgressEvent.Invoke(this, new SendProgressEvent { Value = fileCount, General = true, Receive = true, FilesCount = fileCount });
         }
     }
 }

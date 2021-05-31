@@ -171,14 +171,27 @@ namespace OFTP_Client
                 else
                 {
                     GeneralProgressBar.Value = e.Value;
-                    GeneralProgressLabel.Text = $"Wysłano pliów: {e.Value}/{selectedFilesPath.Count}";
 
-                    if (e.Value == selectedFilesPath.Count)
+                    if (e.Receive)
                     {
-                        MessageBox.Show("Pomyślnie wysłano plik", "Transfer zakończony", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
+                        GeneralProgressLabel.Text = $"Otrzymano plików: {e.Value}/{e.FilesCount}";
+                        if (e.Value == e.FilesCount)
+                        {
+                            MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
+                        }
+                    }
+                    else
+                    {
+                        GeneralProgressLabel.Text = $"Wysłano plików: {e.Value}/{selectedFilesPath.Count}";
 
-                        selectedFilesPath.Clear();
+                        if (e.Value == selectedFilesPath.Count)
+                        {
+                            MessageBox.Show("Pomyślnie wysłano pliki", "Transfer zakończony", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
+
+                            selectedFilesPath.Clear();
+                        }
                     }
                 }
             });
