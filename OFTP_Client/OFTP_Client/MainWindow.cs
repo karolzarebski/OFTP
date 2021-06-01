@@ -150,11 +150,10 @@ namespace OFTP_Client
 
                                    if (filePath != string.Empty)
                                    {
-                                       FilesTreeView.Nodes.Clear();
-                                       DirectoryInfo di = new DirectoryInfo(filePath);
-
                                        FilesTreeView.Invoke((MethodInvoker)delegate
                                        {
+                                           FilesTreeView.Nodes.Clear();
+                                           DirectoryInfo di = new DirectoryInfo(filePath);
                                            TreeNode tds = FilesTreeView.Nodes.Add(di.Name);
 
                                            tds.Tag = di.FullName;
@@ -224,7 +223,8 @@ namespace OFTP_Client
                         GeneralProgressLabel.Text = $"Otrzymano plików: {(e.Value * e.FilesCount) / 100}/{e.FilesCount}";
                         if (e.Value == e.FilesCount)
                         {
-                            MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony", 
+                                MessageBoxButtons.OK, MessageBoxIcon.Information);
                             receiveFilesService.SendFileProgressEvent -= SendFilesService_SendFileProgress;
                         }
                     }
@@ -234,7 +234,8 @@ namespace OFTP_Client
 
                         if (e.Value == selectedFilesPath.Count)
                         {
-                            MessageBox.Show("Pomyślnie wysłano pliki", "Transfer zakończony", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show("Pomyślnie wysłano pliki", "Transfer zakończony", 
+                                MessageBoxButtons.OK, MessageBoxIcon.Information);
                             sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
 
                             selectedFilesPath.Clear();
@@ -426,6 +427,8 @@ namespace OFTP_Client
 
                 GeneralProgressLabel.Text = "Wysłano plików: ";
                 SendFileProgressLabel.Text = "Postęp: ";
+
+                selectedFilesPath.Clear();
             }
         }
 
@@ -481,7 +484,11 @@ namespace OFTP_Client
             //SendButton.Enabled = false;
             //FilesTreeView.Nodes.Clear();
 
-            if (!(await sendFilesService.SendFiles(selectedFilesPath)))
+            var isClientConnected = false;
+
+            await Task.Run(async () => isClientConnected = await sendFilesService.SendFiles(selectedFilesPath));
+
+            if (!isClientConnected)
             {
                 isConnected = false;
                 ConnectButton.Text = "Połącz z użytkownikiem";
@@ -562,12 +569,20 @@ namespace OFTP_Client
 
         private void PauseButton_Click(object sender, EventArgs e)
         {
-            if (!isPaused)
+            if (receiveFilesService != null)
             {
                 receiveFilesService.PauseReceiving();
+            }
+            else
+            {
+                sendFilesService.PauseSending();
+            }
+
+            if (!isPaused)
+            {
                 isPaused = true;
                 PauseButton.Text = "Wznów";
-                MessageBox.Show("Przesyłanie plików wstrzymane", "Pauza", 
+                MessageBox.Show("Przesyłanie plików wstrzymane", "Pauza",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
@@ -581,16 +596,42 @@ namespace OFTP_Client
 
         private void StopButton_Click(object sender, EventArgs e)
         {
-            switch(MessageBox.Show("Czy chcesz przerwać transmisję plików?", "Stop", 
-                MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+            if (!isPaused)
             {
-                case DialogResult.Yes:
-                    receiveFilesService.StopReceiving();
-                    MessageBox.Show("Wysyłanie plików zostało pomyślnie przerwane", "Stop",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    break;
-                case DialogResult.No:
-                    break;
+                switch (MessageBox.Show("Czy chcesz przerwać transmisję plików?", "Stop",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+                {
+                    case DialogResult.Yes:
+
+                        selectedFilesPath.Clear();
+
+                        if (receiveFilesService != null)
+                        {
+                            receiveFilesService.StopReceiving();
+                        }
+                        else
+                        {
+                            sendFilesService.StopSending();
+                        }
+
+                        MessageBox.Show("Wysyłanie plików zostało pomyślnie przerwane", "Stop",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        break;
+                    case DialogResult.No:
+                        break;
+                }
+            }
+            else
+            {
+                switch(MessageBox.Show("Przerwanie transmisji możliwe tylko podczas jej trwania\nCzy chcesz wznowić transmisję?",
+                    "Przerywanie transmisji", MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+                {
+                    case DialogResult.Yes:
+                        PauseButton.PerformClick();
+                        break;
+                    case DialogResult.No:
+                        break;
+                }
             }
         }
 

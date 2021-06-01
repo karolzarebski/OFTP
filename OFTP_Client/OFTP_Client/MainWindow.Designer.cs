@@ -198,9 +198,9 @@ namespace OFTP_Client
             // 
             // PauseButton
             // 
-            this.PauseButton.Location = new System.Drawing.Point(279, 57);
+            this.PauseButton.Location = new System.Drawing.Point(269, 57);
             this.PauseButton.Name = "PauseButton";
-            this.PauseButton.Size = new System.Drawing.Size(50, 23);
+            this.PauseButton.Size = new System.Drawing.Size(60, 23);
             this.PauseButton.TabIndex = 16;
             this.PauseButton.Text = "Pauza";
             this.PauseButton.UseVisualStyleBackColor = true;

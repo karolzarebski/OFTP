@@ -15,7 +15,7 @@ namespace OFTP_Client.FilesService
         private readonly string _serverIP;
         private TcpClient _client;
         private CryptoService _cryptoService;
-        private int bufferLen = 25599; //25 KB
+        private int bufferLen = 25599; //25 KB 25599
         private bool isPaused = false, isStopped = false;
 
 
@@ -165,7 +165,7 @@ namespace OFTP_Client.FilesService
 
                                     if (await ReceiveMessage(true) == CodeNames.OK)
                                     {
-                                        fileStream.Read(buffer, 0, buffer.Length);
+                                        await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
 
                                         await SendData2(buffer);
                                     }
@@ -185,7 +185,7 @@ namespace OFTP_Client.FilesService
 
                                     if (await ReceiveMessage(true) == CodeNames.OK)
                                     {
-                                        fileStream.Read(buffer, 0, buffer.Length);
+                                        await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
 
                                         //Debug.WriteLine(buffer.Length);
 

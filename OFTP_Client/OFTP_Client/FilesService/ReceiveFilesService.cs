@@ -225,18 +225,7 @@ namespace OFTP_Client.FilesService
 
         public void PauseReceiving()
         {
-            if (!isPaused)
-            {
-
-
-                isPaused = true;
-            }
-            else
-            {
-
-
-                isPaused = false;
-            }
+            isPaused = !isPaused;
         }
 
         public void StopReceiving()
