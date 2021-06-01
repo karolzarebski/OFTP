@@ -142,6 +142,15 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 504.
+        /// </summary>
+        internal static string DisconnectFromClient {
+            get {
+                return ResourceManager.GetString("DisconnectFromClient", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 604.
         /// </summary>
         internal static string EndFileTransmission {

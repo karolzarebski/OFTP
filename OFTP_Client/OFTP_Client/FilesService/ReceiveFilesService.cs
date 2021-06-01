@@ -120,6 +120,10 @@ namespace OFTP_Client.FilesService
                         return false;
                 }
             }
+            if (response[0] == CodeNames.DisconnectFromClient)
+            {
+                return false;
+            }
 
             return false;
         }

@@ -63,7 +63,7 @@ namespace OFTP_Client.FilesService
         private async Task SendData2(byte[] data)
         {
             var encryptedData = await _cryptoService.EncryptData(data);
-            //Debug.WriteLine(encryptedData.Length);
+            Debug.WriteLine(encryptedData);
             await _client.GetStream().WriteAsync(encryptedData);
         }
 
@@ -87,6 +87,11 @@ namespace OFTP_Client.FilesService
         public int Map(long x, long in_min, long in_max, long out_min, long out_max)
         {
             return Convert.ToInt32((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
+        }
+
+        public async Task SendEndConnection()
+        {
+            await SendMessage($"{CodeNames.DisconnectFromClient}|0");
         }
 
         public async Task SendFiles(List<string> files)
