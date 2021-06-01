@@ -226,7 +226,7 @@ namespace OFTP_Client
                         GeneralProgressLabel.Text = $"Otrzymano plików: {(e.Value * e.FilesCount) / 100}/{e.FilesCount}";
                         if (e.Value == e.FilesCount)
                         {
-                            MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony", 
+                            MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
                             receiveFilesService.SendFileProgressEvent -= SendFilesService_SendFileProgress;
                         }
@@ -237,7 +237,7 @@ namespace OFTP_Client
 
                         if (e.Value == selectedFilesPath.Count)
                         {
-                            MessageBox.Show("Pomyślnie wysłano pliki", "Transfer zakończony", 
+                            MessageBox.Show("Pomyślnie wysłano pliki", "Transfer zakończony",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
                             sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
 
@@ -435,42 +435,59 @@ namespace OFTP_Client
             }
         }
 
-        private void FilesTreeView_AfterCheck(object sender, TreeViewEventArgs e)
+        private async void FilesTreeView_AfterCheck(object sender, TreeViewEventArgs e)
         {
             string path = filePath.Remove(filePath.LastIndexOf('\\') + 1) + e.Node.FullPath;
 
             SendButton.Enabled = true;
 
-            if (Directory.Exists(path))
+            var temp = StateLabel.Text;
+
+            StateLabel.Text = "Ładowanie listy folderów";
+
+            await Task.Run(() =>
             {
-                if (e.Node.Checked)
-                {
-                    foreach (TreeNode i in e.Node.Nodes)
+                FilesTreeView.Invoke((MethodInvoker)delegate
                     {
-                        if (!i.Checked)
-                            i.Checked = true;
-                    }
-                }
-                else
-                {
-                    foreach (TreeNode i in e.Node.Nodes)
-                    {
-                        if (i.Checked)
-                            i.Checked = false;
-                    }
-                }
-            }
-            else
-            {
-                if (e.Node.Checked)
-                {
-                    selectedFilesPath.Add(path);
-                }
-                else
-                {
-                    selectedFilesPath.Remove(path);
-                }
-            }
+                        if (Directory.Exists(path))
+                        {
+                            if (e.Node.Checked)
+                            {
+                                e.Node.Expand();
+
+                                foreach (TreeNode i in e.Node.Nodes)
+                                {
+                                    if (!i.Checked)
+                                        i.Checked = true;
+                                }
+                            }
+                            else
+                            {
+                                e.Node.Collapse();
+
+                                foreach (TreeNode i in e.Node.Nodes)
+                                {
+                                    if (i.Checked)
+                                        i.Checked = false;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (e.Node.Checked)
+                            {
+                                selectedFilesPath.Add(path);
+                            }
+                            else
+                            {
+                                selectedFilesPath.Remove(path);
+                            }
+                        }
+                    });
+
+            });
+
+            StateLabel.Text = temp;
         }
 
         private async void SendButton_Click(object sender, EventArgs e)
@@ -626,7 +643,7 @@ namespace OFTP_Client
             }
             else
             {
-                switch(MessageBox.Show("Przerwanie transmisji możliwe tylko podczas jej trwania\nCzy chcesz wznowić transmisję?",
+                switch (MessageBox.Show("Przerwanie transmisji możliwe tylko podczas jej trwania\nCzy chcesz wznowić transmisję?",
                     "Przerywanie transmisji", MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                 {
                     case DialogResult.Yes:
