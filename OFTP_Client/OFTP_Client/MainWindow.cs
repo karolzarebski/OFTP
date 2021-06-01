@@ -97,7 +97,10 @@ namespace OFTP_Client
                                    {
                                        while (await receiveFilesService.AcceptFiles())
                                        {
-                                           await receiveFilesService.ReceiveFiles();
+                                           if (!await receiveFilesService.ReceiveFiles())
+                                           {
+                                               break;
+                                           }
                                        }
 
                                        StateLabel.Invoke((MethodInvoker)delegate

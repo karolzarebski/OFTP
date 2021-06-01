@@ -129,7 +129,7 @@ namespace OFTP_Client.FilesService
             return false;
         }
 
-        public async Task ReceiveFiles()
+        public async Task<bool> ReceiveFiles()
         {
             for (int i = 0; i < fileCount; i++)
             {
@@ -156,7 +156,7 @@ namespace OFTP_Client.FilesService
                         {
                             await SendMessage(CodeNames.FileTransmissionInterrupted);
 
-                            return;
+                            return false;
                         }
 
                         if (!isPaused)
@@ -197,7 +197,7 @@ namespace OFTP_Client.FilesService
                                 MessageBox.Show("Klient przerwał transmisję plików", "Stop",
                                     MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                                return;
+                                return false;
                             }
                         }
                     }
@@ -215,6 +215,8 @@ namespace OFTP_Client.FilesService
                     FilesCount = fileCount
                 });
             }
+
+            return true;
         }
 
         public void Dispose()
