@@ -169,6 +169,15 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 609.
+        /// </summary>
+        internal static string FileTransmissionInterrupted {
+            get {
+                return ResourceManager.GetString("FileTransmissionInterrupted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 101.
         /// </summary>
         internal static string Login {

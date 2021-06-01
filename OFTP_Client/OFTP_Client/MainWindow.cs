@@ -15,7 +15,7 @@ namespace OFTP_Client
 {
     public partial class MainWindow : Form
     {
-        private bool isConnected = false, isLoggedIn = true;
+        private bool isConnected = false, isLoggedIn = true, isPaused = false;
         private List<string> _availableUsers = new List<string>();
         private SendFilesService sendFilesService;
         private ReceiveFilesService receiveFilesService;
@@ -97,7 +97,10 @@ namespace OFTP_Client
                                    {
                                        while (await receiveFilesService.AcceptFiles())
                                        {
-                                           await receiveFilesService.ReceiveFiles();
+                                           if (!await receiveFilesService.ReceiveFiles())
+                                           {
+                                               break;
+                                           }
                                        }
 
                                        StateLabel.Invoke((MethodInvoker)delegate
@@ -150,11 +153,10 @@ namespace OFTP_Client
 
                                    if (filePath != string.Empty)
                                    {
-                                       FilesTreeView.Nodes.Clear();
-                                       DirectoryInfo di = new DirectoryInfo(filePath);
-
                                        FilesTreeView.Invoke((MethodInvoker)delegate
                                        {
+                                           FilesTreeView.Nodes.Clear();
+                                           DirectoryInfo di = new DirectoryInfo(filePath);
                                            TreeNode tds = FilesTreeView.Nodes.Add(di.Name);
 
                                            tds.Tag = di.FullName;
@@ -224,7 +226,8 @@ namespace OFTP_Client
                         GeneralProgressLabel.Text = $"Otrzymano plików: {(e.Value * e.FilesCount) / 100}/{e.FilesCount}";
                         if (e.Value == e.FilesCount)
                         {
-                            MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony",
+                                MessageBoxButtons.OK, MessageBoxIcon.Information);
                             receiveFilesService.SendFileProgressEvent -= SendFilesService_SendFileProgress;
                         }
                     }
@@ -234,7 +237,8 @@ namespace OFTP_Client
 
                         if (e.Value == selectedFilesPath.Count)
                         {
-                            MessageBox.Show("Pomyślnie wysłano pliki", "Transfer zakończony", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show("Pomyślnie wysłano pliki", "Transfer zakończony",
+                                MessageBoxButtons.OK, MessageBoxIcon.Information);
                             sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
 
                             selectedFilesPath.Clear();
@@ -426,45 +430,64 @@ namespace OFTP_Client
 
                 GeneralProgressLabel.Text = "Wysłano plików: ";
                 SendFileProgressLabel.Text = "Postęp: ";
+
+                selectedFilesPath.Clear();
             }
         }
 
-        private void FilesTreeView_AfterCheck(object sender, TreeViewEventArgs e)
+        private async void FilesTreeView_AfterCheck(object sender, TreeViewEventArgs e)
         {
             string path = filePath.Remove(filePath.LastIndexOf('\\') + 1) + e.Node.FullPath;
 
             SendButton.Enabled = true;
 
-            if (Directory.Exists(path))
+            var temp = StateLabel.Text;
+
+            StateLabel.Text = "Ładowanie listy folderów";
+
+            await Task.Run(() =>
             {
-                if (e.Node.Checked)
-                {
-                    foreach (TreeNode i in e.Node.Nodes)
+                FilesTreeView.Invoke((MethodInvoker)delegate
                     {
-                        if (!i.Checked)
-                            i.Checked = true;
-                    }
-                }
-                else
-                {
-                    foreach (TreeNode i in e.Node.Nodes)
-                    {
-                        if (i.Checked)
-                            i.Checked = false;
-                    }
-                }
-            }
-            else
-            {
-                if (e.Node.Checked)
-                {
-                    selectedFilesPath.Add(path);
-                }
-                else
-                {
-                    selectedFilesPath.Remove(path);
-                }
-            }
+                        if (Directory.Exists(path))
+                        {
+                            if (e.Node.Checked)
+                            {
+                                e.Node.Expand();
+
+                                foreach (TreeNode i in e.Node.Nodes)
+                                {
+                                    if (!i.Checked)
+                                        i.Checked = true;
+                                }
+                            }
+                            else
+                            {
+                                e.Node.Collapse();
+
+                                foreach (TreeNode i in e.Node.Nodes)
+                                {
+                                    if (i.Checked)
+                                        i.Checked = false;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (e.Node.Checked)
+                            {
+                                selectedFilesPath.Add(path);
+                            }
+                            else
+                            {
+                                selectedFilesPath.Remove(path);
+                            }
+                        }
+                    });
+
+            });
+
+            StateLabel.Text = temp;
         }
 
         private async void SendButton_Click(object sender, EventArgs e)
@@ -481,7 +504,11 @@ namespace OFTP_Client
             //SendButton.Enabled = false;
             //FilesTreeView.Nodes.Clear();
 
-            if (!(await sendFilesService.SendFiles(selectedFilesPath)))
+            var isClientConnected = false;
+
+            await Task.Run(async () => isClientConnected = await sendFilesService.SendFiles(selectedFilesPath));
+
+            if (!isClientConnected)
             {
                 isConnected = false;
                 ConnectButton.Text = "Połącz z użytkownikiem";
@@ -557,6 +584,74 @@ namespace OFTP_Client
                     LoadFiles(filePath, tds);
                     LoadSubDirectories(filePath, tds);
                 });
+            }
+        }
+
+        private void PauseButton_Click(object sender, EventArgs e)
+        {
+            if (receiveFilesService != null)
+            {
+                receiveFilesService.PauseReceiving();
+            }
+            else
+            {
+                sendFilesService.PauseSending();
+            }
+
+            if (!isPaused)
+            {
+                isPaused = true;
+                PauseButton.Text = "Wznów";
+                MessageBox.Show("Przesyłanie plików wstrzymane", "Pauza",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                isPaused = false;
+                PauseButton.Text = "Pauza";
+                MessageBox.Show("Przesyłanie plików wznowione", "Wznów",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void StopButton_Click(object sender, EventArgs e)
+        {
+            if (!isPaused)
+            {
+                switch (MessageBox.Show("Czy chcesz przerwać transmisję plików?", "Stop",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+                {
+                    case DialogResult.Yes:
+
+                        selectedFilesPath.Clear();
+
+                        if (receiveFilesService != null)
+                        {
+                            receiveFilesService.StopReceiving();
+                        }
+                        else
+                        {
+                            sendFilesService.StopSending();
+                        }
+
+                        MessageBox.Show("Wysyłanie plików zostało pomyślnie przerwane", "Stop",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        break;
+                    case DialogResult.No:
+                        break;
+                }
+            }
+            else
+            {
+                switch (MessageBox.Show("Przerwanie transmisji możliwe tylko podczas jej trwania\nCzy chcesz wznowić transmisję?",
+                    "Przerywanie transmisji", MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+                {
+                    case DialogResult.Yes:
+                        PauseButton.PerformClick();
+                        break;
+                    case DialogResult.No:
+                        break;
+                }
             }
         }
 
