@@ -175,7 +175,7 @@ namespace OFTP_Client
 
                     if (e.Receive)
                     {
-                        GeneralProgressLabel.Text = $"Otrzymano plików: {e.Value}/{e.FilesCount}";
+                        GeneralProgressLabel.Text = $"Otrzymano plików: {(e.Value * e.FilesCount) / 100}/{e.FilesCount}";
                         if (e.Value == e.FilesCount)
                         {
                             MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -184,7 +184,7 @@ namespace OFTP_Client
                     }
                     else
                     {
-                        GeneralProgressLabel.Text = $"Wysłano plików: {e.Value}/{selectedFilesPath.Count}";
+                        GeneralProgressLabel.Text = $"Wysłano plików: {(e.Value * selectedFilesPath.Count) / 100}/{selectedFilesPath.Count}";
 
                         if (e.Value == selectedFilesPath.Count)
                         {

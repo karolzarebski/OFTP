@@ -151,6 +151,15 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 606.
+        /// </summary>
+        internal static string FileLength {
+            get {
+                return ResourceManager.GetString("FileLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 101.
         /// </summary>
         internal static string Login {
@@ -178,11 +187,29 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 607.
+        /// </summary>
+        internal static string NextDataLength {
+            get {
+                return ResourceManager.GetString("NextDataLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 605.
         /// </summary>
         internal static string NextPartialData {
             get {
                 return ResourceManager.GetString("NextPartialData", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 608.
+        /// </summary>
+        internal static string OK {
+            get {
+                return ResourceManager.GetString("OK", resourceCulture);
             }
         }
         

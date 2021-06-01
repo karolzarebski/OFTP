@@ -22,6 +22,7 @@ namespace ServerLibrary.Services
         private UsersConnection _uc;
 
         private readonly ServerConfiguration _serverConfiguration;
+        private List<UsersConnection> usersConnections = new List<UsersConnection>();
         private Dictionary<string, string> availableUsers = new Dictionary<string, string>();
         Dictionary<TcpClient, CryptoService> clients = new Dictionary<TcpClient, CryptoService>();
 
@@ -302,7 +303,7 @@ namespace ServerLibrary.Services
 
                                 var tempClient = clients.Keys.Where(x => x.Client.RemoteEndPoint.ToString().StartsWith(tempClientIp)).FirstOrDefault();
 
-                                _uc = new UsersConnection(login, availableUsers[login], tempClientLogin, tempClientIp);
+                                usersConnections.Add(new UsersConnection(login, availableUsers[login], tempClientLogin, tempClientIp));
 
                                 await SendMessage($"{CodeNames.AskUserForConnection}|{login}", tempClient);
 
@@ -311,7 +312,11 @@ namespace ServerLibrary.Services
                                 //Console.WriteLine("Czekam na kod od " + tempClient.Client.RemoteEndPoint);
                                 //var responseCode = await ReceiveMessage(tempClient, true);
 
-                                while (!_uc._userAccepted) ;
+                                var user = usersConnections.Where(x => x._userStartingConnection == login).FirstOrDefault();
+
+                                while (!user._userAccepted) { }
+
+                                usersConnections.Remove(user);
 
                                 await SendMessage(CodeNames.AcceptedIncomingConnection, client);
                                 await SendMessage(tempClientIp, client);
@@ -338,13 +343,25 @@ namespace ServerLibrary.Services
                             }
                             else if (message == CodeNames.AcceptedIncomingConnection)
                             {
-                                if (_uc.IsMe(login, availableUsers[login]))
+                                var user = usersConnections.Where(x => x._userAcceptingConnection == login && x._userAcceptingConnectionIP == availableUsers[login]).FirstOrDefault();
+
+                                if (user.IsMe(login, availableUsers[login]))
                                 {
-                                    _uc._userAccepted = true;
-                                    SendMessage(_uc._userStartingConnectionIP, client);
+                                    user._userAccepted = true;
+                                    SendMessage(user._userStartingConnectionIP, client);
                                 }
+
+                                //if (_uc.IsMe(login, availableUsers[login]))
+                                //{
+                                //    _uc._userAccepted = true;
+                                //    SendMessage(_uc._userStartingConnectionIP, client);
+                                //}
                                 //await SendMessage(availableUsers[login], tempClient);
                                 //Console.WriteLine("OK");
+                            }
+                            else if (message == CodeNames.RejectedIncomingConnection)
+                            {
+
                             }
                         }
                     }

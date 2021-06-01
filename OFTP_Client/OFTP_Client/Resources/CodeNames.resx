@@ -147,6 +147,9 @@
   <data name="EndFileTransmission" xml:space="preserve">
     <value>604</value>
   </data>
+  <data name="FileLength" xml:space="preserve">
+    <value>606</value>
+  </data>
   <data name="Login" xml:space="preserve">
     <value>101</value>
   </data>
@@ -156,8 +159,14 @@
   <data name="NewUser" xml:space="preserve">
     <value>105</value>
   </data>
+  <data name="NextDataLength" xml:space="preserve">
+    <value>607</value>
+  </data>
   <data name="NextPartialData" xml:space="preserve">
     <value>605</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>608</value>
   </data>
   <data name="Register" xml:space="preserve">
     <value>102</value>
