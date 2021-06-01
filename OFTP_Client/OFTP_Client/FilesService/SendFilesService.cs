@@ -94,7 +94,7 @@ namespace OFTP_Client.FilesService
             await SendMessage($"{CodeNames.DisconnectFromClient}|0");
         }
 
-        public async Task SendFiles(List<string> files)
+        public async Task<bool> SendFiles(List<string> files)
         {
             int filesSent = 0;
 
@@ -207,7 +207,18 @@ namespace OFTP_Client.FilesService
 
                     while (await ReceiveMessage(true) != CodeNames.OK) ;
                 }
+
+                return true;
             }
+            else if (responseCode == CodeNames.RejectFileTransmission)
+            {
+                MessageBox.Show("Klient odmówił transmisji plików", "Odmowa",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                return false;
+            }
+
+            return false;
         }
     }
 }

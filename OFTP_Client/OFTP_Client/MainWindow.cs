@@ -109,6 +109,7 @@ namespace OFTP_Client
                                            SendFileProgressLabel.Text = "Postęp: ";
                                        });
 
+                                       receiveFilesService.Dispose();
                                    }
                                }
                            }
@@ -373,7 +374,10 @@ namespace OFTP_Client
 
         private void UsersListBox_DoubleClick(object sender, EventArgs e)
         {
-            ConnectButton.PerformClick();
+            if (UsersListBox.SelectedItem != null)
+            {
+                ConnectButton.PerformClick();
+            }
         }
 
         private void UsersListBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -460,7 +464,18 @@ namespace OFTP_Client
             //SendButton.Enabled = false;
             //FilesTreeView.Nodes.Clear();
 
-            await sendFilesService.SendFiles(selectedFilesPath);
+            if (!(await sendFilesService.SendFiles(selectedFilesPath)))
+            {
+                isConnected = false;
+                ConnectButton.Text = "Połącz z użytkownikiem";
+                StateLabel.Text = "Stan: Oczekiwanie";
+
+                GeneralProgressBar.Value = 0;
+                SendFileProgressBar.Value = 0;
+
+                GeneralProgressLabel.Text = "Wysłano plików: ";
+                SendFileProgressLabel.Text = "Postęp: ";
+            }
         }
 
         private void LoadFiles(string dir, TreeNode td)

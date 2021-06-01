@@ -11,7 +11,7 @@ using System.Windows.Forms;
 
 namespace OFTP_Client.FilesService
 {
-    public class ReceiveFilesService
+    public class ReceiveFilesService : IDisposable
     {
         private TcpListener receiveFilesServer;
         private TcpClient _client;
@@ -197,6 +197,12 @@ namespace OFTP_Client.FilesService
                     FilesCount = fileCount
                 });
             }
+        }
+
+        public void Dispose()
+        {
+            receiveFilesServer.Stop();
+            _client.Close();
         }
     }
 }
