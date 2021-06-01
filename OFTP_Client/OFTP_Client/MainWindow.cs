@@ -15,9 +15,8 @@ namespace OFTP_Client
 {
     public partial class MainWindow : Form
     {
-        private bool isConnected = false, isLoggedIn = true, isPathSelected = false;
+        private bool isConnected = false, isLoggedIn = true;
         private List<string> _availableUsers = new List<string>();
-        private DictionaryService dictionaryService = new DictionaryService();
         private SendFilesService sendFilesService;
         private ReceiveFilesService receiveFilesService;
 
@@ -62,11 +61,18 @@ namespace OFTP_Client
                            }
                            else if (data[0] == CodeNames.AskUserForConnection)
                            {
+                               login = data[1];
+
                                switch (MessageBox.Show($"Czy chcesz akceptować połączenie od: {login}?", "Połączenie przychodzące",
                                    MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                                {
                                    case DialogResult.Yes:
                                        await SendMessage(CodeNames.AcceptedIncomingConnection);
+
+                                       StateLabel.Invoke((MethodInvoker)delegate
+                                       {
+                                           StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
+                                       });
 
                                        break;
                                    case DialogResult.No:
@@ -79,12 +85,14 @@ namespace OFTP_Client
 
                                receiveFilesService.SendFileProgressEvent += SendFilesService_SendFileProgress;
 
-                               if (await receiveFilesService.WaitForIncomingConnection()) //FIX THIS SHIT
-                                   if (await receiveFilesService.AcceptFiles()) // Maybe this shit too //si si torro
+                               if (await receiveFilesService.WaitForIncomingConnection())
+                                   if (await receiveFilesService.AcceptFiles()) 
                                        await receiveFilesService.ReceiveFiles();
                            }
                            else if (data[0] == CodeNames.AcceptedIncomingConnection)
                            {
+                               login = data[1];
+
                                StateLabel.Invoke((MethodInvoker)delegate
                                {
                                    StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct

@@ -307,18 +307,13 @@ namespace ServerLibrary.Services
 
                                 await SendMessage($"{CodeNames.AskUserForConnection}|{login}", tempClient);
 
-                                Console.WriteLine("Wysłałem 501 do " + tempClient.Client.RemoteEndPoint);
-
-                                //Console.WriteLine("Czekam na kod od " + tempClient.Client.RemoteEndPoint);
-                                //var responseCode = await ReceiveMessage(tempClient, true);
-
                                 var user = usersConnections.Where(x => x._userStartingConnection == login).FirstOrDefault();
 
                                 while (!user._userAccepted) { }
 
                                 usersConnections.Remove(user);
 
-                                await SendMessage(CodeNames.AcceptedIncomingConnection, client);
+                                await SendMessage($"{CodeNames.AcceptedIncomingConnection}|{tempClientLogin}", client);
                                 await SendMessage(tempClientIp, client);
 
 
@@ -343,7 +338,8 @@ namespace ServerLibrary.Services
                             }
                             else if (message == CodeNames.AcceptedIncomingConnection)
                             {
-                                var user = usersConnections.Where(x => x._userAcceptingConnection == login && x._userAcceptingConnectionIP == availableUsers[login]).FirstOrDefault();
+                                var user = usersConnections.Where(x => x._userAcceptingConnection == login
+                                            && x._userAcceptingConnectionIP == availableUsers[login]).FirstOrDefault();
 
                                 if (user.IsMe(login, availableUsers[login]))
                                 {
