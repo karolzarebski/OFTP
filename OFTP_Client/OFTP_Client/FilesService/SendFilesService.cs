@@ -98,148 +98,158 @@ namespace OFTP_Client.FilesService
 
         public async Task<bool> SendFiles(List<string> files)
         {
-            int filesSent = 0;
-
-            await SendMessage($"{CodeNames.BeginFileTransmission}|{files.Count}");
-
-            var responseCode = await ReceiveMessage(true);
-
-            if (responseCode == CodeNames.AcceptFileTransmission)
+            try
             {
-                foreach (var file in files)
+                int filesSent = 0;
+
+                await SendMessage($"{CodeNames.BeginFileTransmission}|{files.Count}");
+
+                var responseCode = await ReceiveMessage(true);
+
+                if (responseCode == CodeNames.AcceptFileTransmission)
                 {
-                    int i = 0;
-
-                    FileInfo fi = new FileInfo(file);
-
-                    var fileLength = $"{fi.Name}|{fi.Length}|";
-
-                    int count = Convert.ToInt32(Math.Ceiling(fi.Length / Convert.ToDouble(bufferLen)));
-
-                    using var fileStream = File.OpenRead(file);
-
-                    while (fileLength.Length < 120)
+                    foreach (var file in files)
                     {
-                        fileLength += '0';
-                    }
+                        int i = 0;
 
-                    await SendMessage($"{CodeNames.FileLength}|{fileLength}");
+                        FileInfo fi = new FileInfo(file);
 
-                    SendFileProgress.Invoke(this, new SendProgressEvent
-                    {
-                        Value = Map(filesSent++, 0, files.Count, 0, 100),
-                        General = true,
-                        Receive = false
-                    });
+                        var fileLength = $"{fi.Name}|{fi.Length}|";
 
-                    while (fileStream.Position != fi.Length)
-                    {
-                        if (isStopped)
+                        int count = Convert.ToInt32(Math.Ceiling(fi.Length / Convert.ToDouble(bufferLen)));
+
+                        using var fileStream = File.OpenRead(file);
+
+                        while (fileLength.Length < 120)
                         {
-                            await SendMessage(CodeNames.FileTransmissionInterrupted);
-
-                            return false;
+                            fileLength += '0';
                         }
 
-                        if (!isPaused)
+                        await SendMessage($"{CodeNames.FileLength}|{fileLength}");
+
+                        SendFileProgress.Invoke(this, new SendProgressEvent
                         {
-                            var fileTransmissionResponseCode = await ReceiveMessage(true);
+                            Value = Map(filesSent++, 0, files.Count, 0, 100),
+                            General = true,
+                            Receive = false
+                        });
 
-                            if (fileTransmissionResponseCode == CodeNames.NextPartialData)
+                        while (fileStream.Position != fi.Length)
+                        {
+                            if (isStopped)
                             {
-                                if (fi.Length - fileStream.Position < bufferLen)
-                                {
-                                    int len = Convert.ToInt32(fi.Length - fileStream.Position);
-                                    var buffer = new byte[len];
-
-                                    //Debug.WriteLine(len);
-
-                                    var nextDataLength = $"{CodeNames.NextDataLength}|{len}|";
-
-                                    while (nextDataLength.Length < 10)
-                                    {
-                                        nextDataLength += '0';
-                                    }
-
-                                    await SendMessage(nextDataLength);
-
-                                    if (await ReceiveMessage(true) == CodeNames.OK)
-                                    {
-                                        await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
-
-                                        await SendData2(buffer);
-                                    }
-                                }
-                                else
-                                {
-                                    var buffer = new byte[bufferLen];
-
-                                    var nextDataLength = $"{CodeNames.NextDataLength}|{bufferLen}|";
-
-                                    while (nextDataLength.Length < 10)
-                                    {
-                                        nextDataLength += '0';
-                                    }
-
-                                    await SendMessage(nextDataLength);
-
-                                    if (await ReceiveMessage(true) == CodeNames.OK)
-                                    {
-                                        await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
-
-                                        //Debug.WriteLine(buffer.Length);
-
-                                        await SendData2(buffer);
-                                    }
-                                }
-
-                                SendFileProgress.Invoke(this, new SendProgressEvent
-                                {
-                                    Value = Map(++i, 0, count, 0, 100),
-                                    General = false,
-                                    Receive = false
-                                });
-                            }
-                            else if (fileTransmissionResponseCode == CodeNames.FileTransmissionInterrupted)
-                            {
-                                MessageBox.Show("Klient przerwał transmisję plików", "Stop",
-                                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                await SendMessage(CodeNames.FileTransmissionInterrupted);
 
                                 return false;
                             }
+
+                            if (!isPaused)
+                            {
+                                var fileTransmissionResponseCode = await ReceiveMessage(true);
+
+                                if (fileTransmissionResponseCode == CodeNames.NextPartialData)
+                                {
+                                    if (fi.Length - fileStream.Position < bufferLen)
+                                    {
+                                        int len = Convert.ToInt32(fi.Length - fileStream.Position);
+                                        var buffer = new byte[len];
+
+                                        //Debug.WriteLine(len);
+
+                                        var nextDataLength = $"{CodeNames.NextDataLength}|{len}|";
+
+                                        while (nextDataLength.Length < 10)
+                                        {
+                                            nextDataLength += '0';
+                                        }
+
+                                        await SendMessage(nextDataLength);
+
+                                        if (await ReceiveMessage(true) == CodeNames.OK)
+                                        {
+                                            await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
+
+                                            await SendData2(buffer);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        var buffer = new byte[bufferLen];
+
+                                        var nextDataLength = $"{CodeNames.NextDataLength}|{bufferLen}|";
+
+                                        while (nextDataLength.Length < 10)
+                                        {
+                                            nextDataLength += '0';
+                                        }
+
+                                        await SendMessage(nextDataLength);
+
+                                        if (await ReceiveMessage(true) == CodeNames.OK)
+                                        {
+                                            await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
+
+                                            //Debug.WriteLine(buffer.Length);
+
+                                            await SendData2(buffer);
+                                        }
+                                    }
+
+                                    SendFileProgress.Invoke(this, new SendProgressEvent
+                                    {
+                                        Value = Map(++i, 0, count, 0, 100),
+                                        General = false,
+                                        Receive = false
+                                    });
+                                }
+                                else if (fileTransmissionResponseCode == CodeNames.FileTransmissionInterrupted)
+                                {
+                                    MessageBox.Show("Klient przerwał transmisję plików", "Stop",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                                    return false;
+                                }
+                            }
                         }
+
+                        SendFileProgress.Invoke(this, new SendProgressEvent
+                        {
+                            Value = Map(filesSent, 0, files.Count, 0, 100),
+                            General = true,
+                            Receive = false
+                        });
+
+                        var endMessage = $"{CodeNames.EndFileTransmission}|";
+
+                        while (endMessage.Length < 10)
+                        {
+                            endMessage += '0';
+                        }
+
+                        await SendMessage(endMessage);
+
+                        while (await ReceiveMessage(true) != CodeNames.OK) ;
                     }
 
-                    SendFileProgress.Invoke(this, new SendProgressEvent
-                    {
-                        Value = Map(filesSent, 0, files.Count, 0, 100),
-                        General = true,
-                        Receive = false
-                    });
-
-                    var endMessage = $"{CodeNames.EndFileTransmission}|";
-
-                    while (endMessage.Length < 10)
-                    {
-                        endMessage += '0';
-                    }
-
-                    await SendMessage(endMessage);
-
-                    while (await ReceiveMessage(true) != CodeNames.OK) ;
+                    return true;
                 }
+                else if (responseCode == CodeNames.RejectFileTransmission)
+                {
+                    MessageBox.Show("Klient odmówił transmisji plików", "Odmowa",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                return true;
-            }
-            else if (responseCode == CodeNames.RejectFileTransmission)
-            {
-                MessageBox.Show("Klient odmówił transmisji plików", "Odmowa",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return false;
+                }
 
                 return false;
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Wystąpił błąd podczas transmisji plików", "Błąd transmisji",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
 
-            return false;
+                return false;
+            }
         }
 
         public void PauseSending()
