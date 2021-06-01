@@ -15,7 +15,7 @@ namespace OFTP_Client
 {
     public partial class MainWindow : Form
     {
-        private bool isConnected = false, isLoggedIn = true;
+        private bool isConnected = false, isLoggedIn = true, isPaused = false;
         private List<string> _availableUsers = new List<string>();
         private SendFilesService sendFilesService;
         private ReceiveFilesService receiveFilesService;
@@ -557,6 +557,40 @@ namespace OFTP_Client
                     LoadFiles(filePath, tds);
                     LoadSubDirectories(filePath, tds);
                 });
+            }
+        }
+
+        private void PauseButton_Click(object sender, EventArgs e)
+        {
+            if (!isPaused)
+            {
+                receiveFilesService.PauseReceiving();
+                isPaused = true;
+                PauseButton.Text = "Wznów";
+                MessageBox.Show("Przesyłanie plików wstrzymane", "Pauza", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                isPaused = false;
+                PauseButton.Text = "Pauza";
+                MessageBox.Show("Przesyłanie plików wznowione", "Wznów",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void StopButton_Click(object sender, EventArgs e)
+        {
+            switch(MessageBox.Show("Czy chcesz przerwać transmisję plików?", "Stop", 
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+            {
+                case DialogResult.Yes:
+                    receiveFilesService.StopReceiving();
+                    MessageBox.Show("Wysyłanie plików zostało pomyślnie przerwane", "Stop",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    break;
+                case DialogResult.No:
+                    break;
             }
         }
 

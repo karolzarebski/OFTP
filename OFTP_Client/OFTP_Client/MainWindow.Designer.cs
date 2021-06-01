@@ -45,6 +45,8 @@ namespace OFTP_Client
             this.GeneralProgressBar = new System.Windows.Forms.ProgressBar();
             this.GeneralProgressLabel = new System.Windows.Forms.Label();
             this.ChooseDir = new System.Windows.Forms.Button();
+            this.PauseButton = new System.Windows.Forms.Button();
+            this.StopButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // UsersListBox
@@ -194,11 +196,33 @@ namespace OFTP_Client
             this.ChooseDir.UseVisualStyleBackColor = true;
             this.ChooseDir.Click += new System.EventHandler(this.ChooseDir_Click);
             // 
+            // PauseButton
+            // 
+            this.PauseButton.Location = new System.Drawing.Point(279, 57);
+            this.PauseButton.Name = "PauseButton";
+            this.PauseButton.Size = new System.Drawing.Size(50, 23);
+            this.PauseButton.TabIndex = 16;
+            this.PauseButton.Text = "Pauza";
+            this.PauseButton.UseVisualStyleBackColor = true;
+            this.PauseButton.Click += new System.EventHandler(this.PauseButton_Click);
+            // 
+            // StopButton
+            // 
+            this.StopButton.Location = new System.Drawing.Point(335, 57);
+            this.StopButton.Name = "StopButton";
+            this.StopButton.Size = new System.Drawing.Size(50, 23);
+            this.StopButton.TabIndex = 17;
+            this.StopButton.Text = "Stop";
+            this.StopButton.UseVisualStyleBackColor = true;
+            this.StopButton.Click += new System.EventHandler(this.StopButton_Click);
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 460);
+            this.Controls.Add(this.StopButton);
+            this.Controls.Add(this.PauseButton);
             this.Controls.Add(this.ChooseDir);
             this.Controls.Add(this.GeneralProgressLabel);
             this.Controls.Add(this.GeneralProgressBar);
@@ -243,5 +267,7 @@ namespace OFTP_Client
         private System.Windows.Forms.ProgressBar GeneralProgressBar;
         private System.Windows.Forms.Label GeneralProgressLabel;
         private System.Windows.Forms.Button ChooseDir;
+        private System.Windows.Forms.Button PauseButton;
+        private System.Windows.Forms.Button StopButton;
     }
 }

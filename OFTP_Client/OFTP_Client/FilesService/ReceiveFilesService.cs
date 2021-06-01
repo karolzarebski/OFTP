@@ -18,6 +18,7 @@ namespace OFTP_Client.FilesService
         private CryptoService _cryptoService;
         private string _ipAddress;
         private int fileCount;
+        private bool isPaused = false, isStopped = false;
 
         public string IncommingConnectionAddress { get; private set; }
         public event EventHandler<IncommingConnectionEvent> IncommingConnection;
@@ -151,36 +152,53 @@ namespace OFTP_Client.FilesService
 
                     while (true)
                     {
-                        await SendMessage(CodeNames.NextPartialData);
-
-                        var len = (await ReceiveMessage2(16, true)).Split('|');
-
-                        if (len[0] == CodeNames.NextDataLength)
+                        if (isStopped)
                         {
-                            int realLength = Convert.ToInt32(len[1]);
+                            await SendMessage(CodeNames.FileTransmissionInterrupted);
 
-                            while (realLength % 16 != 0)
-                            {
-                                realLength++;
-                            }
-
-                            await SendMessage(CodeNames.OK);
-
-                            byte[] partialData = await ReceiveData2(realLength);
-
-                            fs.Write(partialData.Take(Convert.ToInt32(len[1])).ToArray());
-                            receivedDataLen += Convert.ToInt32(len[1]);
-
-                            SendFileProgressEvent.Invoke(this, new SendProgressEvent
-                            {
-                                Value = Map(receivedDataLen, 0, fileLen, 0, 100),
-                                General = false,
-                                Receive = true
-                            });
+                            return;
                         }
-                        else if (len[0] == CodeNames.EndFileTransmission)
+
+                        if (!isPaused)
                         {
-                            break;
+                            await SendMessage(CodeNames.NextPartialData);
+
+                            var len = (await ReceiveMessage2(16, true)).Split('|');
+
+                            if (len[0] == CodeNames.NextDataLength)
+                            {
+                                int realLength = Convert.ToInt32(len[1]);
+
+                                while (realLength % 16 != 0)
+                                {
+                                    realLength++;
+                                }
+
+                                await SendMessage(CodeNames.OK);
+
+                                byte[] partialData = await ReceiveData2(realLength);
+
+                                fs.Write(partialData.Take(Convert.ToInt32(len[1])).ToArray());
+                                receivedDataLen += Convert.ToInt32(len[1]);
+
+                                SendFileProgressEvent.Invoke(this, new SendProgressEvent
+                                {
+                                    Value = Map(receivedDataLen, 0, fileLen, 0, 100),
+                                    General = false,
+                                    Receive = true
+                                });
+                            }
+                            else if (len[0] == CodeNames.EndFileTransmission)
+                            {
+                                break;
+                            }
+                            else if (len[0] == CodeNames.FileTransmissionInterrupted)
+                            {
+                                MessageBox.Show("Klient przerwał transmisję plików", "Stop",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                                return;
+                            }
                         }
                     }
 
@@ -203,6 +221,27 @@ namespace OFTP_Client.FilesService
         {
             receiveFilesServer.Stop();
             _client.Close();
+        }
+
+        public void PauseReceiving()
+        {
+            if (!isPaused)
+            {
+
+
+                isPaused = true;
+            }
+            else
+            {
+
+
+                isPaused = false;
+            }
+        }
+
+        public void StopReceiving()
+        {
+            isStopped = true;
         }
     }
 }
