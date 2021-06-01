@@ -1,5 +1,4 @@
-﻿using DatabaseLibrary.DAL.Services;
-using LoginLibrary.Services;
+﻿using LoginLibrary.Services;
 using Microsoft.Extensions.Logging;
 using ServerLibrary.Events;
 using ServerLibrary.Resources;
@@ -17,9 +16,6 @@ namespace ServerLibrary.Services
     {
         private readonly ILoginService _loginService;
         private readonly ILogger<ServerService> _logger;
-        private readonly IDatabaseService _storageService;
-
-        private UsersConnection _uc;
 
         private readonly ServerConfiguration _serverConfiguration;
         private List<UsersConnection> usersConnections = new List<UsersConnection>();
@@ -29,46 +25,40 @@ namespace ServerLibrary.Services
         private event EventHandler<UsersCountChangedEvent> usersCountChangedEvent;
 
         public ServerService(ServerConfiguration serverConfiguration, ILoginService loginService,
-            ILogger<ServerService> logger, IDatabaseService storageService)
+            ILogger<ServerService> logger)
         {
-            _storageService = storageService;
             _serverConfiguration = serverConfiguration;
             _loginService = loginService;
             _logger = logger;
 
             usersCountChangedEvent += RefreshAvailableUsers;
 
-            availableUsers = new Dictionary<string, string>
-            {
-                { "Karol-PC", "192.168.1.11" },
-                { "Karol-Laptop", "192.168.1.14" },
-                {"Liam", "192.168.1.8" },
-                {"Olivia", "192.168.29.22" },
-                {"Noah" , "192.168.83.32"},
-                { "Emma", "192.168.212.2"},
-                { "Oliver", "192.168.92.212"},
-                { "Ava", "192.168.13.93"},
-                {"Elijah" , "192.168.129.94"},
-                {"Charlotte" , "192.168.214.23"},
-                {"William" , "192.168.254.54"},
-                { "Sophia", "192.168.132.11"},
-                { "James", "192.168.53.123"},
-                {"Amelia" , "192.168.21.84"},
-                {"Benjamin" , "192.168.21.37"},
-                {"Isabella" , "192.168.11.98"},
-                {"Lucas" , "192.168.111.73"},
-                {  "Mia", "192.168.152.91"},
-                { "Henry" , "192.168.213.211"},
-                { "Evelyn", "192.168.10.182"},
-                { "Alexander", "192.168.251.43"},
-                {"Harper" , "192.168.167.142"}
-            };
-
-            //for (int i = 0; i < 100; i++)
+            //Added for testing purposes
+            //availableUsers = new Dictionary<string, string> 
             //{
-            //    availableUsers.Add($"Name{i}", $"192.168.99.{i + 1}");
-            //}
-
+            //    { "Karol-PC", "192.168.1.11" },
+            //    { "Karol-Laptop", "192.168.1.14" },
+            //    {"Liam", "192.168.1.8" },
+            //    {"Olivia", "192.168.29.22" },
+            //    {"Noah" , "192.168.83.32"},
+            //    { "Emma", "192.168.212.2"},
+            //    { "Oliver", "192.168.92.212"},
+            //    { "Ava", "192.168.13.93"},
+            //    {"Elijah" , "192.168.129.94"},
+            //    {"Charlotte" , "192.168.214.23"},
+            //    {"William" , "192.168.254.54"},
+            //    { "Sophia", "192.168.132.11"},
+            //    { "James", "192.168.53.123"},
+            //    {"Amelia" , "192.168.21.84"},
+            //    {"Benjamin" , "192.168.21.37"},
+            //    {"Isabella" , "192.168.11.98"},
+            //    {"Lucas" , "192.168.111.73"},
+            //    {  "Mia", "192.168.152.91"},
+            //    { "Henry" , "192.168.213.211"},
+            //    { "Evelyn", "192.168.10.182"},
+            //    { "Alexander", "192.168.251.43"},
+            //    {"Harper" , "192.168.167.142"}
+            //};
         }
 
         private async void RefreshAvailableUsers(object sender, UsersCountChangedEvent e)
@@ -79,16 +69,6 @@ namespace ServerLibrary.Services
             {
                 if (e.newClient != client.Key)
                 {
-                    //var encryptedData = await client.Value.EncryptData();
-
-                    //var message = new byte[encryptedData.Length + 1];
-
-                    //Array.Copy(encryptedData, 0, message, 1, encryptedData.Length);
-
-                    //message[0] = (byte)encryptedData.Length;
-
-                    //await client.Key.GetStream().WriteAsync(message);
-
                     await SendMessage($"{CodeNames.NewUser}|{e.Username}", client.Key);
                 }
             }
@@ -145,7 +125,7 @@ namespace ServerLibrary.Services
                 string login = string.Empty;
                 string password = string.Empty;
 
-                Task.Run(async () => //TODO remove await
+                Task.Run(async () =>
                 {
                     await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(CodeNames.Connected));
 
@@ -272,7 +252,7 @@ namespace ServerLibrary.Services
                             }
                             else
                             {
-                                await SendMessage($"{CodeNames.ActiveUsers}|0", client);
+                                await SendMessage($"{CodeNames.ActiveUsers}|-1", client);
                             }
                         }
 
@@ -324,25 +304,6 @@ namespace ServerLibrary.Services
                                     }
 
                                     usersConnections.Remove(user);
-
-                                    //var buffer = new byte[18];
-
-                                    //await tempClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
-
-
-
-                                    //Console.WriteLine("Odebrałem kod od " + tempClient.Client.RemoteEndPoint);
-
-                                    //var responseCode = "4354";
-
-                                    //if (responseCode == CodeNames.AcceptedIncomingConnection)
-                                    //{
-
-                                    //}
-                                    //else if (responseCode == CodeNames.RejectedIncomingConnection)
-                                    //{
-                                    //    await SendMessage(CodeNames.RejectedIncomingConnection, client);
-                                    //}
                                 }
                                 else if (message == CodeNames.AcceptedIncomingConnection)
                                 {
