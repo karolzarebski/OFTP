@@ -206,10 +206,20 @@ namespace OFTP_Client.FilesService
 
                         if (len[0] == CodeNames.NextDataLength)
                         {
-                            byte[] partialData = await ReceiveData2(Convert.ToInt32(len[1]));
+                            int realLength = Convert.ToInt32(len[1]);
 
-                            fs.Write(partialData);
-                            receivedDataLen += partialData.Length;
+                            while (realLength % 16 != 0)
+                            {
+                                realLength++;
+                            }
+
+                            await SendMessage(CodeNames.OK);
+
+                            byte[] partialData = await ReceiveData2(realLength);
+
+                            fs.Write(partialData.Take(Convert.ToInt32(len[1])).ToArray());
+                            receivedDataLen += Convert.ToInt32(len[1]);
+
                             //SendFileProgressEvent.Invoke(this, new SendProgressEvent
                             //{
                             //    Value = Map(receivedDataLen, 0, fileLen, 0, 100),
@@ -229,6 +239,8 @@ namespace OFTP_Client.FilesService
                     }
 
                     fs.Flush();
+
+                    await SendMessage(CodeNames.OK);
                     //MessageBox.Show($"Odebrano plik {fileInfo[0]}");
                 }
 
