@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -16,7 +15,7 @@ namespace OFTP_Client.FilesService
         private readonly string _serverIP;
         private TcpClient _client;
         private CryptoService _cryptoService;
-        private int bufferLen = 51198; //100 KB
+        private int bufferLen = 25599; //100 KB
 
         public event EventHandler<SendProgressEvent> SendFileProgress;
 
@@ -126,6 +125,13 @@ namespace OFTP_Client.FilesService
             await _client.GetStream().WriteAsync(encryptedMessage);
         }
 
+        private async Task SendData2(byte[] data)
+        {
+            var encryptedData = await _cryptoService.EncryptData(data);
+            Debug.WriteLine(encryptedData.Length);
+            await _client.GetStream().WriteAsync(encryptedData);
+        }
+
         private async Task<string> ReceiveMessage(bool isCodeReceived = false)
         {
             if (isCodeReceived)
@@ -173,7 +179,7 @@ namespace OFTP_Client.FilesService
 
                     using var fileStream = File.OpenRead(file);
 
-                    while (fileLength.Length < 125)
+                    while (fileLength.Length < 120)
                     {
                         fileLength += '0';
                     }
@@ -189,6 +195,13 @@ namespace OFTP_Client.FilesService
                                 int len = Convert.ToInt32(fi.Length - fileStream.Position);
                                 var buffer = new byte[len];
 
+                                //while (len % 16 != 0)
+                                //{
+                                //    len++;
+                                //}
+
+                                Debug.WriteLine(len);
+
                                 var nextDataLength = $"{CodeNames.NextDataLength}|{len}|";
 
                                 while (nextDataLength.Length < 10)
@@ -202,7 +215,7 @@ namespace OFTP_Client.FilesService
                                 {
                                     fileStream.Read(buffer, 0, buffer.Length);
 
-                                    await SendData(buffer);
+                                    await SendData2(buffer);
                                 }
                             }
                             else
@@ -222,13 +235,16 @@ namespace OFTP_Client.FilesService
                                 {
                                     fileStream.Read(buffer, 0, buffer.Length);
 
-                                    await SendData(buffer);
+                                    Debug.WriteLine(buffer.Length);
+
+                                    await SendData2(buffer);
                                 }
 
                                 //Debug.WriteLine($"{buffer[0]}\t{buffer[1]}");
                             }
                         }
                     }
+
                     var endMessage = $"{CodeNames.EndFileTransmission}|";
 
                     while (endMessage.Length < 10)
