@@ -15,9 +15,8 @@ namespace OFTP_Client
 {
     public partial class MainWindow : Form
     {
-        private bool isConnected = false, isLoggedIn = true, isPathSelected = false;
+        private bool isConnected = false, isLoggedIn = true;
         private List<string> _availableUsers = new List<string>();
-        private DictionaryService dictionaryService = new DictionaryService();
         private SendFilesService sendFilesService;
         private ReceiveFilesService receiveFilesService;
 
@@ -44,6 +43,8 @@ namespace OFTP_Client
            {
                var buffer = new byte[2048];
 
+               bool accepted = false;
+
                while (isLoggedIn)
                {
                    try
@@ -62,29 +63,59 @@ namespace OFTP_Client
                            }
                            else if (data[0] == CodeNames.AskUserForConnection)
                            {
+                               login = data[1];
+
                                switch (MessageBox.Show($"Czy chcesz akceptować połączenie od: {login}?", "Połączenie przychodzące",
                                    MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                                {
                                    case DialogResult.Yes:
                                        await SendMessage(CodeNames.AcceptedIncomingConnection);
 
+                                       accepted = true;
+
+                                       StateLabel.Invoke((MethodInvoker)delegate
+                                       {
+                                           StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
+                                       });
+
                                        break;
                                    case DialogResult.No:
+                                       accepted = false;
+
                                        await SendMessage(CodeNames.RejectedIncomingConnection);
                                        break;
                                }
-                               string ip = await ReceiveMessage();
+                               if (accepted)
+                               {
+                                   string ip = await ReceiveMessage();
 
-                               receiveFilesService = new ReceiveFilesService(ip);
+                                   receiveFilesService = new ReceiveFilesService(ip);
 
-                               receiveFilesService.SendFileProgressEvent += SendFilesService_SendFileProgress;
+                                   receiveFilesService.SendFileProgressEvent += SendFilesService_SendFileProgress;
 
-                               if (await receiveFilesService.WaitForIncomingConnection()) //FIX THIS SHIT
-                                   if (await receiveFilesService.AcceptFiles()) // Maybe this shit too //si si torro
-                                       await receiveFilesService.ReceiveFiles();
+                                   if (await receiveFilesService.WaitForIncomingConnection())
+                                   {
+                                       while (await receiveFilesService.AcceptFiles())
+                                       {
+                                           await receiveFilesService.ReceiveFiles();
+                                       }
+
+                                       StateLabel.Invoke((MethodInvoker)delegate
+                                       {
+                                           StateLabel.Text = "Stan: Oczekiwanie";
+                                           GeneralProgressBar.Value = 0;
+                                           GeneralProgressLabel.Text = "Otrzymano plików: ";
+                                           SendFileProgressBar.Value = 0;
+                                           SendFileProgressLabel.Text = "Postęp: ";
+                                       });
+
+                                   }
+                               }
                            }
                            else if (data[0] == CodeNames.AcceptedIncomingConnection)
                            {
+                               login = data[1];
+
                                StateLabel.Invoke((MethodInvoker)delegate
                                {
                                    StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
@@ -140,6 +171,20 @@ namespace OFTP_Client
                                        MessageBoxButtons.OK, MessageBoxIcon.Error);
                                }
                            }
+                           else if (data[0] == CodeNames.RejectedIncomingConnection)
+                           {
+                               SendButton.Enabled = false;
+                               MessageBox.Show("Klient odmówił połączenia", "Odmowa połączenia",
+                                   MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                               isConnected = false;
+
+                               ConnectButton.Invoke((MethodInvoker)delegate
+                               {
+                                   ConnectButton.Text = "Połącz z użytkownikiem";
+                                   StateLabel.Text = "Stan: Oczekiwanie";
+                               });
+                           }
                        }
                    }
                    catch (Exception ex)
@@ -175,7 +220,7 @@ namespace OFTP_Client
 
                     if (e.Receive)
                     {
-                        GeneralProgressLabel.Text = $"Otrzymano plików: {e.Value}/{e.FilesCount}";
+                        GeneralProgressLabel.Text = $"Otrzymano plików: {(e.Value * e.FilesCount) / 100}/{e.FilesCount}";
                         if (e.Value == e.FilesCount)
                         {
                             MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -184,7 +229,7 @@ namespace OFTP_Client
                     }
                     else
                     {
-                        GeneralProgressLabel.Text = $"Wysłano plików: {e.Value}/{selectedFilesPath.Count}";
+                        GeneralProgressLabel.Text = $"Wysłano plików: {(e.Value * selectedFilesPath.Count) / 100}/{selectedFilesPath.Count}";
 
                         if (e.Value == selectedFilesPath.Count)
                         {
@@ -356,9 +401,28 @@ namespace OFTP_Client
 
         private async void ConnectButton_Click(object sender, EventArgs e)
         {
-            await SendMessage($"{CodeNames.AskUserForConnection}");
-            await SendMessage($"{UsersListBox.SelectedItem}");
-            StateLabel.Text = $"Stan: Oczekiwanie na akceptację od {UsersListBox.SelectedItem}";
+            if (!isConnected)
+            {
+                isConnected = true;
+                await SendMessage($"{CodeNames.AskUserForConnection}");
+                await SendMessage($"{UsersListBox.SelectedItem}");
+                StateLabel.Text = $"Stan: Oczekiwanie na akceptację od {UsersListBox.SelectedItem}";
+                ConnectButton.Text = "Rozłącz z użytkownikiem";
+            }
+            else
+            {
+                await sendFilesService.SendEndConnection();
+
+                isConnected = false;
+                ConnectButton.Text = "Połącz z użytkownikiem";
+                StateLabel.Text = "Stan: Oczekiwanie";
+
+                GeneralProgressBar.Value = 0;
+                SendFileProgressBar.Value = 0;
+
+                GeneralProgressLabel.Text = "Wysłano plików: ";
+                SendFileProgressLabel.Text = "Postęp: ";
+            }
         }
 
         private void FilesTreeView_AfterCheck(object sender, TreeViewEventArgs e)
@@ -423,6 +487,44 @@ namespace OFTP_Client
                 tds.Tag = di.FullName;
                 LoadFiles(subdirectory, tds);
                 LoadSubDirectories(subdirectory, tds);
+            }
+        }
+
+        private void ChooseDir_Click(object sender, EventArgs e)
+        {
+            selectedFilesPath.Clear();
+
+            filePath = string.Empty;
+
+            var t = new Thread(() =>
+            {
+                FolderBrowserDialog fbd = new FolderBrowserDialog();
+                fbd.RootFolder = Environment.SpecialFolder.MyComputer;
+                fbd.ShowNewFolderButton = true;
+                if (fbd.ShowDialog() == DialogResult.Cancel)
+                    return;
+
+                filePath = fbd.SelectedPath;
+            });
+
+            t.SetApartmentState(ApartmentState.STA);
+            t.Start();
+            t.Join();
+
+            if (filePath != string.Empty)
+            {
+                FilesTreeView.Nodes.Clear();
+                DirectoryInfo di = new DirectoryInfo(filePath);
+
+                FilesTreeView.Invoke((MethodInvoker)delegate
+                {
+                    TreeNode tds = FilesTreeView.Nodes.Add(di.Name);
+
+                    tds.Tag = di.FullName;
+                    tds.StateImageIndex = 0;
+                    LoadFiles(filePath, tds);
+                    LoadSubDirectories(filePath, tds);
+                });
             }
         }
 

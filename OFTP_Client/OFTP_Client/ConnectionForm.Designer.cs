@@ -147,7 +147,6 @@ namespace OFTP_Client
             this.Controls.Add(this.LoginTextBox);
             this.Controls.Add(this.LoginButton);
             this.Name = "ConnectionForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "OFTP";
             this.Load += new System.EventHandler(this.ConnectionForm_Load);
             this.ResumeLayout(false);

@@ -112,10 +112,10 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AcceptedIncomingConnection" xml:space="preserve">
     <value>502</value>
@@ -144,8 +144,14 @@
   <data name="Disconnect" xml:space="preserve">
     <value>213</value>
   </data>
+  <data name="DisconnectFromClient" xml:space="preserve">
+    <value>504</value>
+  </data>
   <data name="EndFileTransmission" xml:space="preserve">
     <value>604</value>
+  </data>
+  <data name="FileLength" xml:space="preserve">
+    <value>606</value>
   </data>
   <data name="Login" xml:space="preserve">
     <value>101</value>
@@ -156,8 +162,14 @@
   <data name="NewUser" xml:space="preserve">
     <value>105</value>
   </data>
+  <data name="NextDataLength" xml:space="preserve">
+    <value>607</value>
+  </data>
   <data name="NextPartialData" xml:space="preserve">
     <value>605</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>608</value>
   </data>
   <data name="Register" xml:space="preserve">
     <value>102</value>

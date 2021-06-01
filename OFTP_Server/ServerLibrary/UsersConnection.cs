@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ServerLibrary
+﻿namespace ServerLibrary
 {
     public class UsersConnection
     {
@@ -12,9 +6,10 @@ namespace ServerLibrary
         public string _userStartingConnectionIP;
         public string _userAcceptingConnection;
         public string _userAcceptingConnectionIP;
+        public bool _userRejected = false;
         public bool _userAccepted;
 
-        public UsersConnection(string userStartingConnection, string userStartingConnectionIP, 
+        public UsersConnection(string userStartingConnection, string userStartingConnectionIP,
             string userAcceptingConnection, string userAcceptingConnectionIP)
         {
             _userStartingConnection = userStartingConnection;
@@ -26,7 +21,7 @@ namespace ServerLibrary
 
         public bool IsMe(string login, string ip)
         {
-            if(login == _userAcceptingConnection && ip == _userAcceptingConnectionIP)
+            if (login == _userAcceptingConnection && ip == _userAcceptingConnectionIP)
             {
                 return true;
             }

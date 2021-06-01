@@ -44,6 +44,7 @@ namespace OFTP_Client
             this.SendFileProgressLabel = new System.Windows.Forms.Label();
             this.GeneralProgressBar = new System.Windows.Forms.ProgressBar();
             this.GeneralProgressLabel = new System.Windows.Forms.Label();
+            this.ChooseDir = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // UsersListBox
@@ -143,9 +144,9 @@ namespace OFTP_Client
             // SendButton
             // 
             this.SendButton.Enabled = false;
-            this.SendButton.Location = new System.Drawing.Point(409, 71);
+            this.SendButton.Location = new System.Drawing.Point(398, 71);
             this.SendButton.Name = "SendButton";
-            this.SendButton.Size = new System.Drawing.Size(86, 23);
+            this.SendButton.Size = new System.Drawing.Size(97, 23);
             this.SendButton.TabIndex = 10;
             this.SendButton.Text = "Wyślij pliki";
             this.SendButton.UseVisualStyleBackColor = true;
@@ -183,11 +184,22 @@ namespace OFTP_Client
             this.GeneralProgressLabel.TabIndex = 14;
             this.GeneralProgressLabel.Text = "Wysłano plików: ";
             // 
+            // ChooseDir
+            // 
+            this.ChooseDir.Location = new System.Drawing.Point(398, 42);
+            this.ChooseDir.Name = "ChooseDir";
+            this.ChooseDir.Size = new System.Drawing.Size(97, 23);
+            this.ChooseDir.TabIndex = 15;
+            this.ChooseDir.Text = "Wybór folderu";
+            this.ChooseDir.UseVisualStyleBackColor = true;
+            this.ChooseDir.Click += new System.EventHandler(this.ChooseDir_Click);
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 460);
+            this.Controls.Add(this.ChooseDir);
             this.Controls.Add(this.GeneralProgressLabel);
             this.Controls.Add(this.GeneralProgressBar);
             this.Controls.Add(this.SendFileProgressLabel);
@@ -230,5 +242,6 @@ namespace OFTP_Client
         private System.Windows.Forms.Label SendFileProgressLabel;
         private System.Windows.Forms.ProgressBar GeneralProgressBar;
         private System.Windows.Forms.Label GeneralProgressLabel;
+        private System.Windows.Forms.Button ChooseDir;
     }
 }
