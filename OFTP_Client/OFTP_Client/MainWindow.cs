@@ -431,22 +431,39 @@ namespace OFTP_Client
 
         private void FilesTreeView_AfterCheck(object sender, TreeViewEventArgs e)
         {
-            SendButton.Enabled = true;
-
             string path = filePath.Remove(filePath.LastIndexOf('\\') + 1) + e.Node.FullPath;
+
+            SendButton.Enabled = true;
 
             if (Directory.Exists(path))
             {
-                path += "\\";
-            }
-
-            if (e.Node.Checked)
-            {
-                selectedFilesPath.Add(path);
+                if (e.Node.Checked)
+                {
+                    foreach (TreeNode i in e.Node.Nodes)
+                    {
+                        if (!i.Checked)
+                            i.Checked = true;
+                    }
+                }
+                else
+                {
+                    foreach (TreeNode i in e.Node.Nodes)
+                    {
+                        if (i.Checked)
+                            i.Checked = false;
+                    }
+                }
             }
             else
             {
-                selectedFilesPath.Remove(path);
+                if (e.Node.Checked)
+                {
+                    selectedFilesPath.Add(path);
+                }
+                else
+                {
+                    selectedFilesPath.Remove(path);
+                }
             }
         }
 
