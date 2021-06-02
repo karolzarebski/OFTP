@@ -229,8 +229,8 @@ namespace OFTP_Client
 
                         if (e.Value == 100)
                         {
-                            //MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony",
-                            //    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony",
+                                MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }
                     }
                     else
@@ -239,8 +239,8 @@ namespace OFTP_Client
 
                         if (e.Value == 100)
                         {
-                            MessageBox.Show("Pomyślnie wysłano pliki", "Transfer zakończony",
-                                MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            Task.Run(() => MessageBox.Show("Pomyślnie wysłano pliki", "Transfer zakończony",
+                                MessageBoxButtons.OK, MessageBoxIcon.Information));
 
                             selectedFilesPath.Clear();
                         }

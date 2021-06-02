@@ -229,14 +229,15 @@ namespace OFTP_Client.FilesService
                         await SendMessage(CodeNames.OK);
                     }
 
-                    SendFileProgressEvent.Invoke(this, new SendProgressEvent
-                    {
-                        Value = Map(fileCount, 0, fileCount, 0, 100),
-                        General = true,
-                        Receive = true,
-                        FilesCount = fileCount
-                    });
                 }
+
+                SendFileProgressEvent.Invoke(this, new SendProgressEvent
+                {
+                    Value = Map(fileCount, 0, fileCount, 0, 100),
+                    General = true,
+                    Receive = true,
+                    FilesCount = fileCount
+                });
 
                 return true;
             }
