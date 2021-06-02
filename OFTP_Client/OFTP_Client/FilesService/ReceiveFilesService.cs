@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -133,6 +134,23 @@ namespace OFTP_Client.FilesService
         {
             try
             {
+                var filePath = string.Empty;
+
+                var t = new Thread(() =>
+                {
+                    FolderBrowserDialog fbd = new FolderBrowserDialog();
+                    fbd.RootFolder = Environment.SpecialFolder.MyComputer;
+                    fbd.ShowNewFolderButton = true;
+                    if (fbd.ShowDialog() == DialogResult.Cancel)
+                        return;
+
+                    filePath = fbd.SelectedPath;
+                });
+
+                t.SetApartmentState(ApartmentState.STA);
+                t.Start();
+                t.Join();
+
                 for (int i = 0; i < fileCount; i++)
                 {
                     var fileInfo = (await ReceiveMessage2(128, true)).Split("|");
@@ -142,7 +160,9 @@ namespace OFTP_Client.FilesService
                         int fileLen = Convert.ToInt32(fileInfo[2]);
                         int receivedDataLen = 0;
 
-                        using FileStream fs = File.Create(fileInfo[1]);
+                        var fileDestination = Path.Combine(filePath, fileInfo[1]);
+
+                        using FileStream fs = File.Create(fileDestination); //Need to check
 
                         SendFileProgressEvent.Invoke(this, new SendProgressEvent
                         {
