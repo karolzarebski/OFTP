@@ -96,10 +96,12 @@ namespace OFTP_Client.FilesService
             await SendMessage($"{CodeNames.DisconnectFromClient}|0");
         }
 
-        public async Task<bool> SendFiles(List<string> files)
+        public async Task<bool> SendFiles(List<string> _files)
         {
             try
             {
+                var files = new List<string>(_files);
+
                 int filesSent = 0;
 
                 await SendMessage($"{CodeNames.BeginFileTransmission}|{files.Count}");

@@ -112,6 +112,8 @@ namespace OFTP_Client
                                            SendFileProgressLabel.Text = "Postęp: ";
                                        });
 
+                                       receiveFilesService.SendFileProgressEvent -= SendFilesService_SendFileProgress;
+
                                        receiveFilesService.Dispose();
                                    }
                                }
@@ -228,18 +230,16 @@ namespace OFTP_Client
                         {
                             MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            receiveFilesService.SendFileProgressEvent -= SendFilesService_SendFileProgress;
                         }
                     }
                     else
                     {
                         GeneralProgressLabel.Text = $"Wysłano plików: {(e.Value * selectedFilesPath.Count) / 100}/{selectedFilesPath.Count}";
 
-                        if (e.Value == selectedFilesPath.Count)
+                        if (((e.Value * selectedFilesPath.Count) / 100) == selectedFilesPath.Count)
                         {
                             MessageBox.Show("Pomyślnie wysłano pliki", "Transfer zakończony",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
 
                             selectedFilesPath.Clear();
                         }
@@ -422,6 +422,8 @@ namespace OFTP_Client
             else
             {
                 await sendFilesService.SendEndConnection();
+
+                sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
 
                 isConnected = false;
                 ConnectButton.Text = "Połącz z użytkownikiem";

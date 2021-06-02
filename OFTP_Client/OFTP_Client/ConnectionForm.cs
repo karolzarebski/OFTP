@@ -257,12 +257,14 @@ namespace OFTP_Client
                 else if (message == CodeNames.RegistrationLoginExists)
                 {
                     MessageBox.Show("Błąd rejestracji\nKonto o podanym loginie już istnieje\nPodaj nowe i spróbuj ponowne",
-                            "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            "Błąd rejestracji", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 else if (message == CodeNames.RegistrationPasswordWrong)
                 {
-                    MessageBox.Show("Błąd rejestracji\nHasło nie spełnia polityki\nPodaj nowe i spróbuj ponowne",
-                        "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Błąd rejestracji\nHasło nie spełnia polityki\n" +
+                        "Hasło musi składać się z min. 10 znaków, 1 wielka litera, 1 mała litera, 1 cyfra\n" +
+                        "Podaj nowe i spróbuj ponowne",
+                        "Błąd rejestracji", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             else
