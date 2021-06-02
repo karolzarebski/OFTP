@@ -290,6 +290,7 @@ namespace OFTP_Client
 
             UsersListBox.Invoke((MethodInvoker)delegate
             {
+                AvailableUsersLabel.Text = $"Dostępni użytkownicy: {_availableUsers.Count}";
                 UsersListBox.Items.Clear();
                 UsersListBox.Items.AddRange(_availableUsers.ToArray());
             });
@@ -319,12 +320,13 @@ namespace OFTP_Client
             await SendMessage(CodeNames.LogOut);
 
             cancellationTokenSource.Cancel();
+
             _tcpClient.Close();
 
-            _tcpClient.Dispose();
             isLoggedIn = false;
 
             UsersListBox.Items.Clear();
+            _availableUsers.Clear();
         }
 
         private void LogoutButton_Click(object sender, EventArgs e)
@@ -441,10 +443,6 @@ namespace OFTP_Client
 
             SendButton.Enabled = true;
 
-            var temp = StateLabel.Text;
-
-            StateLabel.Text = "Ładowanie listy folderów";
-
             await Task.Run(() =>
             {
                 FilesTreeView.Invoke((MethodInvoker)delegate
@@ -484,10 +482,7 @@ namespace OFTP_Client
                             }
                         }
                     });
-
             });
-
-            StateLabel.Text = temp;
         }
 
         private async void SendButton_Click(object sender, EventArgs e)

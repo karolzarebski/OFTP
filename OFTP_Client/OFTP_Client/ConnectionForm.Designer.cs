@@ -39,12 +39,13 @@ namespace OFTP_Client
             this.ConnectButton = new System.Windows.Forms.Button();
             this.RegisterButton = new System.Windows.Forms.Button();
             this.ServerConnectionLabel = new System.Windows.Forms.Label();
+            this.ShowPasswordCheckBox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // LoginButton
             // 
             this.LoginButton.Enabled = false;
-            this.LoginButton.Location = new System.Drawing.Point(62, 254);
+            this.LoginButton.Location = new System.Drawing.Point(62, 278);
             this.LoginButton.Name = "LoginButton";
             this.LoginButton.Size = new System.Drawing.Size(95, 23);
             this.LoginButton.TabIndex = 0;
@@ -114,7 +115,7 @@ namespace OFTP_Client
             // RegisterButton
             // 
             this.RegisterButton.Enabled = false;
-            this.RegisterButton.Location = new System.Drawing.Point(182, 254);
+            this.RegisterButton.Location = new System.Drawing.Point(182, 278);
             this.RegisterButton.Name = "RegisterButton";
             this.RegisterButton.Size = new System.Drawing.Size(95, 23);
             this.RegisterButton.TabIndex = 8;
@@ -131,11 +132,23 @@ namespace OFTP_Client
             this.ServerConnectionLabel.TabIndex = 9;
             this.ServerConnectionLabel.Text = "Stan: Rozłączono";
             // 
+            // ShowPasswordCheckBox
+            // 
+            this.ShowPasswordCheckBox.AutoSize = true;
+            this.ShowPasswordCheckBox.Location = new System.Drawing.Point(92, 243);
+            this.ShowPasswordCheckBox.Name = "ShowPasswordCheckBox";
+            this.ShowPasswordCheckBox.Size = new System.Drawing.Size(104, 19);
+            this.ShowPasswordCheckBox.TabIndex = 10;
+            this.ShowPasswordCheckBox.Text = "Wyświetl hasło";
+            this.ShowPasswordCheckBox.UseVisualStyleBackColor = true;
+            this.ShowPasswordCheckBox.CheckedChanged += new System.EventHandler(this.ShowPasswordCheckBox_CheckedChanged);
+            // 
             // ConnectionForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(336, 327);
+            this.Controls.Add(this.ShowPasswordCheckBox);
             this.Controls.Add(this.ServerConnectionLabel);
             this.Controls.Add(this.RegisterButton);
             this.Controls.Add(this.ConnectButton);
@@ -166,6 +179,7 @@ namespace OFTP_Client
         private System.Windows.Forms.Button ConnectButton;
         private System.Windows.Forms.Button RegisterButton;
         private System.Windows.Forms.Label ServerConnectionLabel;
+        private System.Windows.Forms.CheckBox ShowPasswordCheckBox;
     }
 }
 

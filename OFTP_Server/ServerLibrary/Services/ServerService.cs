@@ -34,6 +34,7 @@ namespace ServerLibrary.Services
             usersCountChangedEvent += RefreshAvailableUsers;
 
             //Added for testing purposes
+
             //availableUsers = new Dictionary<string, string> 
             //{
             //    { "Karol-PC", "192.168.1.11" },
@@ -111,9 +112,11 @@ namespace ServerLibrary.Services
         {
             TcpListener server = new TcpListener(IPAddress.Parse(_serverConfiguration.IpAddress), _serverConfiguration.Port);
 
-            _logger.LogInformation("Starting server");
+            _logger.LogInformation($"Starting serwer at: {_serverConfiguration.IpAddress}:{_serverConfiguration.Port}");
 
             server.Start();
+
+            Console.WriteLine($"Starting serwer at: {_serverConfiguration.IpAddress}:{_serverConfiguration.Port}");
 
             while (true)
             {
@@ -143,6 +146,9 @@ namespace ServerLibrary.Services
 
                     string clientIpAddress = client.Client.RemoteEndPoint.ToString();
 
+                    _logger.LogInformation($"User {clientIpAddress} connected");
+                    Console.WriteLine($"User {clientIpAddress} connected");
+
                     clients.Add(client, cryptoService);
 
                     while (!loggedIn)
@@ -163,7 +169,10 @@ namespace ServerLibrary.Services
                                     if (!availableUsers.ContainsKey(login))
                                     {
                                         availableUsers.Add(login, clientIpAddress.Remove(clientIpAddress.IndexOf(':')));
+
                                         _logger.LogInformation($"User {login} logged in");
+                                        Console.WriteLine($"User {login} logged in");
+
                                         usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
                                     }
                                 }
@@ -172,7 +181,7 @@ namespace ServerLibrary.Services
                                 {
                                     await SendMessage(CodeNames.WrongLoginData, client);
                                     loggedIn = false;
-                                    clients.Remove(client);
+                                    //clients.Remove(client);
                                 }
                             }
                             else
@@ -195,7 +204,10 @@ namespace ServerLibrary.Services
                                 if (!availableUsers.ContainsKey(login))
                                 {
                                     availableUsers.Add(login, clientIpAddress.Remove(clientIpAddress.IndexOf(':')));
+
                                     _logger.LogInformation($"User {login} registered");
+                                    Console.WriteLine($"User {login} registered");
+
                                     usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
                                 }
                             }
@@ -203,7 +215,7 @@ namespace ServerLibrary.Services
                             {
                                 await SendMessage(registrationResultCode.ToString(), client);
                                 loggedIn = false;
-                                clients.Remove(client);
+                                //clients.Remove(client);
                             }
                         }
                         else if (data[0] == CodeNames.Disconnect)
@@ -211,6 +223,10 @@ namespace ServerLibrary.Services
                             clients.Remove(client);
                             client.Close();
                             client.Dispose();
+
+                            _logger.LogInformation($"User {client.Client.RemoteEndPoint} disconnected");
+                            Console.WriteLine($"User {client.Client.RemoteEndPoint} disconnected");
+
                             break;
                         }
                     }
@@ -264,7 +280,8 @@ namespace ServerLibrary.Services
 
                                 if (message == CodeNames.LogOut)
                                 {
-                                    _logger.LogInformation("User logged out");
+                                    _logger.LogInformation($"User {client.Client.RemoteEndPoint} logged out");
+                                    Console.WriteLine($"User {client.Client.RemoteEndPoint} logged out");
 
                                     usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
 
@@ -331,6 +348,7 @@ namespace ServerLibrary.Services
                             catch (Exception ex)
                             {
                                 _logger.LogInformation($"Critical error for user {availableUsers[login]}");
+                                Console.WriteLine($"Critical error for user {availableUsers[login]}");
 
                                 usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
 

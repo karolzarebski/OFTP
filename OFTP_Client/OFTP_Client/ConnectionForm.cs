@@ -219,21 +219,24 @@ namespace OFTP_Client
 
             if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
-                await SendMessage($"{Resources.CodeNames.Register}|{login}|{password}");
+                await SendMessage($"{CodeNames.Register}|{login}|{password}");
 
                 var message = await ReceiveMessage(true);
-                if (message == Resources.CodeNames.CorrectRegisterData)
+
+                if (message == CodeNames.CorrectRegisterData)
                 {
                     MessageBox.Show("Pomyślnie zarejestrowano", "Rejestracja",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
 
+                    await SendMessage(CodeNames.ActiveUsers);
+
                     var availableUsersCount = (await ReceiveMessage(false)).Split('|');
 
-                    if (availableUsersCount[0] == Resources.CodeNames.ActiveUsers)
+                    if (availableUsersCount[0] == CodeNames.ActiveUsers)
                     {
                         var processedUsersCount = Convert.ToInt32(availableUsersCount[1]);
 
-                        await SendMessage(Resources.CodeNames.ActiveUsers);
+                        await SendMessage(CodeNames.ActiveUsers);
 
                         while (processedUsersCount >= 0)
                         {
@@ -251,12 +254,12 @@ namespace OFTP_Client
 
                     InitMainWindow();
                 }
-                else if (message == Resources.CodeNames.RegistrationLoginExists)
+                else if (message == CodeNames.RegistrationLoginExists)
                 {
                     MessageBox.Show("Błąd rejestracji\nKonto o podanym loginie już istnieje\nPodaj nowe i spróbuj ponowne",
                             "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-                else if (message == Resources.CodeNames.RegistrationPasswordWrong)
+                else if (message == CodeNames.RegistrationPasswordWrong)
                 {
                     MessageBox.Show("Błąd rejestracji\nHasło nie spełnia polityki\nPodaj nowe i spróbuj ponowne",
                         "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -272,6 +275,18 @@ namespace OFTP_Client
         private void ConnectionForm_Load(object sender, EventArgs e)
         {
             ServerConnectionLabel.ForeColor = Color.Red;
+        }
+
+        private void ShowPasswordCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (ShowPasswordCheckBox.Checked)
+            {
+                PasswordTextBox.PasswordChar = '\0';
+            }
+            else
+            {
+                PasswordTextBox.PasswordChar = '*';
+            }
         }
 
         private void InitMainWindow()
