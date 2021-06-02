@@ -112,6 +112,8 @@ namespace OFTP_Client
                                            SendFileProgressLabel.Text = "Postęp: ";
                                        });
 
+                                       receiveFilesService.SendFileProgressEvent -= SendFilesService_SendFileProgress;
+
                                        receiveFilesService.Dispose();
                                    }
                                }
@@ -224,22 +226,21 @@ namespace OFTP_Client
                     if (e.Receive)
                     {
                         GeneralProgressLabel.Text = $"Otrzymano plików: {(e.Value * e.FilesCount) / 100}/{e.FilesCount}";
-                        if (e.Value == e.FilesCount)
+
+                        if (e.Value == 100)
                         {
-                            MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony",
-                                MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            receiveFilesService.SendFileProgressEvent -= SendFilesService_SendFileProgress;
+                            //MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony",
+                            //    MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }
                     }
                     else
                     {
                         GeneralProgressLabel.Text = $"Wysłano plików: {(e.Value * selectedFilesPath.Count) / 100}/{selectedFilesPath.Count}";
 
-                        if (e.Value == selectedFilesPath.Count)
+                        if (e.Value == 100)
                         {
                             MessageBox.Show("Pomyślnie wysłano pliki", "Transfer zakończony",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
 
                             selectedFilesPath.Clear();
                         }
@@ -422,6 +423,8 @@ namespace OFTP_Client
             else
             {
                 await sendFilesService.SendEndConnection();
+
+                sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
 
                 isConnected = false;
                 ConnectButton.Text = "Połącz z użytkownikiem";
