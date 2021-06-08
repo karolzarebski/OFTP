@@ -328,9 +328,9 @@ namespace ServerLibrary.Services
                         {
                             try
                             {
-                                var message = await ReceiveMessage(client);
+                                var message = (await ReceiveMessage(client)).Split('|');
 
-                                if (message == CodeNames.LogOut)
+                                if (message[0] == CodeNames.LogOut)
                                 {
                                     _logger.LogInformation($"User {client.Client.RemoteEndPoint} logged out");
                                     Console.WriteLine($"User {client.Client.RemoteEndPoint} logged out");
@@ -347,9 +347,9 @@ namespace ServerLibrary.Services
                                     break;
                                 }
 
-                                else if (message == CodeNames.AskUserForConnection)
+                                else if (message[0] == CodeNames.AskUserForConnection)
                                 {
-                                    var tempClientLogin = await ReceiveMessage(client);
+                                    var tempClientLogin = message[1];
                                     var tempClientIp = availableUsers[tempClientLogin];
 
                                     var tempClient = clients.Keys.Where(x => x.Client.RemoteEndPoint.ToString().StartsWith(tempClientIp)).FirstOrDefault();
@@ -373,7 +373,7 @@ namespace ServerLibrary.Services
 
                                     usersConnections.Remove(user);
                                 }
-                                else if (message == CodeNames.AcceptedIncomingConnection)
+                                else if (message[0] == CodeNames.AcceptedIncomingConnection)
                                 {
                                     var user = usersConnections.Where(x => x._userAcceptingConnection == login
                                                 && x._userAcceptingConnectionIP == availableUsers[login]).FirstOrDefault();
@@ -381,10 +381,10 @@ namespace ServerLibrary.Services
                                     if (user.IsMe(login, availableUsers[login]))
                                     {
                                         user._userAccepted = true;
-                                        SendMessage(client, CodeNames.AcceptedIncomingConnection, user._userStartingConnectionIP);
+                                        SendMessage(client, CodeNames.AcceptedIncomingConnection, $"{user._userStartingConnection}|{user._userStartingConnectionIP}");
                                     }
                                 }
-                                else if (message == CodeNames.RejectedIncomingConnection)
+                                else if (message[0] == CodeNames.RejectedIncomingConnection)
                                 {
                                     var user = usersConnections.Where(x => x._userAcceptingConnection == login
                                                 && x._userAcceptingConnectionIP == availableUsers[login]).FirstOrDefault();

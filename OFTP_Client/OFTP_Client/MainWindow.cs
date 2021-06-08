@@ -91,10 +91,9 @@ namespace OFTP_Client
                                }
                                if (accepted)
                                {
-                                   string ip = await ReceiveMessage();
+                                   string ip = data[1];
 
                                    receiveFilesService = new ReceiveFilesService(ip);
-
                                    receiveFilesService.SendFileProgressEvent += SendFilesService_SendFileProgress;
 
                                    if (await receiveFilesService.WaitForIncomingConnection())
@@ -131,7 +130,7 @@ namespace OFTP_Client
                                    StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
                                });
 
-                               string ip = await ReceiveMessage();
+                               string ip = data[1];
 
                                sendFilesService = new SendFilesService(ip);
                                sendFilesService.SendFileProgress += SendFilesService_SendFileProgress;
