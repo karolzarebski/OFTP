@@ -42,7 +42,7 @@ namespace OFTP_Client
 
             Task.Run(async () =>
            {
-               var buffer = new byte[2048];
+               var buffer = new byte[5];
 
                bool accepted = false;
 
@@ -50,148 +50,157 @@ namespace OFTP_Client
                {
                    try
                    {
-                       await _tcpClient.GetStream().ReadAsync(buffer, 0, buffer.Length, cancellationToken);
+                       await _tcpClient.GetStream().ReadAsync(buffer, 0, 5, cancellationToken);
 
                        if (!cancellationToken.IsCancellationRequested)
                        {
                            var msgLength = buffer[3] * 256 + buffer[4];
                            var code = Encoding.UTF8.GetString(buffer.Take(3).ToArray());
+                           buffer = new byte[msgLength];
 
-                           var data = (await cryptoService.DecryptData(buffer.Skip(5).Take(msgLength).ToArray())).Split('|');
-                           var login = string.Empty;
-
-                           if (code == CodeNames.NewUser)
+                           if (msgLength != 0)
                            {
-                               login = data[0];
-                               UsersChanged(login);
-                           }
-                           else if (code == CodeNames.AskUserForConnection)
-                           {
-                               login = data[0];
+                               await _tcpClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
 
-                               switch (MessageBox.Show($"Czy chcesz akceptować połączenie od: {login}?", "Połączenie przychodzące",
-                                   MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+                               var data = (await cryptoService.DecryptData(buffer)).Split('|');
+                               var login = string.Empty;
+
+                               if (code == CodeNames.NewUser)
                                {
-                                   case DialogResult.Yes:
-                                       await SendMessage(CodeNames.AcceptedIncomingConnection);
-
-                                       accepted = true;
-
-                                       StateLabel.Invoke((MethodInvoker)delegate
-                                       {
-                                           StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
-                                       });
-
-                                       break;
-                                   case DialogResult.No:
-                                       accepted = false;
-
-                                       await SendMessage(CodeNames.RejectedIncomingConnection);
-                                       break;
+                                   login = data[0];
+                                   UsersChanged(login);
                                }
-                               if (accepted)
+                               else if (code == CodeNames.AskUserForConnection)
                                {
-                                   string ip = data[1];
+                                   login = data[0];
 
-                                   receiveFilesService = new ReceiveFilesService(ip);
-                                   receiveFilesService.SendFileProgressEvent += SendFilesService_SendFileProgress;
-
-                                   if (await receiveFilesService.WaitForIncomingConnection())
+                                   switch (MessageBox.Show($"Czy chcesz akceptować połączenie od: {login}?", "Połączenie przychodzące",
+                                       MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                                    {
-                                       while (await receiveFilesService.AcceptFiles())
-                                       {
-                                           if (!await receiveFilesService.ReceiveFiles())
+                                       case DialogResult.Yes:
+                                           await SendMessage(CodeNames.AcceptedIncomingConnection);
+
+                                           accepted = true;
+
+                                           StateLabel.Invoke((MethodInvoker)delegate
                                            {
-                                               break;
-                                           }
-                                       }
+                                               StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
+                                           });
 
-                                       StateLabel.Invoke((MethodInvoker)delegate
+                                           break;
+                                       case DialogResult.No:
+                                           accepted = false;
+
+                                           await SendMessage(CodeNames.RejectedIncomingConnection);
+                                           break;
+                                   }
+                                   if (accepted)
+                                   {
+                                       string ip = (await ReceiveMessage()).Split('|')[2];
+
+                                       receiveFilesService = new ReceiveFilesService(ip);
+                                       receiveFilesService.SendFileProgressEvent += SendFilesService_SendFileProgress;
+
+                                       if (await receiveFilesService.WaitForIncomingConnection())
                                        {
-                                           StateLabel.Text = "Stan: Oczekiwanie";
-                                           GeneralProgressBar.Value = 0;
-                                           GeneralProgressLabel.Text = "Otrzymano plików: ";
-                                           SendFileProgressBar.Value = 0;
-                                           SendFileProgressLabel.Text = "Postęp: ";
-                                       });
+                                           while (await receiveFilesService.AcceptFiles())
+                                           {
+                                               if (!await receiveFilesService.ReceiveFiles())
+                                               {
+                                                   break;
+                                               }
+                                           }
 
-                                       receiveFilesService.SendFileProgressEvent -= SendFilesService_SendFileProgress;
+                                           StateLabel.Invoke((MethodInvoker)delegate
+                                           {
+                                               StateLabel.Text = "Stan: Oczekiwanie";
+                                               GeneralProgressBar.Value = 0;
+                                               GeneralProgressLabel.Text = "Otrzymano plików: ";
+                                               SendFileProgressBar.Value = 0;
+                                               SendFileProgressLabel.Text = "Postęp: ";
+                                           });
 
-                                       receiveFilesService.Dispose();
+                                           receiveFilesService.SendFileProgressEvent -= SendFilesService_SendFileProgress;
+
+                                           receiveFilesService.Dispose();
+                                       }
                                    }
                                }
-                           }
-                           else if (code == CodeNames.AcceptedIncomingConnection)
-                           {
-                               login = data[0];
-
-                               StateLabel.Invoke((MethodInvoker)delegate
+                               else if (code == CodeNames.AcceptedIncomingConnection)
                                {
-                                   StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
-                               });
+                                   login = data[0];
 
-                               string ip = data[1];
-
-                               sendFilesService = new SendFilesService(ip);
-                               sendFilesService.SendFileProgress += SendFilesService_SendFileProgress;
-
-                               if (await sendFilesService.Connect())
-                               {
-                                   isConnected = true;
-
-                                   filePath = string.Empty;
-
-                                   var t = new Thread(() =>
+                                   StateLabel.Invoke((MethodInvoker)delegate
                                    {
-                                       FolderBrowserDialog fbd = new FolderBrowserDialog();
-                                       fbd.RootFolder = Environment.SpecialFolder.MyComputer;
-                                       fbd.ShowNewFolderButton = true;
-                                       if (fbd.ShowDialog() == DialogResult.Cancel)
-                                           return;
-
-                                       filePath = fbd.SelectedPath;
+                                       StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
                                    });
 
-                                   t.SetApartmentState(ApartmentState.STA);
-                                   t.Start();
-                                   t.Join();
+                                   string ip = data[1];
 
-                                   if (filePath != string.Empty)
+                                   sendFilesService = new SendFilesService(ip);
+                                   sendFilesService.SendFileProgress += SendFilesService_SendFileProgress;
+
+                                   if (await sendFilesService.Connect())
                                    {
-                                       FilesTreeView.Invoke((MethodInvoker)delegate
-                                       {
-                                           FilesTreeView.Nodes.Clear();
-                                           DirectoryInfo di = new DirectoryInfo(filePath);
-                                           TreeNode tds = FilesTreeView.Nodes.Add(di.Name);
+                                       isConnected = true;
 
-                                           tds.Tag = di.FullName;
-                                           tds.StateImageIndex = 0;
-                                           LoadFiles(filePath, tds);
-                                           LoadSubDirectories(filePath, tds);
+                                       filePath = string.Empty;
+
+                                       var t = new Thread(() =>
+                                       {
+                                           FolderBrowserDialog fbd = new FolderBrowserDialog();
+                                           fbd.RootFolder = Environment.SpecialFolder.MyComputer;
+                                           fbd.ShowNewFolderButton = true;
+                                           if (fbd.ShowDialog() == DialogResult.Cancel)
+                                               return;
+
+                                           filePath = fbd.SelectedPath;
                                        });
+
+                                       t.SetApartmentState(ApartmentState.STA);
+                                       t.Start();
+                                       t.Join();
+
+                                       if (filePath != string.Empty)
+                                       {
+                                           FilesTreeView.Invoke((MethodInvoker)delegate
+                                           {
+                                               FilesTreeView.Nodes.Clear();
+                                               DirectoryInfo di = new DirectoryInfo(filePath);
+                                               TreeNode tds = FilesTreeView.Nodes.Add(di.Name);
+
+                                               tds.Tag = di.FullName;
+                                               tds.StateImageIndex = 0;
+                                               LoadFiles(filePath, tds);
+                                               LoadSubDirectories(filePath, tds);
+                                           });
+                                       }
+                                   }
+                                   else
+                                   {
+                                       isConnected = false;
+                                       SendButton.Enabled = false;
+                                       MessageBox.Show("Wystąpił błąd podczas łącznia klientem", "Błąd połączenia",
+                                           MessageBoxButtons.OK, MessageBoxIcon.Error);
                                    }
                                }
-                               else
-                               {
-                                   isConnected = false;
-                                   SendButton.Enabled = false;
-                                   MessageBox.Show("Wystąpił błąd podczas łącznia klientem", "Błąd połączenia",
-                                       MessageBoxButtons.OK, MessageBoxIcon.Error);
-                               }
                            }
-                           else if (code == CodeNames.RejectedIncomingConnection)
+                           else
                            {
-                               SendButton.Enabled = false;
-                               MessageBox.Show("Klient odmówił połączenia", "Odmowa połączenia",
-                                   MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                               isConnected = false;
-
-                               ConnectButton.Invoke((MethodInvoker)delegate
+                               if (code == CodeNames.RejectedIncomingConnection)
                                {
-                                   ConnectButton.Text = "Połącz z użytkownikiem";
-                                   StateLabel.Text = "Stan: Oczekiwanie";
-                               });
+                                   SendButton.Enabled = false;
+                                   MessageBox.Show("Klient odmówił połączenia", "Odmowa połączenia",
+                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                                   isConnected = false;
+
+                                   ConnectButton.Invoke((MethodInvoker)delegate
+                                   {
+                                       ConnectButton.Text = "Połącz z użytkownikiem";
+                                       StateLabel.Text = "Stan: Oczekiwanie";
+                                   });
+                               }
                            }
                        }
                    }
