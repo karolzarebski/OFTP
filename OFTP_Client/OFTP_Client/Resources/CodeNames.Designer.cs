@@ -133,6 +133,24 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 110.
+        /// </summary>
+        internal static string DiffieHellmanIV {
+            get {
+                return ResourceManager.GetString("DiffieHellmanIV", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 109.
+        /// </summary>
+        internal static string DiffieHellmanKey {
+            get {
+                return ResourceManager.GetString("DiffieHellmanKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 213.
         /// </summary>
         internal static string Disconnect {

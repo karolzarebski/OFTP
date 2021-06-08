@@ -70,42 +70,78 @@ namespace ServerLibrary.Services
             {
                 if (e.newClient != client.Key)
                 {
-                    await SendMessage($"{CodeNames.NewUser}|{e.Username}", client.Key);
+                    await SendMessage(client.Key, CodeNames.NewUser, e.Username);
                 }
             }
         }
 
-        private async Task SendMessage(string message, TcpClient client)
+        //private async Task SendMessage(string message, TcpClient client)
+        //{
+        //    var encryptedData = await clients[client].EncryptData(message);
+
+        //    var encryptedMessage = new byte[encryptedData.Length + 2];
+
+        //    Array.Copy(encryptedData, 0, encryptedMessage, 2, encryptedData.Length);
+
+        //    var msgLen = encryptedData.Length;
+
+        //    encryptedMessage[0] = (byte)(msgLen / 256);
+        //    encryptedMessage[1] = (byte)(msgLen % 256);
+
+        //    await client.GetStream().WriteAsync(encryptedMessage);
+        //}
+
+        private async Task SendMessage(TcpClient client, string code, string message)
         {
             var encryptedData = await clients[client].EncryptData(message);
-
-            var encryptedMessage = new byte[encryptedData.Length + 2];
-
-            Array.Copy(encryptedData, 0, encryptedMessage, 2, encryptedData.Length);
-
-            var msgLen = encryptedData.Length;
-
-            encryptedMessage[0] = (byte)(msgLen / 256);
-            encryptedMessage[1] = (byte)(msgLen % 256);
-
+            var encryptedMessage = new byte[encryptedData.Length + 5];
+            Array.Copy(encryptedData, 0, encryptedMessage, 5, encryptedData.Length);
+            Array.Copy(Encoding.UTF8.GetBytes(code), 0, encryptedMessage, 0, 3);
+            var len = encryptedData.Length;
+            encryptedMessage[3] = (byte)(len / 256);
+            encryptedMessage[4] = (byte)(len % 256);
             await client.GetStream().WriteAsync(encryptedMessage);
         }
 
-        private async Task<string> ReceiveMessage(TcpClient client, bool isCodeReceived = false)
+        private async Task SendMessage(TcpClient client, string code)
         {
-            if (isCodeReceived)
+            var encryptedMessage = new byte[5];
+            Array.Copy(Encoding.UTF8.GetBytes(code), 0, encryptedMessage, 0, 3);
+            encryptedMessage[3] = 0;
+            encryptedMessage[4] = 0;
+            await client.GetStream().WriteAsync(encryptedMessage);
+        }
+
+        private async Task<string> ReceiveMessage(TcpClient client)
+        {
+            var header = new byte[5];
+            await client.GetStream().ReadAsync(header, 0, 5);
+
+            var len = header[3] * 256 + header[4];
+
+            if (len != 0)
             {
-                var codeBuffer = new byte[256]; //TODO check length
-                await client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
-                return await clients[client].DecryptData(codeBuffer.Skip(2).Take(codeBuffer[0] * 256 + codeBuffer[1]).ToArray());
+                var message = new byte[len];
+                await client.GetStream().ReadAsync(message, 0, len);
+
+                return $"{Encoding.UTF8.GetString(header.Take(3).ToArray())}|{await clients[client].DecryptData(message)}";
             }
-            else
-            {
-                var messageBuffer = new byte[1024];
-                await client.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
-                return await clients[client].DecryptData(messageBuffer.Skip(2)
-                        .Take(messageBuffer[0] * 256 + messageBuffer[1]).ToArray());
-            }
+
+            return Encoding.UTF8.GetString(header.Take(3).ToArray());
+
+            //if (isCodeReceived)
+            //{
+            //    var codeBuffer = new byte[256]; //TODO check length
+            //    await client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
+            //    return await clients[client].DecryptData(codeBuffer.Skip(2).Take(codeBuffer[0] * 256 + codeBuffer[1]).ToArray());
+            //}
+            //else
+            //{
+            //    var messageBuffer = new byte[1024];
+            //    await client.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
+            //    return await clients[client].DecryptData(messageBuffer.Skip(2)
+            //            .Take(messageBuffer[0] * 256 + messageBuffer[1]).ToArray());
+            //}
         }
 
         public async Task StartServer()
@@ -130,17 +166,33 @@ namespace ServerLibrary.Services
 
                 Task.Run(async () =>
                 {
-                    await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(CodeNames.Connected));
+                    await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes($"{CodeNames.Connected}00"));
 
                     var cryptoService = new CryptoService();
 
                     var publicKey = cryptoService.GeneratePublicKey();
-                    await client.GetStream().WriteAsync(publicKey);
 
-                    byte[] clientPublicKey = new byte[72];
+                    var diffieHellmanMessage = new byte[publicKey.Length + 5];
+
+                    Array.Copy(publicKey, 0, diffieHellmanMessage, 5, publicKey.Length);
+                    Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanKey), 0, diffieHellmanMessage, 0, 3);
+                    diffieHellmanMessage[3] = 0;
+                    diffieHellmanMessage[4] = 72;
+                    await client.GetStream().WriteAsync(diffieHellmanMessage);
+
+                    byte[] clientPublicKey = new byte[77];
                     await client.GetStream().ReadAsync(clientPublicKey, 0, clientPublicKey.Length);
 
-                    await client.GetStream().WriteAsync(cryptoService.GenerateIV(clientPublicKey));
+                    diffieHellmanMessage = new byte[21];
+
+                    var iv = cryptoService.GenerateIV(clientPublicKey.Skip(5).ToArray());
+
+                    Array.Copy(iv, 0, diffieHellmanMessage, 5, iv.Length);
+                    Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanIV), 0, diffieHellmanMessage, 0, 3);
+                    diffieHellmanMessage[3] = 0;
+                    diffieHellmanMessage[4] = 16;
+
+                    await client.GetStream().WriteAsync(diffieHellmanMessage);
 
                     bool loggedIn = false;
 
@@ -153,7 +205,7 @@ namespace ServerLibrary.Services
 
                     while (!loggedIn)
                     {
-                        var data = (await ReceiveMessage(client, false)).Split('|');
+                        var data = (await ReceiveMessage(client)).Split('|');
 
                         if (data[0] == CodeNames.Login)
                         {
@@ -163,7 +215,7 @@ namespace ServerLibrary.Services
                             {
                                 if (await _loginService.CheckLoginCredentials(login, data[2]))
                                 {
-                                    await SendMessage(CodeNames.CorrectLoginData, client);
+                                    await SendMessage(client, CodeNames.CorrectLoginData);
                                     loggedIn = true;
 
                                     if (!availableUsers.ContainsKey(login))
@@ -179,7 +231,7 @@ namespace ServerLibrary.Services
 
                                 else
                                 {
-                                    await SendMessage(CodeNames.WrongLoginData, client);
+                                    await SendMessage(client, CodeNames.WrongLoginData);
                                     loggedIn = false;
                                     //clients.Remove(client);
                                 }
@@ -187,7 +239,7 @@ namespace ServerLibrary.Services
                             else
                             {
                                 loggedIn = false;
-                                await SendMessage(CodeNames.UserAlreadyLoggedIn, client);
+                                await SendMessage(client, CodeNames.UserAlreadyLoggedIn);
                             }
 
                         }
@@ -198,7 +250,7 @@ namespace ServerLibrary.Services
 
                             if (registrationResultCode.ToString() == CodeNames.CorrectRegisterData)
                             {
-                                await SendMessage(registrationResultCode.ToString(), client);
+                                await SendMessage(client, registrationResultCode.ToString());
                                 loggedIn = true;
 
                                 if (!availableUsers.ContainsKey(login))
@@ -213,7 +265,7 @@ namespace ServerLibrary.Services
                             }
                             else
                             {
-                                await SendMessage(registrationResultCode.ToString(), client);
+                                await SendMessage(client, registrationResultCode.ToString());
                                 loggedIn = false;
                                 //clients.Remove(client);
                             }
@@ -233,7 +285,7 @@ namespace ServerLibrary.Services
 
                     if (loggedIn)
                     {
-                        var usersCode = await ReceiveMessage(client, true);
+                        var usersCode = await ReceiveMessage(client);
 
                         if (usersCode == CodeNames.ActiveUsers)
                         {
@@ -241,9 +293,9 @@ namespace ServerLibrary.Services
                             {
                                 var tempUsers = availableUsers;
 
-                                await SendMessage($"{CodeNames.ActiveUsers}|{tempUsers.Count - 1}", client);
+                                await SendMessage(client, CodeNames.ActiveUsers, $"{tempUsers.Count - 1}");
 
-                                if (await ReceiveMessage(client, true) == CodeNames.ActiveUsers)
+                                if (await ReceiveMessage(client) == CodeNames.ActiveUsers)
                                 {
                                     while (tempUsers.Any())
                                     {
@@ -260,7 +312,7 @@ namespace ServerLibrary.Services
                                             }
                                         }
 
-                                        await SendMessage(preparatedData.Remove(preparatedData.Length - 1), client);
+                                        await SendMessage(client, CodeNames.ActiveUsers, preparatedData.Remove(preparatedData.Length - 1));
 
                                         await Task.Delay(1); //server sends data too fast
                                     }
@@ -268,7 +320,7 @@ namespace ServerLibrary.Services
                             }
                             else
                             {
-                                await SendMessage($"{CodeNames.ActiveUsers}|-1", client);
+                                await SendMessage(client, CodeNames.ActiveUsers, "-1");
                             }
                         }
 
@@ -276,7 +328,7 @@ namespace ServerLibrary.Services
                         {
                             try
                             {
-                                var message = await ReceiveMessage(client, true);
+                                var message = await ReceiveMessage(client);
 
                                 if (message == CodeNames.LogOut)
                                 {
@@ -285,7 +337,7 @@ namespace ServerLibrary.Services
 
                                     usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
 
-                                    await SendMessage(CodeNames.LogOut, client);
+                                    await SendMessage(client, CodeNames.LogOut);
 
                                     clients.Remove(client);
                                     availableUsers.Remove(login);
@@ -304,7 +356,7 @@ namespace ServerLibrary.Services
 
                                     usersConnections.Add(new UsersConnection(login, availableUsers[login], tempClientLogin, tempClientIp));
 
-                                    await SendMessage($"{CodeNames.AskUserForConnection}|{login}", tempClient);
+                                    await SendMessage(tempClient, CodeNames.AskUserForConnection, login);
 
                                     var user = usersConnections.Where(x => x._userStartingConnection == login).FirstOrDefault();
 
@@ -312,12 +364,11 @@ namespace ServerLibrary.Services
 
                                     if (user._userRejected)
                                     {
-                                        await SendMessage($"{CodeNames.RejectedIncomingConnection}|0", client);
+                                        await SendMessage(client, CodeNames.RejectedIncomingConnection); //0 tu było
                                     }
                                     else
                                     {
-                                        await SendMessage($"{CodeNames.AcceptedIncomingConnection}|{tempClientLogin}", client);
-                                        await SendMessage(tempClientIp, client);
+                                        await SendMessage(client, CodeNames.AcceptedIncomingConnection, $"{tempClientLogin}|{tempClientIp}");
                                     }
 
                                     usersConnections.Remove(user);
@@ -330,7 +381,7 @@ namespace ServerLibrary.Services
                                     if (user.IsMe(login, availableUsers[login]))
                                     {
                                         user._userAccepted = true;
-                                        SendMessage(user._userStartingConnectionIP, client);
+                                        SendMessage(client, CodeNames.AcceptedIncomingConnection, user._userStartingConnectionIP);
                                     }
                                 }
                                 else if (message == CodeNames.RejectedIncomingConnection)

@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,140 +16,159 @@ namespace OFTP_Client
         private NetworkStream stream;
         private CryptoService _cryptoService = new CryptoService();
         private List<string> availableUsers = new List<string>();
-        private bool connected = false, isLoggedIn = false;
+        private bool connected = false, loginSite = true;
+
+        private string serverIpAddress = "192.168.1.14";
 
         public ConnectionForm()
         {
             InitializeComponent();
 
-            ServerIpTextBox.Text = "192.168.1.14";
-            LoginTextBox.Text = "karol123";
-            PasswordTextBox.Text = "Ww123456789";
+            //ServerIpTextBox.Text = "192.168.1.14";
+            //LoginTextBox.Text = "karol123";
+            //PasswordTextBox.Text = "Ww123456789";
+
+            ConnectToServer();
         }
 
-        private IPAddress IsServerConfigurationCorrect(string ipAddress)
+        private async Task<string> ReceiveMessage()
         {
-            try
+            var header = new byte[5];
+            await client.GetStream().ReadAsync(header, 0, 5);
+
+            var len = header[3] * 256 + header[4];
+
+            if (len != 0)
             {
-                return IPAddress.Parse(ipAddress);
+                var message = new byte[len];
+                await client.GetStream().ReadAsync(message, 0, len);
+
+                return $"{Encoding.UTF8.GetString(header.Take(3).ToArray())}|{await _cryptoService.DecryptData(message)}";
             }
-            catch
-            {
-                return default;
-            }
+
+            return Encoding.UTF8.GetString(header.Take(3).ToArray());
+
+            //if (isCodeReceived)
+            //{
+            //    var codeBuffer = new byte[256]; //TODO check length
+            //    await client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
+            //    return await clients[client].DecryptData(codeBuffer.Skip(2).Take(codeBuffer[0] * 256 + codeBuffer[1]).ToArray());
+            //}
+            //else
+            //{
+            //    var messageBuffer = new byte[1024];
+            //    await client.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
+            //    return await clients[client].DecryptData(messageBuffer.Skip(2)
+            //            .Take(messageBuffer[0] * 256 + messageBuffer[1]).ToArray());
+            //}
         }
 
-        private async Task<string> ReceiveMessage(bool isCodeReceived = false)
-        {
-            if (isCodeReceived)
-            {
-                var codeBuffer = new byte[256]; //TODO check length
-                await stream.ReadAsync(codeBuffer, 0, codeBuffer.Length);
-                return await _cryptoService.DecryptData(codeBuffer.Skip(2).Take(codeBuffer[0] * 256 + codeBuffer[1]).ToArray());
-            }
-            else
-            {
-                var messageBuffer = new byte[1024];
-                await stream.ReadAsync(messageBuffer, 0, messageBuffer.Length);
-                return await _cryptoService.DecryptData(messageBuffer.Skip(2)
-                        .Take(messageBuffer[0] * 256 + messageBuffer[1]).ToArray());
-            }
-        }
-
-        private async Task SendMessage(string message)
+        private async Task SendMessage(string code, string message)
         {
             var encryptedData = await _cryptoService.EncryptData(message);
-            var encryptedMessage = new byte[encryptedData.Length + 2];
-            Array.Copy(encryptedData, 0, encryptedMessage, 2, encryptedData.Length);
+            var encryptedMessage = new byte[encryptedData.Length + 5];
+            Array.Copy(encryptedData, 0, encryptedMessage, 5, encryptedData.Length);
+            Array.Copy(Encoding.UTF8.GetBytes(code), 0, encryptedMessage, 0, 3);
             var len = encryptedData.Length;
-            encryptedMessage[0] = (byte)(len / 256);
-            encryptedMessage[1] = (byte)(len % 256);
+            encryptedMessage[3] = (byte)(len / 256);
+            encryptedMessage[4] = (byte)(len % 256);
+            await stream.WriteAsync(encryptedMessage);
+        }       
+        
+        private async Task SendMessage(string code)
+        {
+            var encryptedMessage = new byte[5];
+            Array.Copy(Encoding.UTF8.GetBytes(code), 0, encryptedMessage, 0, 3);
+            encryptedMessage[3] = 0;
+            encryptedMessage[4] = 0;
             await stream.WriteAsync(encryptedMessage);
         }
 
-        private async void ConnectToServer(IPAddress ipAddress)
+        private async void ConnectToServer()
         {
             try
             {
-                ConnectButton.Text = "Łączenie";
-                ConnectButton.Enabled = false;
+                TryAgainButton.Visible = false;
 
-                ServerConnectionLabel.Text = "Stan: Łączenie";
+                await Task.Delay(1000);
+
+                TryAgainButton.Text = "Łączenie";
+                TryAgainButton.Enabled = false;
+
+                ServerConnectionLabel.Text = "Stan połączenia: Łączenie";
                 ServerConnectionLabel.ForeColor = Color.Orange;
 
-                await (client = new TcpClient()).ConnectAsync(ipAddress, 12137);
+                await (client = new TcpClient()).ConnectAsync(serverIpAddress, 12137);
 
                 ServerConnectionLabel.ForeColor = Color.Green;
-                ServerConnectionLabel.Text = "Stan: Połączono";
+                ServerConnectionLabel.Text = "Stan połączenia: Połączono";
             }
             catch (Exception ex)
             {
-                ConnectButton.Text = "Połącz";
-                ConnectButton.Enabled = true;
+                TryAgainButton.Text = "Spróbuj ponownie";
+                TryAgainButton.Enabled = true;
 
                 ServerConnectionLabel.ForeColor = Color.Red;
-                ServerConnectionLabel.Text = "Stan: Rozłączono";
+                ServerConnectionLabel.Text = "Stan połączenia: Rozłączono";
+
+                TryAgainButton.Visible = true;
 
                 MessageBox.Show($"Błąd podczas łączenia się z serwerem\nTreść błędu: {ex.Message}",
                     "Błąd połączenia", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
                 return;
             }
 
             stream = client.GetStream();
 
-            var code = new byte[3]; //TODO check size
+            var code = new byte[5]; //TODO check size
             await stream.ReadAsync(code, 0, code.Length);
 
-            if (Encoding.UTF8.GetString(code) == CodeNames.Connected)
+            if (Encoding.UTF8.GetString(code.Take(3).ToArray()) == CodeNames.Connected)
             {
                 LoginButton.Enabled = true;
                 RegisterButton.Enabled = true;
-                ConnectButton.Text = "Rozłącz";
-                ConnectButton.Enabled = true;
+                TryAgainButton.Text = "Rozłącz";
+                TryAgainButton.Enabled = true;
                 connected = true;
 
-                byte[] publicKey = new byte[72];
+                byte[] publicKey = new byte[77];
                 await stream.ReadAsync(publicKey, 0, publicKey.Length);
 
-                var clientPublicKey = _cryptoService.GeneratePublicKey();
-                await stream.WriteAsync(clientPublicKey);
+                var clientPublicKey = new byte[77];           
 
-                byte[] iv = new byte[16];
+                Array.Copy(_cryptoService.GeneratePublicKey(), 0, clientPublicKey, 5, 72);
+                Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanKey), 0, clientPublicKey, 0, 3);
+                clientPublicKey[3] = 0;
+                clientPublicKey[4] = 72;
+                await client.GetStream().WriteAsync(clientPublicKey);
+
+                byte[] iv = new byte[21];
                 await stream.ReadAsync(iv, 0, iv.Length);
-                _cryptoService.AssignIV(publicKey, iv);
+                _cryptoService.AssignIV(publicKey.Skip(5).ToArray(), iv.Skip(5).ToArray());
             }
         }
 
-        private async void ConnectButton_Click(object sender, EventArgs e)
+        private void TryAgainButton_Click(object sender, EventArgs e)
         {
-            if (connected)
-            {
-                await SendMessage(CodeNames.Disconnect);
+            //if (connected)
+            //{
+            //    await SendMessage(CodeNames.Disconnect);
 
-                ServerConnectionLabel.ForeColor = Color.Red;
-                ServerConnectionLabel.Text = "Stan: Rozłączno";
+            //    ServerConnectionLabel.ForeColor = Color.Red;
+            //    ServerConnectionLabel.Text = "Stan: Rozłączno";
 
-                LoginButton.Enabled = false;
-                RegisterButton.Enabled = false;
-                ConnectButton.Text = "Połącz";
-                LoginTextBox.Text = "";
-                PasswordTextBox.Text = "";
-                connected = false;
-            }
-            else
-            {
-                var serwerIP = IsServerConfigurationCorrect(ServerIpTextBox.Text);
-
-                if (serwerIP != default)
-                {
-                    ConnectToServer(serwerIP);
-                }
-                else
-                {
-                    MessageBox.Show("Niepoprawny adres IP serwera\nPodaj inny i spróbuj ponownie", "Błędny adres IP",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
+            //    LoginButton.Enabled = false;
+            //    RegisterButton.Enabled = false;
+            //    TryAgainButton.Text = "Połącz";
+            //    LoginTextBox.Text = "";
+            //    PasswordTextBox.Text = "";
+            //    connected = false;
+            //}
+            //else
+            //{
+                ConnectToServer();
+            //}
         }
 
 
@@ -161,8 +179,8 @@ namespace OFTP_Client
 
             if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
-                await SendMessage($"{CodeNames.Login}|{login}|{password}");
-                var message = await ReceiveMessage(true);
+                await SendMessage(CodeNames.Login, $"{login}|{password}");
+                var message = await ReceiveMessage();
 
                 if (message == CodeNames.CorrectLoginData)
                 {
@@ -170,7 +188,7 @@ namespace OFTP_Client
 
                     await SendMessage(CodeNames.ActiveUsers);
 
-                    var availableUsersCount = (await ReceiveMessage(false)).Split('|');
+                    var availableUsersCount = (await ReceiveMessage()).Split('|');
 
                     if (availableUsersCount[0] == CodeNames.ActiveUsers)
                     {
@@ -180,7 +198,7 @@ namespace OFTP_Client
 
                         while (processedUsersCount >= 0)
                         {
-                            var users = (await ReceiveMessage(false)).Split('\n');
+                            var users = (await ReceiveMessage()).Split('|')[1].Split('\n');
 
                             foreach (var craftedUser in users)
                             {
@@ -219,9 +237,9 @@ namespace OFTP_Client
 
             if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
-                await SendMessage($"{CodeNames.Register}|{login}|{password}");
+                await SendMessage(CodeNames.Register, $"{login}|{password}");
 
-                var message = await ReceiveMessage(true);
+                var message = await ReceiveMessage();
 
                 if (message == CodeNames.CorrectRegisterData)
                 {
@@ -230,7 +248,7 @@ namespace OFTP_Client
 
                     await SendMessage(CodeNames.ActiveUsers);
 
-                    var availableUsersCount = (await ReceiveMessage(false)).Split('|');
+                    var availableUsersCount = (await ReceiveMessage()).Split('|');
 
                     if (availableUsersCount[0] == CodeNames.ActiveUsers)
                     {
@@ -240,7 +258,7 @@ namespace OFTP_Client
 
                         while (processedUsersCount >= 0)
                         {
-                            var users = (await ReceiveMessage(false)).Split('\n');
+                            var users = (await ReceiveMessage()).Split('|')[1].Split('\n');  
 
                             foreach (var craftedUser in users)
                             {
@@ -277,6 +295,15 @@ namespace OFTP_Client
         private void ConnectionForm_Load(object sender, EventArgs e)
         {
             ServerConnectionLabel.ForeColor = Color.Red;
+
+            RepeatPasswordLabel.Visible = false;
+            RepeatPasswordTextBox.Visible = false;
+
+            RegisterButton.Visible = false;
+
+            TryAgainButton.Visible = false;
+
+            Size = new Size(320, 335);
         }
 
         private void ShowPasswordCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -284,16 +311,66 @@ namespace OFTP_Client
             if (ShowPasswordCheckBox.Checked)
             {
                 PasswordTextBox.PasswordChar = '\0';
+                RepeatPasswordTextBox.PasswordChar = '\0';
             }
             else
             {
                 PasswordTextBox.PasswordChar = '*';
+                RepeatPasswordTextBox.PasswordChar = '*';
+            }
+        }
+
+        private void RegisterOrLoginLabel_Click(object sender, EventArgs e)
+        {
+            if (loginSite)
+            {
+                loginSite = false;
+
+                RegisterOrLoginLabel.Location = new Point(28, 277);
+                RegisterOrLoginLabel.Text = "Zaloguj się";
+                LoginButton.Visible = false;
+                RegisterButton.Visible = true;
+
+                RepeatPasswordLabel.Visible = true;
+                RepeatPasswordTextBox.Visible = true;
+
+                Size = new Size(320, 374);
+            }
+            else
+            {
+                loginSite = true;
+
+                RegisterOrLoginLabel.Location = new Point(28, 226);
+                RegisterOrLoginLabel.Text = "Zarejestruj się";
+                LoginButton.Visible = true;
+                RegisterButton.Visible = false;
+
+                RepeatPasswordTextBox.Visible = false;
+                RepeatPasswordLabel.Visible = false;
+
+                Size = new Size(320, 335);
+            }
+        }
+
+        private void RepeatPasswordTextBox_TextChanged(object sender, EventArgs e)
+        {
+            if (PasswordTextBox.Text != RepeatPasswordTextBox.Text)
+            {
+                RepeatPasswordTextBox.BackColor = Color.Tomato;
+            }
+            else
+            {
+                RepeatPasswordTextBox.BackColor = Color.PaleGreen;
+
+                if (connected)
+                {
+                    RegisterButton.Enabled = true;
+                }
             }
         }
 
         private void InitMainWindow()
         {
-            isLoggedIn = true;
             var mainWindow = new MainWindow(client, _cryptoService, availableUsers, LoginTextBox.Text);
 
             mainWindow.FormClosing += (sender, e) =>
@@ -304,7 +381,7 @@ namespace OFTP_Client
                 Show();
                 LoginButton.Enabled = false;
                 RegisterButton.Enabled = false;
-                ConnectButton.Text = "Połącz";
+                TryAgainButton.Text = "Połącz";
                 LoginTextBox.Text = "";
                 PasswordTextBox.Text = "";
                 connected = false;

@@ -141,6 +141,12 @@
   <data name="CorrectRegisterData" xml:space="preserve">
     <value>104</value>
   </data>
+  <data name="DiffieHellmanIV" xml:space="preserve">
+    <value>110</value>
+  </data>
+  <data name="DiffieHellmanKey" xml:space="preserve">
+    <value>109</value>
+  </data>
   <data name="Disconnect" xml:space="preserve">
     <value>213</value>
   </data>
