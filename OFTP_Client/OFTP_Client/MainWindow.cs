@@ -7,6 +7,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -41,7 +42,7 @@ namespace OFTP_Client
 
             Task.Run(async () =>
            {
-               var buffer = new byte[2048];
+               var buffer = new byte[5];
 
                bool accepted = false;
 
@@ -49,146 +50,157 @@ namespace OFTP_Client
                {
                    try
                    {
-                       await _tcpClient.GetStream().ReadAsync(buffer, 0, buffer.Length, cancellationToken);
+                       await _tcpClient.GetStream().ReadAsync(buffer, 0, 5, cancellationToken);
 
                        if (!cancellationToken.IsCancellationRequested)
                        {
-                           var data = (await cryptoService.DecryptData(buffer.Skip(2).Take(buffer[0] * 256 + buffer[1]).ToArray())).Split('|');
-                           var login = string.Empty;
+                           var msgLength = buffer[3] * 256 + buffer[4];
+                           var code = Encoding.UTF8.GetString(buffer.Take(3).ToArray());
+                           buffer = new byte[msgLength];
 
-                           if (data[0] == CodeNames.NewUser)
+                           if (msgLength != 0)
                            {
-                               login = data[1];
-                               UsersChanged(login);
-                           }
-                           else if (data[0] == CodeNames.AskUserForConnection)
-                           {
-                               login = data[1];
+                               await _tcpClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
 
-                               switch (MessageBox.Show($"Czy chcesz akceptować połączenie od: {login}?", "Połączenie przychodzące",
-                                   MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+                               var data = (await cryptoService.DecryptData(buffer)).Split('|');
+                               var login = string.Empty;
+
+                               if (code == CodeNames.NewUser)
                                {
-                                   case DialogResult.Yes:
-                                       await SendMessage(CodeNames.AcceptedIncomingConnection);
-
-                                       accepted = true;
-
-                                       StateLabel.Invoke((MethodInvoker)delegate
-                                       {
-                                           StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
-                                       });
-
-                                       break;
-                                   case DialogResult.No:
-                                       accepted = false;
-
-                                       await SendMessage(CodeNames.RejectedIncomingConnection);
-                                       break;
+                                   login = data[0];
+                                   UsersChanged(login);
                                }
-                               if (accepted)
+                               else if (code == CodeNames.AskUserForConnection)
                                {
-                                   string ip = await ReceiveMessage();
+                                   login = data[0];
 
-                                   receiveFilesService = new ReceiveFilesService(ip);
-
-                                   receiveFilesService.SendFileProgressEvent += SendFilesService_SendFileProgress;
-
-                                   if (await receiveFilesService.WaitForIncomingConnection())
+                                   switch (MessageBox.Show($"Czy chcesz akceptować połączenie od: {login}?", "Połączenie przychodzące",
+                                       MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                                    {
-                                       while (await receiveFilesService.AcceptFiles())
-                                       {
-                                           if (!await receiveFilesService.ReceiveFiles())
+                                       case DialogResult.Yes:
+                                           await SendMessage(CodeNames.AcceptedIncomingConnection);
+
+                                           accepted = true;
+
+                                           StateLabel.Invoke((MethodInvoker)delegate
                                            {
-                                               break;
-                                           }
-                                       }
+                                               StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
+                                           });
 
-                                       StateLabel.Invoke((MethodInvoker)delegate
+                                           break;
+                                       case DialogResult.No:
+                                           accepted = false;
+
+                                           await SendMessage(CodeNames.RejectedIncomingConnection);
+                                           break;
+                                   }
+                                   if (accepted)
+                                   {
+                                       string ip = (await ReceiveMessage()).Split('|')[2];
+
+                                       receiveFilesService = new ReceiveFilesService(ip);
+                                       receiveFilesService.SendFileProgressEvent += SendFilesService_SendFileProgress;
+
+                                       if (await receiveFilesService.WaitForIncomingConnection())
                                        {
-                                           StateLabel.Text = "Stan: Oczekiwanie";
-                                           GeneralProgressBar.Value = 0;
-                                           GeneralProgressLabel.Text = "Otrzymano plików: ";
-                                           SendFileProgressBar.Value = 0;
-                                           SendFileProgressLabel.Text = "Postęp: ";
-                                       });
+                                           while (await receiveFilesService.AcceptFiles())
+                                           {
+                                               if (!await receiveFilesService.ReceiveFiles())
+                                               {
+                                                   break;
+                                               }
+                                           }
 
-                                       receiveFilesService.SendFileProgressEvent -= SendFilesService_SendFileProgress;
+                                           StateLabel.Invoke((MethodInvoker)delegate
+                                           {
+                                               StateLabel.Text = "Stan: Oczekiwanie";
+                                               GeneralProgressBar.Value = 0;
+                                               GeneralProgressLabel.Text = "Otrzymano plików: ";
+                                               SendFileProgressBar.Value = 0;
+                                               SendFileProgressLabel.Text = "Postęp: ";
+                                           });
 
-                                       receiveFilesService.Dispose();
+                                           receiveFilesService.SendFileProgressEvent -= SendFilesService_SendFileProgress;
+
+                                           receiveFilesService.Dispose();
+                                       }
                                    }
                                }
-                           }
-                           else if (data[0] == CodeNames.AcceptedIncomingConnection)
-                           {
-                               login = data[1];
-
-                               StateLabel.Invoke((MethodInvoker)delegate
+                               else if (code == CodeNames.AcceptedIncomingConnection)
                                {
-                                   StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
-                               });
+                                   login = data[0];
 
-                               string ip = await ReceiveMessage();
-
-                               sendFilesService = new SendFilesService(ip);
-                               sendFilesService.SendFileProgress += SendFilesService_SendFileProgress;
-
-                               if (await sendFilesService.Connect())
-                               {
-                                   isConnected = true;
-
-                                   filePath = string.Empty;
-
-                                   var t = new Thread(() =>
+                                   StateLabel.Invoke((MethodInvoker)delegate
                                    {
-                                       FolderBrowserDialog fbd = new FolderBrowserDialog();
-                                       fbd.RootFolder = Environment.SpecialFolder.MyComputer;
-                                       fbd.ShowNewFolderButton = true;
-                                       if (fbd.ShowDialog() == DialogResult.Cancel)
-                                           return;
-
-                                       filePath = fbd.SelectedPath;
+                                       StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
                                    });
 
-                                   t.SetApartmentState(ApartmentState.STA);
-                                   t.Start();
-                                   t.Join();
+                                   string ip = data[1];
 
-                                   if (filePath != string.Empty)
+                                   sendFilesService = new SendFilesService(ip);
+                                   sendFilesService.SendFileProgress += SendFilesService_SendFileProgress;
+
+                                   if (await sendFilesService.Connect())
                                    {
-                                       FilesTreeView.Invoke((MethodInvoker)delegate
-                                       {
-                                           FilesTreeView.Nodes.Clear();
-                                           DirectoryInfo di = new DirectoryInfo(filePath);
-                                           TreeNode tds = FilesTreeView.Nodes.Add(di.Name);
+                                       isConnected = true;
 
-                                           tds.Tag = di.FullName;
-                                           tds.StateImageIndex = 0;
-                                           LoadFiles(filePath, tds);
-                                           LoadSubDirectories(filePath, tds);
+                                       filePath = string.Empty;
+
+                                       var t = new Thread(() =>
+                                       {
+                                           FolderBrowserDialog fbd = new FolderBrowserDialog();
+                                           fbd.RootFolder = Environment.SpecialFolder.MyComputer;
+                                           fbd.ShowNewFolderButton = true;
+                                           if (fbd.ShowDialog() == DialogResult.Cancel)
+                                               return;
+
+                                           filePath = fbd.SelectedPath;
                                        });
+
+                                       t.SetApartmentState(ApartmentState.STA);
+                                       t.Start();
+                                       t.Join();
+
+                                       if (filePath != string.Empty)
+                                       {
+                                           FilesTreeView.Invoke((MethodInvoker)delegate
+                                           {
+                                               FilesTreeView.Nodes.Clear();
+                                               DirectoryInfo di = new DirectoryInfo(filePath);
+                                               TreeNode tds = FilesTreeView.Nodes.Add(di.Name);
+
+                                               tds.Tag = di.FullName;
+                                               tds.StateImageIndex = 0;
+                                               LoadFiles(filePath, tds);
+                                               LoadSubDirectories(filePath, tds);
+                                           });
+                                       }
+                                   }
+                                   else
+                                   {
+                                       isConnected = false;
+                                       SendButton.Enabled = false;
+                                       MessageBox.Show("Wystąpił błąd podczas łącznia klientem", "Błąd połączenia",
+                                           MessageBoxButtons.OK, MessageBoxIcon.Error);
                                    }
                                }
-                               else
-                               {
-                                   isConnected = false;
-                                   SendButton.Enabled = false;
-                                   MessageBox.Show("Wystąpił błąd podczas łącznia klientem", "Błąd połączenia",
-                                       MessageBoxButtons.OK, MessageBoxIcon.Error);
-                               }
                            }
-                           else if (data[0] == CodeNames.RejectedIncomingConnection)
+                           else
                            {
-                               SendButton.Enabled = false;
-                               MessageBox.Show("Klient odmówił połączenia", "Odmowa połączenia",
-                                   MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                               isConnected = false;
-
-                               ConnectButton.Invoke((MethodInvoker)delegate
+                               if (code == CodeNames.RejectedIncomingConnection)
                                {
-                                   ConnectButton.Text = "Połącz z użytkownikiem";
-                                   StateLabel.Text = "Stan: Oczekiwanie";
-                               });
+                                   SendButton.Enabled = false;
+                                   MessageBox.Show("Klient odmówił połączenia", "Odmowa połączenia",
+                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                                   isConnected = false;
+
+                                   ConnectButton.Invoke((MethodInvoker)delegate
+                                   {
+                                       ConnectButton.Text = "Połącz z użytkownikiem";
+                                       StateLabel.Text = "Stan: Oczekiwanie";
+                                   });
+                               }
                            }
                        }
                    }
@@ -249,33 +261,57 @@ namespace OFTP_Client
             });
         }
 
-        private async Task SendMessage(string message)
+        private async Task<string> ReceiveMessage()
+        {
+            var header = new byte[5];
+            await _tcpClient.GetStream().ReadAsync(header, 0, 5);
+
+            var len = header[3] * 256 + header[4];
+
+            if (len != 0)
+            {
+                var message = new byte[len];
+                await _tcpClient.GetStream().ReadAsync(message, 0, len);
+
+                return $"{Encoding.UTF8.GetString(header.Take(3).ToArray())}|{await _cryptoService.DecryptData(message)}";
+            }
+
+            return Encoding.UTF8.GetString(header.Take(3).ToArray());
+
+            //if (isCodeReceived)
+            //{
+            //    var codeBuffer = new byte[256]; //TODO check length
+            //    await client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
+            //    return await clients[client].DecryptData(codeBuffer.Skip(2).Take(codeBuffer[0] * 256 + codeBuffer[1]).ToArray());
+            //}
+            //else
+            //{
+            //    var messageBuffer = new byte[1024];
+            //    await client.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
+            //    return await clients[client].DecryptData(messageBuffer.Skip(2)
+            //            .Take(messageBuffer[0] * 256 + messageBuffer[1]).ToArray());
+            //}
+        }
+
+        private async Task SendMessage(string code, string message)
         {
             var encryptedData = await _cryptoService.EncryptData(message);
-            var encryptedMessage = new byte[encryptedData.Length + 2];
-            Array.Copy(encryptedData, 0, encryptedMessage, 2, encryptedData.Length);
+            var encryptedMessage = new byte[encryptedData.Length + 5];
+            Array.Copy(encryptedData, 0, encryptedMessage, 5, encryptedData.Length);
+            Array.Copy(Encoding.UTF8.GetBytes(code), 0, encryptedMessage, 0, 3);
             var len = encryptedData.Length;
-
-            encryptedMessage[0] = (byte)(len / 256);
-            encryptedMessage[1] = (byte)(len % 256);
+            encryptedMessage[3] = (byte)(len / 256);
+            encryptedMessage[4] = (byte)(len % 256);
             await _tcpClient.GetStream().WriteAsync(encryptedMessage);
         }
 
-        private async Task<string> ReceiveMessage(bool isCodeReceived = false)
+        private async Task SendMessage(string code)
         {
-            if (isCodeReceived)
-            {
-                var codeBuffer = new byte[256]; //TODO check length
-                await _tcpClient.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
-                return await _cryptoService.DecryptData(codeBuffer.Skip(2).Take(codeBuffer[0] * 256 + codeBuffer[1]).ToArray());
-            }
-            else
-            {
-                var messageBuffer = new byte[1024];
-                await _tcpClient.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
-                return await _cryptoService.DecryptData(messageBuffer.Skip(2)
-                        .Take(messageBuffer[0] * 256 + messageBuffer[1]).ToArray());
-            }
+            var encryptedMessage = new byte[5];
+            Array.Copy(Encoding.UTF8.GetBytes(code), 0, encryptedMessage, 0, 3);
+            encryptedMessage[3] = 0;
+            encryptedMessage[4] = 0;
+            await _tcpClient.GetStream().WriteAsync(encryptedMessage);
         }
 
         private void UsersChanged(string userName)
@@ -415,8 +451,7 @@ namespace OFTP_Client
             if (!isConnected)
             {
                 isConnected = true;
-                await SendMessage($"{CodeNames.AskUserForConnection}");
-                await SendMessage($"{UsersListBox.SelectedItem}");
+                await SendMessage(CodeNames.AskUserForConnection, UsersListBox.SelectedItem.ToString());
                 StateLabel.Text = $"Stan: Oczekiwanie na akceptację od {UsersListBox.SelectedItem}";
                 ConnectButton.Text = "Rozłącz z użytkownikiem";
             }

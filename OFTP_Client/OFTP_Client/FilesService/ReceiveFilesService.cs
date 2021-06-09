@@ -16,6 +16,7 @@ namespace OFTP_Client.FilesService
     {
         private TcpListener receiveFilesServer;
         private TcpClient _client;
+        private Socket _socket;
         private CryptoService _cryptoService;
         private string _ipAddress;
         private int fileCount;
@@ -32,35 +33,51 @@ namespace OFTP_Client.FilesService
             receiveFilesServer.Start();
         }
 
-        private async Task<string> ReceiveMessage2(int bytesToRead, bool isCodeReceived = false)
+        private async Task<string> ReceiveMessage()
         {
-            if (isCodeReceived)
+            var header = new byte[5];
+            await _client.GetStream().ReadAsync(header, 0, 5);
+
+            var len = header[3] * 256 + header[4];
+
+            if (len != 0)
             {
-                var codeBuffer = new byte[bytesToRead]; //TODO check length
-                await _client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
-                return await _cryptoService.DecryptData(codeBuffer);
+                var message = new byte[len];
+                await _client.GetStream().ReadAsync(message, 0, len);
+
+                return $"{Encoding.UTF8.GetString(header.Take(3).ToArray())}|{await _cryptoService.DecryptData(message)}";
             }
-            else
-            {
-                var messageBuffer = new byte[1024];
-                await _client.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
-                return await _cryptoService.DecryptData(messageBuffer);
-            }
+
+            return Encoding.UTF8.GetString(header.Take(3).ToArray());
         }
 
-        private async Task SendMessage(string message)
+        private async Task SendMessage(string code)
         {
-            var encryptedData = await _cryptoService.EncryptData(message);
-            await _client.GetStream().WriteAsync(encryptedData);
+            var encryptedMessage = new byte[5];
+            Array.Copy(Encoding.UTF8.GetBytes(code), 0, encryptedMessage, 0, 3);
+            encryptedMessage[3] = 0;
+            encryptedMessage[4] = 0;
+            await _client.GetStream().WriteAsync(encryptedMessage);
         }
 
-        private async Task<byte[]> ReceiveData2(int length)
+        private async Task<byte[]> ReceiveData2()
         {
-            var codeBuffer = new byte[length];
+            var codeBuffer = new byte[2];
 
             await _client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
 
             return await _cryptoService.DecryptDataB(codeBuffer);
+        }
+
+        private async Task<byte[]> ReceiveData()
+        {
+            var message = new byte[1031];
+            await Task.Run(() => _client.Client.Receive(message, SocketFlags.Partial));
+
+            var len = message[3] * 256 + message[4];
+            var fileLen = message[5] * 256 + message[6];
+
+            return (await _cryptoService.DecryptDataB(message.Skip(7).Take(len).ToArray())).Take(fileLen).ToArray();
         }
 
         private int Map(long x, long in_min, long in_max, long out_min, long out_max)
@@ -75,6 +92,7 @@ namespace OFTP_Client.FilesService
             while (!isClientOk)
             {
                 _client = await receiveFilesServer.AcceptTcpClientAsync();
+                _socket = _client.Client;
 
                 if (!_client.Client.RemoteEndPoint.ToString().StartsWith(_ipAddress))
                 {
@@ -84,19 +102,33 @@ namespace OFTP_Client.FilesService
                 }
                 else
                 {
-                    isClientOk = true;
-
-                    await _client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(CodeNames.Connected));
+                    await _client.GetStream().WriteAsync(Encoding.UTF8.GetBytes($"{CodeNames.Connected}00"));
 
                     _cryptoService = new CryptoService();
 
                     var publicKey = _cryptoService.GeneratePublicKey();
-                    await _client.GetStream().WriteAsync(publicKey);
 
-                    byte[] clientPublicKey = new byte[72];
+                    var diffieHellmanMessage = new byte[publicKey.Length + 5];
+
+                    Array.Copy(publicKey, 0, diffieHellmanMessage, 5, publicKey.Length);
+                    Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanKey), 0, diffieHellmanMessage, 0, 3);
+                    diffieHellmanMessage[3] = 0;
+                    diffieHellmanMessage[4] = 72;
+                    await _client.GetStream().WriteAsync(diffieHellmanMessage);
+
+                    byte[] clientPublicKey = new byte[77];
                     await _client.GetStream().ReadAsync(clientPublicKey, 0, clientPublicKey.Length);
 
-                    await _client.GetStream().WriteAsync(_cryptoService.GenerateIV(clientPublicKey));
+                    diffieHellmanMessage = new byte[21];
+
+                    var iv = _cryptoService.GenerateIV(clientPublicKey.Skip(5).ToArray());
+
+                    Array.Copy(iv, 0, diffieHellmanMessage, 5, iv.Length);
+                    Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanIV), 0, diffieHellmanMessage, 0, 3);
+                    diffieHellmanMessage[3] = 0;
+                    diffieHellmanMessage[4] = 16;
+
+                    await _client.GetStream().WriteAsync(diffieHellmanMessage);
 
                     return true;
                 }
@@ -106,7 +138,7 @@ namespace OFTP_Client.FilesService
 
         public async Task<bool> AcceptFiles()
         {
-            var response = (await ReceiveMessage2(16, true)).Split("|");
+            var response = (await ReceiveMessage()).Split("|");
 
             if (response[0] == CodeNames.BeginFileTransmission)
             {
@@ -153,16 +185,17 @@ namespace OFTP_Client.FilesService
 
                 for (int i = 0; i < fileCount; i++)
                 {
-                    var fileInfo = (await ReceiveMessage2(128, true)).Split("|");
+                    var fileInfo = (await ReceiveMessage()).Split("|");
 
                     if (fileInfo[0] == CodeNames.FileLength)
                     {
                         int fileLen = Convert.ToInt32(fileInfo[2]);
+                        int totalFileLength = fileLen;
                         int receivedDataLen = 0;
 
                         var fileDestination = Path.Combine(filePath, fileInfo[1]);
 
-                        using FileStream fs = File.Create(fileDestination); //Need to check
+                        using FileStream fs = File.Create(fileDestination); 
 
                         SendFileProgressEvent.Invoke(this, new SendProgressEvent
                         {
@@ -172,7 +205,7 @@ namespace OFTP_Client.FilesService
                             FilesCount = fileCount
                         });
 
-                        while (true)
+                        while (fileLen > 0)
                         {
                             if (isStopped)
                             {
@@ -183,44 +216,19 @@ namespace OFTP_Client.FilesService
 
                             if (!isPaused)
                             {
-                                await SendMessage(CodeNames.NextPartialData);
+                                var len = await ReceiveData();
 
-                                var len = (await ReceiveMessage2(16, true)).Split('|');
+                                fileLen -= len.Length;
 
-                                if (len[0] == CodeNames.NextDataLength)
+                                fs.Write(len, 0, len.Length);
+                                receivedDataLen += Convert.ToInt32(len.Length);
+
+                                SendFileProgressEvent.Invoke(this, new SendProgressEvent
                                 {
-                                    int realLength = Convert.ToInt32(len[1]);
-
-                                    while (realLength % 16 != 0)
-                                    {
-                                        realLength++;
-                                    }
-
-                                    await SendMessage(CodeNames.OK);
-
-                                    byte[] partialData = await ReceiveData2(realLength);
-
-                                    fs.Write(partialData.Take(Convert.ToInt32(len[1])).ToArray());
-                                    receivedDataLen += Convert.ToInt32(len[1]);
-
-                                    SendFileProgressEvent.Invoke(this, new SendProgressEvent
-                                    {
-                                        Value = Map(receivedDataLen, 0, fileLen, 0, 100),
-                                        General = false,
-                                        Receive = true
-                                    });
-                                }
-                                else if (len[0] == CodeNames.EndFileTransmission)
-                                {
-                                    break;
-                                }
-                                else if (len[0] == CodeNames.FileTransmissionInterrupted)
-                                {
-                                    MessageBox.Show("Klient przerwał transmisję plików", "Stop",
-                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                                    return false;
-                                }
+                                    Value = Map(receivedDataLen, 0, totalFileLength, 0, 100),
+                                    General = false,
+                                    Receive = true
+                                });
                             }
                         }
 
@@ -228,7 +236,6 @@ namespace OFTP_Client.FilesService
 
                         await SendMessage(CodeNames.OK);
                     }
-
                 }
 
                 SendFileProgressEvent.Invoke(this, new SendProgressEvent
