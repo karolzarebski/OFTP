@@ -179,31 +179,16 @@ namespace OFTP_Client.FilesService
 
                                 if (fileTransmissionResponseCode == CodeNames.NextPartialData)
                                 {
-                                    if (fi.Length - fileStream.Position < bufferLen)
-                                    {
-                                        int len = Convert.ToInt32(fi.Length - fileStream.Position);
-                                        var buffer = new byte[len];
+                                    var buffer = new byte[bufferLen];
 
-                                        //Debug.WriteLine(len);
+                                    //await SendMessage(CodeNames.NextDataLength, $"{bufferLen}");
 
-                                        //await SendMessage(CodeNames.NextDataLength, $"{len}");
+                                    var readLen = await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
 
-                                        await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
+                                    //Debug.WriteLine(buffer.Length);
 
-                                        await SendData(buffer);
-                                    }
-                                    else
-                                    {
-                                        var buffer = new byte[bufferLen];
+                                    await SendData(buffer.Take(readLen).ToArray());
 
-                                        //await SendMessage(CodeNames.NextDataLength, $"{bufferLen}");
-
-                                        await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
-
-                                        //Debug.WriteLine(buffer.Length);
-
-                                        await SendData(buffer);
-                                    }
 
                                     SendFileProgress.Invoke(this, new SendProgressEvent
                                     {
