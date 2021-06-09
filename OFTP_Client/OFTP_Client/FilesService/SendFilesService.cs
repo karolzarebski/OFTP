@@ -151,18 +151,11 @@ namespace OFTP_Client.FilesService
 
                         FileInfo fi = new FileInfo(file);
 
-                        var fileLength = $"{fi.Name}|{fi.Length}|";
-
                         int count = Convert.ToInt32(Math.Ceiling(fi.Length / Convert.ToDouble(bufferLen)));
 
                         using var fileStream = File.OpenRead(file);
 
-                        while (fileLength.Length < 120)
-                        {
-                            fileLength += '0';
-                        }
-
-                        await SendMessage(CodeNames.FileLength, $"{fileLength}");
+                        await SendMessage(CodeNames.FileLength, $"{fi.Name}|{fi.Length}");
 
                         SendFileProgress.Invoke(this, new SendProgressEvent
                         {
