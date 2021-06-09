@@ -75,8 +75,9 @@ namespace OFTP_Client.FilesService
             await Task.Run(() => _client.Client.Receive(message, SocketFlags.Partial));
 
             var len = message[3] * 256 + message[4];
+            var fileLen = message[5] * 256 + message[6];
 
-            return await _cryptoService.DecryptDataB(message.Skip(5).Take(len).ToArray());
+            return (await _cryptoService.DecryptDataB(message.Skip(7).Take(len).ToArray())).Take(fileLen).ToArray();
         }
 
         private int Map(long x, long in_min, long in_max, long out_min, long out_max)

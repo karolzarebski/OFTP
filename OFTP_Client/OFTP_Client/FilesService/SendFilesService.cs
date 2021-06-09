@@ -73,12 +73,14 @@ namespace OFTP_Client.FilesService
         private async Task SendData(byte[] data)
         {
             var encryptedData = await _cryptoService.EncryptData(data);
-            var encryptedMessage = new byte[encryptedData.Length + 5];
-            Array.Copy(encryptedData, 0, encryptedMessage, 5, encryptedData.Length);
+            var encryptedMessage = new byte[encryptedData.Length + 7];
+            Array.Copy(encryptedData, 0, encryptedMessage, 7, encryptedData.Length);
             Array.Copy(Encoding.UTF8.GetBytes(CodeNames.NextPartialData), 0, encryptedMessage, 0, 3);
             var len = encryptedData.Length;
             encryptedMessage[3] = (byte)(len / 256);
             encryptedMessage[4] = (byte)(len % 256);
+            encryptedMessage[5] = (byte)(data.Length / 256);
+            encryptedMessage[6] = (byte)(data.Length % 256);
             await Task.Run(() => _client.Client.Send(encryptedMessage, encryptedMessage.Length, SocketFlags.Partial));
         }
 
