@@ -193,7 +193,7 @@ namespace OFTP_Client.FilesService
 
                         var fileDestination = Path.Combine(filePath, fileInfo[1]);
 
-                        using FileStream fs = File.Create(fileDestination); //Need to check
+                        using FileStream fs = File.Create(fileDestination); 
 
                         SendFileProgressEvent.Invoke(this, new SendProgressEvent
                         {

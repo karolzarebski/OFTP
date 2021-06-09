@@ -195,12 +195,9 @@ namespace OFTP_Client.FilesService
 
                                         //await SendMessage(CodeNames.NextDataLength, $"{len}");
 
-                                        if (await ReceiveMessage() == CodeNames.OK)
-                                        {
-                                            await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
+                                        await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
 
-                                            await SendData(buffer);
-                                        }
+                                        await SendData(buffer);
                                     }
                                     else
                                     {
@@ -208,14 +205,11 @@ namespace OFTP_Client.FilesService
 
                                         //await SendMessage(CodeNames.NextDataLength, $"{bufferLen}");
 
-                                        if (await ReceiveMessage() == CodeNames.OK)
-                                        {
-                                            await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
+                                        await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
 
-                                            //Debug.WriteLine(buffer.Length);
+                                        //Debug.WriteLine(buffer.Length);
 
-                                            await SendData(buffer);
-                                        }
+                                        await SendData(buffer);
                                     }
 
                                     SendFileProgress.Invoke(this, new SendProgressEvent
