@@ -71,7 +71,7 @@ namespace OFTP_Client.FilesService
 
         private async Task<byte[]> ReceiveData()
         {
-            var message = new byte[1024];
+            var message = new byte[1031];
             await Task.Run(() => _client.Client.Receive(message, SocketFlags.Partial));
 
             var len = message[3] * 256 + message[4];
@@ -216,8 +216,6 @@ namespace OFTP_Client.FilesService
 
                             if (!isPaused)
                             {
-                                await SendMessage(CodeNames.NextPartialData);
-
                                 var len = await ReceiveData();
 
                                 fileLen -= len.Length;
@@ -238,7 +236,6 @@ namespace OFTP_Client.FilesService
 
                         await SendMessage(CodeNames.OK);
                     }
-
                 }
 
                 SendFileProgressEvent.Invoke(this, new SendProgressEvent

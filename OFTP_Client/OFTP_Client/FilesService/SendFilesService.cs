@@ -17,7 +17,7 @@ namespace OFTP_Client.FilesService
         private readonly string _serverIP;
         private TcpClient _client;
         private CryptoService _cryptoService;
-        private int bufferLen = 1024; //25 KB 25599
+        private int bufferLen = 1023; //25 KB 25599
         private bool isPaused = false, isStopped = false;
 
 
@@ -130,7 +130,7 @@ namespace OFTP_Client.FilesService
 
         public async Task SendEndConnection()
         {
-            await SendMessage($"{CodeNames.DisconnectFromClient}|0");
+            await SendMessage(CodeNames.DisconnectFromClient);
         }
 
         public async Task<bool> SendFiles(List<string> _files)
@@ -177,35 +177,21 @@ namespace OFTP_Client.FilesService
 
                             if (!isPaused)
                             {
-                                var fileTransmissionResponseCode = await ReceiveMessage();
+                                var buffer = new byte[bufferLen];
 
-                                if (fileTransmissionResponseCode == CodeNames.NextPartialData)
+                                var readLen = await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
+
+                                //Debug.WriteLine(buffer.Length);
+
+                                await SendData(buffer.Take(readLen).ToArray());
+
+
+                                SendFileProgress.Invoke(this, new SendProgressEvent
                                 {
-                                    var buffer = new byte[bufferLen];
-
-                                    //await SendMessage(CodeNames.NextDataLength, $"{bufferLen}");
-
-                                    var readLen = await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
-
-                                    //Debug.WriteLine(buffer.Length);
-
-                                    await SendData(buffer.Take(readLen).ToArray());
-
-
-                                    SendFileProgress.Invoke(this, new SendProgressEvent
-                                    {
-                                        Value = Map(++i, 0, count, 0, 100),
-                                        General = false,
-                                        Receive = false
-                                    });
-                                }
-                                else if (fileTransmissionResponseCode == CodeNames.FileTransmissionInterrupted)
-                                {
-                                    MessageBox.Show("Klient przerwał transmisję plików", "Stop",
-                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                                    return false;
-                                }
+                                    Value = Map(++i, 0, count, 0, 100),
+                                    General = false,
+                                    Receive = false
+                                });
                             }
                         }
 
