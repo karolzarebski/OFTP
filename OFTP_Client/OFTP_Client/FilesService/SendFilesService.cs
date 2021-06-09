@@ -63,11 +63,11 @@ namespace OFTP_Client.FilesService
             }
         }
 
-        private async Task SendMessage(string message)
-        {
-            var encryptedData = await _cryptoService.EncryptData(message);
-            await _client.GetStream().WriteAsync(encryptedData);
-        }
+        //private async Task SendMessage(string message)
+        //{
+        //    var encryptedData = await _cryptoService.EncryptData(message);
+        //    await _client.GetStream().WriteAsync(encryptedData);
+        //}
 
         private async Task SendData2(byte[] data)
         {
@@ -76,21 +76,60 @@ namespace OFTP_Client.FilesService
             await _client.GetStream().WriteAsync(encryptedData);
         }
 
-        private async Task<string> ReceiveMessage(bool isCodeReceived = false)
-        {
-            if (isCodeReceived)
-            {
-                var codeBuffer = new byte[16];
-                await _client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
+        //private async Task<string> ReceiveMessage(bool isCodeReceived = false)
+        //{
+        //    if (isCodeReceived)
+        //    {
+        //        var codeBuffer = new byte[16];
+        //        await _client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
 
-                return await _cryptoService.DecryptData(codeBuffer);
-            }
-            else
+        //        return await _cryptoService.DecryptData(codeBuffer);
+        //    }
+        //    else
+        //    {
+        //        var messageBuffer = new byte[1024];
+        //        await _client.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
+        //        return await _cryptoService.DecryptData(messageBuffer);
+        //    }
+        //}
+
+        private async Task<string> ReceiveMessage()
+        {
+            var header = new byte[5];
+            await _client.GetStream().ReadAsync(header, 0, 5);
+
+            var len = header[3] * 256 + header[4];
+
+            if (len != 0)
             {
-                var messageBuffer = new byte[1024];
-                await _client.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
-                return await _cryptoService.DecryptData(messageBuffer);
+                var message = new byte[len];
+                await _client.GetStream().ReadAsync(message, 0, len);
+
+                return $"{Encoding.UTF8.GetString(header.Take(3).ToArray())}|{await _cryptoService.DecryptData(message)}";
             }
+
+            return Encoding.UTF8.GetString(header.Take(3).ToArray());
+        }
+
+        private async Task SendMessage(string code, string message)
+        {
+            var encryptedData = await _cryptoService.EncryptData(message);
+            var encryptedMessage = new byte[encryptedData.Length + 5];
+            Array.Copy(encryptedData, 0, encryptedMessage, 5, encryptedData.Length);
+            Array.Copy(Encoding.UTF8.GetBytes(code), 0, encryptedMessage, 0, 3);
+            var len = encryptedData.Length;
+            encryptedMessage[3] = (byte)(len / 256);
+            encryptedMessage[4] = (byte)(len % 256);
+            await _client.GetStream().WriteAsync(encryptedMessage);
+        }
+
+        private async Task SendMessage(string code)
+        {
+            var encryptedMessage = new byte[5];
+            Array.Copy(Encoding.UTF8.GetBytes(code), 0, encryptedMessage, 0, 3);
+            encryptedMessage[3] = 0;
+            encryptedMessage[4] = 0;
+            await _client.GetStream().WriteAsync(encryptedMessage);
         }
 
         public int Map(long x, long in_min, long in_max, long out_min, long out_max)
@@ -111,9 +150,9 @@ namespace OFTP_Client.FilesService
 
                 int filesSent = 0;
 
-                await SendMessage($"{CodeNames.BeginFileTransmission}|{files.Count}");
+                await SendMessage(CodeNames.BeginFileTransmission, $"{files.Count}");
 
-                var responseCode = await ReceiveMessage(true);
+                var responseCode = await ReceiveMessage();
 
                 if (responseCode == CodeNames.AcceptFileTransmission)
                 {
@@ -134,7 +173,7 @@ namespace OFTP_Client.FilesService
                             fileLength += '0';
                         }
 
-                        await SendMessage($"{CodeNames.FileLength}|{fileLength}");
+                        await SendMessage(CodeNames.FileLength, $"{fileLength}");
 
                         SendFileProgress.Invoke(this, new SendProgressEvent
                         {
@@ -154,7 +193,7 @@ namespace OFTP_Client.FilesService
 
                             if (!isPaused)
                             {
-                                var fileTransmissionResponseCode = await ReceiveMessage(true);
+                                var fileTransmissionResponseCode = await ReceiveMessage();
 
                                 if (fileTransmissionResponseCode == CodeNames.NextPartialData)
                                 {
@@ -165,16 +204,16 @@ namespace OFTP_Client.FilesService
 
                                         //Debug.WriteLine(len);
 
-                                        var nextDataLength = $"{CodeNames.NextDataLength}|{len}|";
+                                        //var nextDataLength = $"{CodeNames.NextDataLength}|{len}";
 
-                                        while (nextDataLength.Length < 10)
-                                        {
-                                            nextDataLength += '0';
-                                        }
+                                        //while (nextDataLength.Length < 10)
+                                        //{
+                                        //    nextDataLength += '0';
+                                        //}
 
-                                        await SendMessage(nextDataLength);
+                                        await SendMessage(CodeNames.NextDataLength, $"{len}");
 
-                                        if (await ReceiveMessage(true) == CodeNames.OK)
+                                        if (await ReceiveMessage() == CodeNames.OK)
                                         {
                                             await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
 
@@ -185,16 +224,16 @@ namespace OFTP_Client.FilesService
                                     {
                                         var buffer = new byte[bufferLen];
 
-                                        var nextDataLength = $"{CodeNames.NextDataLength}|{bufferLen}|";
+                                        //var nextDataLength = $"{CodeNames.NextDataLength}|{bufferLen}|";
 
-                                        while (nextDataLength.Length < 10)
-                                        {
-                                            nextDataLength += '0';
-                                        }
+                                        //while (nextDataLength.Length < 10)
+                                        //{
+                                        //    nextDataLength += '0';
+                                        //}
 
-                                        await SendMessage(nextDataLength);
+                                        await SendMessage(CodeNames.NextDataLength, $"{bufferLen}");
 
-                                        if (await ReceiveMessage(true) == CodeNames.OK)
+                                        if (await ReceiveMessage() == CodeNames.OK)
                                         {
                                             await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
 
@@ -230,14 +269,14 @@ namespace OFTP_Client.FilesService
 
                         var endMessage = $"{CodeNames.EndFileTransmission}|";
 
-                        while (endMessage.Length < 10)
-                        {
-                            endMessage += '0';
-                        }
+                        //while (endMessage.Length < 10)
+                        //{
+                        //    endMessage += '0';
+                        //}
 
-                        await SendMessage(endMessage);
+                        await SendMessage(CodeNames.EndFileTransmission);
 
-                        while (await ReceiveMessage(true) != CodeNames.OK) ;
+                        while (await ReceiveMessage() != CodeNames.OK) ;
                     }
 
                     return true;

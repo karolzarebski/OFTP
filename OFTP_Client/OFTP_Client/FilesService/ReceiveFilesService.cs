@@ -32,66 +32,54 @@ namespace OFTP_Client.FilesService
             receiveFilesServer.Start();
         }
 
-        //private async Task<string> ReceiveMessage()
+        private async Task<string> ReceiveMessage()
+        {
+            var header = new byte[5];
+            await _client.GetStream().ReadAsync(header, 0, 5);
+
+            var len = header[3] * 256 + header[4];
+
+            if (len != 0)
+            {
+                var message = new byte[len];
+                await _client.GetStream().ReadAsync(message, 0, len);
+
+                return $"{Encoding.UTF8.GetString(header.Take(3).ToArray())}|{await _cryptoService.DecryptData(message)}";
+            }
+
+            return Encoding.UTF8.GetString(header.Take(3).ToArray());
+        }
+
+        private async Task SendMessage(string code)
+        {
+            var encryptedMessage = new byte[5];
+            Array.Copy(Encoding.UTF8.GetBytes(code), 0, encryptedMessage, 0, 3);
+            encryptedMessage[3] = 0;
+            encryptedMessage[4] = 0;
+            await _client.GetStream().WriteAsync(encryptedMessage);
+        }
+
+        //private async Task<string> ReceiveMessage2(int bytesToRead, bool isCodeReceived = false)
         //{
-        //    var header = new byte[5];
-        //    await _client.GetStream().ReadAsync(header, 0, 5);
-
-        //    var len = header[3] * 256 + header[4];
-
-        //    if (len != 0)
+        //    if (isCodeReceived)
         //    {
-        //        var message = new byte[len];
-        //        await _client.GetStream().ReadAsync(message, 0, len);
-
-        //        return $"{Encoding.UTF8.GetString(header.Take(3).ToArray())}|{await _cryptoService.DecryptData(message)}";
+        //        var codeBuffer = new byte[bytesToRead]; //TODO check length
+        //        await _client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
+        //        return await _cryptoService.DecryptData(codeBuffer);
         //    }
-
-        //    return Encoding.UTF8.GetString(header.Take(3).ToArray());
+        //    else
+        //    {
+        //        var messageBuffer = new byte[1024];
+        //        await _client.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
+        //        return await _cryptoService.DecryptData(messageBuffer);
+        //    }
         //}
 
-        //private async Task SendMessage(string code, string message)
+        //private async Task SendMessage(string message)
         //{
         //    var encryptedData = await _cryptoService.EncryptData(message);
-        //    var encryptedMessage = new byte[encryptedData.Length + 5];
-        //    Array.Copy(encryptedData, 0, encryptedMessage, 5, encryptedData.Length);
-        //    Array.Copy(Encoding.UTF8.GetBytes(code), 0, encryptedMessage, 0, 3);
-        //    var len = encryptedData.Length;
-        //    encryptedMessage[3] = (byte)(len / 256);
-        //    encryptedMessage[4] = (byte)(len % 256);
-        //    await _client.GetStream().WriteAsync(encryptedMessage);
+        //    await _client.GetStream().WriteAsync(encryptedData);
         //}
-
-        //private async Task SendMessage(string code)
-        //{
-        //    var encryptedMessage = new byte[5];
-        //    Array.Copy(Encoding.UTF8.GetBytes(code), 0, encryptedMessage, 0, 3);
-        //    encryptedMessage[3] = 0;
-        //    encryptedMessage[4] = 0;
-        //    await _client.GetStream().WriteAsync(encryptedMessage);
-        //}
-
-        private async Task<string> ReceiveMessage2(int bytesToRead, bool isCodeReceived = false)
-        {
-            if (isCodeReceived)
-            {
-                var codeBuffer = new byte[bytesToRead]; //TODO check length
-                await _client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
-                return await _cryptoService.DecryptData(codeBuffer);
-            }
-            else
-            {
-                var messageBuffer = new byte[1024];
-                await _client.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
-                return await _cryptoService.DecryptData(messageBuffer);
-            }
-        }
-
-        private async Task SendMessage(string message)
-        {
-            var encryptedData = await _cryptoService.EncryptData(message);
-            await _client.GetStream().WriteAsync(encryptedData);
-        }
 
         private async Task<byte[]> ReceiveData2(int length)
         {
@@ -161,7 +149,7 @@ namespace OFTP_Client.FilesService
 
         public async Task<bool> AcceptFiles()
         {
-            var response = (await ReceiveMessage2(16, true)).Split("|");
+            var response = (await ReceiveMessage()).Split("|");
 
             if (response[0] == CodeNames.BeginFileTransmission)
             {
@@ -208,7 +196,7 @@ namespace OFTP_Client.FilesService
 
                 for (int i = 0; i < fileCount; i++)
                 {
-                    var fileInfo = (await ReceiveMessage2(128, true)).Split("|");
+                    var fileInfo = (await ReceiveMessage()).Split("|");
 
                     if (fileInfo[0] == CodeNames.FileLength)
                     {
@@ -240,7 +228,7 @@ namespace OFTP_Client.FilesService
                             {
                                 await SendMessage(CodeNames.NextPartialData);
 
-                                var len = (await ReceiveMessage2(16, true)).Split('|');
+                                var len = (await ReceiveMessage()).Split('|');
 
                                 if (len[0] == CodeNames.NextDataLength)
                                 {
