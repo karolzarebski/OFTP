@@ -189,6 +189,7 @@ namespace OFTP_Client.FilesService
                     if (fileInfo[0] == CodeNames.FileLength)
                     {
                         int fileLen = Convert.ToInt32(fileInfo[2]);
+                        int totalFileLength = fileLen;
                         int receivedDataLen = 0;
 
                         var fileDestination = Path.Combine(filePath, fileInfo[1]);
@@ -221,11 +222,11 @@ namespace OFTP_Client.FilesService
                                 fileLen -= len.Length;
 
                                 fs.Write(len, 0, len.Length);
-                                receivedDataLen += Convert.ToInt32(len[1]);
+                                receivedDataLen += Convert.ToInt32(len.Length);
 
                                 SendFileProgressEvent.Invoke(this, new SendProgressEvent
                                 {
-                                    Value = Map(receivedDataLen, 0, fileLen, 0, 100),
+                                    Value = Map(receivedDataLen, 0, totalFileLength, 0, 100),
                                     General = false,
                                     Receive = true
                                 });
