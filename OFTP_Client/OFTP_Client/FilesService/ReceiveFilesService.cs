@@ -32,6 +32,45 @@ namespace OFTP_Client.FilesService
             receiveFilesServer.Start();
         }
 
+        //private async Task<string> ReceiveMessage()
+        //{
+        //    var header = new byte[5];
+        //    await _client.GetStream().ReadAsync(header, 0, 5);
+
+        //    var len = header[3] * 256 + header[4];
+
+        //    if (len != 0)
+        //    {
+        //        var message = new byte[len];
+        //        await _client.GetStream().ReadAsync(message, 0, len);
+
+        //        return $"{Encoding.UTF8.GetString(header.Take(3).ToArray())}|{await _cryptoService.DecryptData(message)}";
+        //    }
+
+        //    return Encoding.UTF8.GetString(header.Take(3).ToArray());
+        //}
+
+        //private async Task SendMessage(string code, string message)
+        //{
+        //    var encryptedData = await _cryptoService.EncryptData(message);
+        //    var encryptedMessage = new byte[encryptedData.Length + 5];
+        //    Array.Copy(encryptedData, 0, encryptedMessage, 5, encryptedData.Length);
+        //    Array.Copy(Encoding.UTF8.GetBytes(code), 0, encryptedMessage, 0, 3);
+        //    var len = encryptedData.Length;
+        //    encryptedMessage[3] = (byte)(len / 256);
+        //    encryptedMessage[4] = (byte)(len % 256);
+        //    await _client.GetStream().WriteAsync(encryptedMessage);
+        //}
+
+        //private async Task SendMessage(string code)
+        //{
+        //    var encryptedMessage = new byte[5];
+        //    Array.Copy(Encoding.UTF8.GetBytes(code), 0, encryptedMessage, 0, 3);
+        //    encryptedMessage[3] = 0;
+        //    encryptedMessage[4] = 0;
+        //    await _client.GetStream().WriteAsync(encryptedMessage);
+        //}
+
         private async Task<string> ReceiveMessage2(int bytesToRead, bool isCodeReceived = false)
         {
             if (isCodeReceived)
@@ -86,17 +125,33 @@ namespace OFTP_Client.FilesService
                 {
                     isClientOk = true;
 
-                    await _client.GetStream().WriteAsync(Encoding.UTF8.GetBytes(CodeNames.Connected));
+                    await _client.GetStream().WriteAsync(Encoding.UTF8.GetBytes($"{CodeNames.Connected}00"));
 
                     _cryptoService = new CryptoService();
 
                     var publicKey = _cryptoService.GeneratePublicKey();
-                    await _client.GetStream().WriteAsync(publicKey);
 
-                    byte[] clientPublicKey = new byte[72];
+                    var diffieHellmanMessage = new byte[publicKey.Length + 5];
+
+                    Array.Copy(publicKey, 0, diffieHellmanMessage, 5, publicKey.Length);
+                    Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanKey), 0, diffieHellmanMessage, 0, 3);
+                    diffieHellmanMessage[3] = 0;
+                    diffieHellmanMessage[4] = 72;
+                    await _client.GetStream().WriteAsync(diffieHellmanMessage);
+
+                    byte[] clientPublicKey = new byte[77];
                     await _client.GetStream().ReadAsync(clientPublicKey, 0, clientPublicKey.Length);
 
-                    await _client.GetStream().WriteAsync(_cryptoService.GenerateIV(clientPublicKey));
+                    diffieHellmanMessage = new byte[21];
+
+                    var iv = _cryptoService.GenerateIV(clientPublicKey.Skip(5).ToArray());
+
+                    Array.Copy(iv, 0, diffieHellmanMessage, 5, iv.Length);
+                    Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanIV), 0, diffieHellmanMessage, 0, 3);
+                    diffieHellmanMessage[3] = 0;
+                    diffieHellmanMessage[4] = 16;
+
+                    await _client.GetStream().WriteAsync(diffieHellmanMessage);
 
                     return true;
                 }

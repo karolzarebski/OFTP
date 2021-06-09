@@ -4,7 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -33,18 +35,23 @@ namespace OFTP_Client.FilesService
             {
                 await (_client = new TcpClient()).ConnectAsync(_serverIP, 12138);
 
-                var code = new byte[3];
+                var code = new byte[5];
                 await _client.GetStream().ReadAsync(code, 0, code.Length);
 
-                byte[] publicKey = new byte[72];
+                byte[] publicKey = new byte[77];
                 await _client.GetStream().ReadAsync(publicKey, 0, publicKey.Length);
 
-                var clientPublicKey = _cryptoService.GeneratePublicKey();
+                var clientPublicKey = new byte[77];
+
+                Array.Copy(_cryptoService.GeneratePublicKey(), 0, clientPublicKey, 5, 72);
+                Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanKey), 0, clientPublicKey, 0, 3);
+                clientPublicKey[3] = 0;
+                clientPublicKey[4] = 72;
                 await _client.GetStream().WriteAsync(clientPublicKey);
 
-                byte[] iv = new byte[16];
+                byte[] iv = new byte[21];
                 await _client.GetStream().ReadAsync(iv, 0, iv.Length);
-                _cryptoService.AssignIV(publicKey, iv);
+                _cryptoService.AssignIV(publicKey.Skip(5).ToArray(), iv.Skip(5).ToArray());
 
                 return true;
             }
