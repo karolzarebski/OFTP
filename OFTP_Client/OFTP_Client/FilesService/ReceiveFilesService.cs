@@ -190,49 +190,71 @@ namespace OFTP_Client.FilesService
 
                     if (fileInfo[0] == CodeNames.FileLength)
                     {
-                        int fileLen = Convert.ToInt32(fileInfo[2]);
-                        int totalFileLength = fileLen;
-                        int receivedDataLen = 0;
-
                         var fileDestination = Path.Combine(filePath, fileInfo[1]);
 
-                        using FileStream fs = File.Create(fileDestination); 
+                        FileStream fs = new FileStream(fileDestination, FileMode.OpenOrCreate);
 
-                        SendFileProgressEvent.Invoke(this, new SendProgressEvent
+                        double fileSize = Convert.ToDouble(fileInfo[2]);
+
+                        byte[] buffer = null;
+
+                        while(fileSize > 0)
                         {
-                            Value = Map(i, 0, fileCount, 0, 100),
-                            General = true,
-                            Receive = true,
-                            FilesCount = fileCount
-                        });
+                            buffer = new byte[1024];
 
-                        while (fileLen > 0)
-                        {
-                            if (isStopped)
-                            {
-                                await SendMessage(CodeNames.FileTransmissionInterrupted);
+                            var data = ReceivePlainData();
 
-                                return false;
-                            }
+                            int size = data.Length;
 
-                            if (!isPaused)
-                            {
-                                var len = ReceivePlainData();
-                                //var len = ReceiveEncryptedData();
+                            fs.Write(buffer, 0, size);
 
-                                fileLen -= len.Length;
-
-                                fs.Write(len, 0, len.Length);
-                                receivedDataLen += Convert.ToInt32(len.Length);
-
-                                SendFileProgressEvent.Invoke(this, new SendProgressEvent
-                                {
-                                    Value = Map(receivedDataLen, 0, totalFileLength, 0, 100),
-                                    General = false,
-                                    Receive = true
-                                });
-                            }
+                            fileSize -= size;
                         }
+
+                        fs.Close();
+
+                        //int fileLen = Convert.ToInt32(fileInfo[2]);
+                        //int totalFileLength = fileLen;
+                        //int receivedDataLen = 0;
+
+
+                        //SendFileProgressEvent.Invoke(this, new SendProgressEvent
+                        //{
+                        //    Value = Map(i, 0, fileCount, 0, 100),
+                        //    General = true,
+                        //    Receive = true,
+                        //    FilesCount = fileCount
+                        //});
+
+
+
+                        //while (fileLen > 0)
+                        //{
+                        //    if (isStopped)
+                        //    {
+                        //        await SendMessage(CodeNames.FileTransmissionInterrupted);
+
+                        //        return false;
+                        //    }
+
+                        //    if (!isPaused)
+                        //    {
+                        //        var len = ReceivePlainData();
+                        //        //var len = ReceiveEncryptedData();
+
+                        //        fileLen -= len.Length;
+
+                        //        fs.Write(len, 0, len.Length);
+                        //        receivedDataLen += Convert.ToInt32(len.Length);
+
+                        //        SendFileProgressEvent.Invoke(this, new SendProgressEvent
+                        //        {
+                        //            Value = Map(receivedDataLen, 0, totalFileLength, 0, 100),
+                        //            General = false,
+                        //            Receive = true
+                        //        });
+                        //    }
+                        //}
 
                         fs.Flush();
 

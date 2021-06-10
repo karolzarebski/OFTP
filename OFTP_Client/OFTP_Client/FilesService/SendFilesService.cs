@@ -17,7 +17,7 @@ namespace OFTP_Client.FilesService
         private readonly string _serverIP;
         private TcpClient _client;
         private CryptoService _cryptoService;
-        private int bufferLen = 1023; //25 KB 25599
+        private int bufferLen = 1024; //25 KB 25599
         private bool isPaused = false, isStopped = false;
 
 
@@ -148,6 +148,8 @@ namespace OFTP_Client.FilesService
         {
             try
             {
+                byte[] buffer = null;
+
                 var files = new List<string>(_files);
 
                 int filesSent = 0;
@@ -162,13 +164,15 @@ namespace OFTP_Client.FilesService
                     {
                         int i = 0;
 
-                        FileInfo fi = new FileInfo(file);
+                        FileStream fs = new FileStream(file, FileMode.Open);
 
-                        int count = Convert.ToInt32(Math.Ceiling(fi.Length / Convert.ToDouble(bufferLen)));
+                        //int count = Convert.ToInt32(Math.Ceiling(fi.Length / Convert.ToDouble(bufferLen)));
+
+                        int bufferCount = Convert.ToInt32(Math.Ceiling((double)fs.Length / (double)bufferLen));
 
                         using var fileStream = File.OpenRead(file);
 
-                        await SendMessage(CodeNames.FileLength, $"{fi.Name}|{fi.Length}");
+                        await SendMessage(CodeNames.FileLength, $"{Path.GetFileName(fs.Name)}|{fs.Length}");
 
                         SendFileProgress.Invoke(this, new SendProgressEvent
                         {
@@ -177,35 +181,43 @@ namespace OFTP_Client.FilesService
                             Receive = false
                         });
 
-                        while (fileStream.Position != fi.Length)
+                        for (int j = 0; j < bufferCount; j++)
                         {
-                            if (isStopped)
-                            {
-                                await SendMessage(CodeNames.FileTransmissionInterrupted);
+                            buffer = new byte[bufferLen];
+                            int size = fs.Read(buffer, 0, bufferLen);
 
-                                return false;
-                            }
-
-                            if (!isPaused)
-                            {
-                                var buffer = new byte[bufferLen];
-
-                                var readLen = await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
-
-                                //Debug.WriteLine(buffer.Length);
-
-                                SendPlainData(buffer.Take(readLen).ToArray());
-                                //SendEncryptedData(buffer.Take(readLen).ToArray());
-
-
-                                SendFileProgress.Invoke(this, new SendProgressEvent
-                                {
-                                    Value = Map(++i, 0, count, 0, 100),
-                                    General = false,
-                                    Receive = false
-                                });
-                            }
+                            SendPlainData(buffer);
                         }
+
+                        //while (fileStream.Position != fi.Length)
+                        //{
+                        //    if (isStopped)
+                        //    {
+                        //        await SendMessage(CodeNames.FileTransmissionInterrupted);
+
+                        //        return false;
+                        //    }
+
+                        //    if (!isPaused)
+                        //    {
+                        //        var buffer = new byte[bufferLen];
+
+                        //        var readLen = await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
+
+                        //        //Debug.WriteLine(buffer.Length);
+
+                        //        SendPlainData(buffer.Take(readLen).ToArray());
+                        //        //SendEncryptedData(buffer.Take(readLen).ToArray());
+
+
+                        //        SendFileProgress.Invoke(this, new SendProgressEvent
+                        //        {
+                        //            Value = Map(++i, 0, count, 0, 100),
+                        //            General = false,
+                        //            Receive = false
+                        //        });
+                        //    }
+                        //}
 
                         SendFileProgress.Invoke(this, new SendProgressEvent
                         {
