@@ -1,6 +1,7 @@
 ﻿using OFTP_Client.Events;
 using OFTP_Client.Resources;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -82,7 +83,7 @@ namespace OFTP_Client.FilesService
         
         private async Task<byte[]> ReceivePlainData()
         {
-            var message = new byte[1029];
+            var message = new byte[1028];
             await Task.Run(() => _client.Client.Receive(message, SocketFlags.Partial));
 
             var len = message[3] * 256 + message[4];
@@ -203,6 +204,8 @@ namespace OFTP_Client.FilesService
                         int totalFileLength = fileLen;
                         int receivedDataLen = 0;
 
+                        int ok = fileLen;
+
                         var fileDestination = Path.Combine(filePath, fileInfo[1]);
 
                         using FileStream fs = File.Create(fileDestination); 
@@ -214,6 +217,8 @@ namespace OFTP_Client.FilesService
                             Receive = true,
                             FilesCount = fileCount
                         });
+
+                        await SendMessage(CodeNames.OK);
 
                         while (fileLen > 0)
                         {
@@ -239,8 +244,12 @@ namespace OFTP_Client.FilesService
                                     General = false,
                                     Receive = true
                                 });
+
+                                await SendMessage(CodeNames.OK);
                             }
                         }
+
+                        Debug.WriteLine($"{ok} {receivedDataLen}");
 
                         fs.Flush();
 
