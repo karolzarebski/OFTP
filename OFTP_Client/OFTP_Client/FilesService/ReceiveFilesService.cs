@@ -78,6 +78,16 @@ namespace OFTP_Client.FilesService
             var fileLen = message[5] * 256 + message[6];
 
             return (await _cryptoService.DecryptDataB(message.Skip(7).Take(len).ToArray())).Take(fileLen).ToArray();
+        }    
+        
+        private async Task<byte[]> ReceivePlainData()
+        {
+            var message = new byte[1029];
+            await Task.Run(() => _client.Client.Receive(message, SocketFlags.Partial));
+
+            var len = message[3] * 256 + message[4];
+
+            return message.Skip(5).Take(len).ToArray();
         }
 
         private int Map(long x, long in_min, long in_max, long out_min, long out_max)
@@ -216,7 +226,7 @@ namespace OFTP_Client.FilesService
 
                             if (!isPaused)
                             {
-                                var len = await ReceiveData();
+                                var len = await ReceivePlainData();
 
                                 fileLen -= len.Length;
 

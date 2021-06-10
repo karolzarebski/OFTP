@@ -82,6 +82,17 @@ namespace OFTP_Client.FilesService
             encryptedMessage[5] = (byte)(data.Length / 256);
             encryptedMessage[6] = (byte)(data.Length % 256);
             await Task.Run(() => _client.Client.Send(encryptedMessage, encryptedMessage.Length, SocketFlags.Partial));
+        }       
+        
+        private async Task SendPlainData(byte[] data)
+        {
+            var message = new byte[data.Length + 5];
+            Array.Copy(data, 0, message, 5, data.Length);
+            Array.Copy(Encoding.UTF8.GetBytes(CodeNames.NextPartialData), 0, message, 0, 3);
+            var len = data.Length;
+            message[3] = (byte)(len / 256);
+            message[4] = (byte)(len % 256);
+            await Task.Run(() => _client.Client.Send(message, message.Length, SocketFlags.Partial));
         }
 
         private async Task<string> ReceiveMessage()
@@ -183,7 +194,7 @@ namespace OFTP_Client.FilesService
 
                                 //Debug.WriteLine(buffer.Length);
 
-                                await SendData(buffer.Take(readLen).ToArray());
+                                await SendPlainData(buffer.Take(readLen).ToArray());
 
 
                                 SendFileProgress.Invoke(this, new SendProgressEvent
