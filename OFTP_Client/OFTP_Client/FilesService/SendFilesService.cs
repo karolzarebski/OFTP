@@ -179,30 +179,35 @@ namespace OFTP_Client.FilesService
 
                         while (fileStream.Position != fi.Length)
                         {
-                            if (isStopped)
+                            responseCode = await ReceiveMessage();
+
+                            if (responseCode == CodeNames.OK)
                             {
-                                await SendMessage(CodeNames.FileTransmissionInterrupted);
-
-                                return false;
-                            }
-
-                            if (!isPaused)
-                            {
-                                var buffer = new byte[bufferLen];
-
-                                var readLen = await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
-
-                                //Debug.WriteLine(buffer.Length);
-
-                                await SendPlainData(buffer.Take(readLen).ToArray());
-
-
-                                SendFileProgress.Invoke(this, new SendProgressEvent
+                                if (isStopped)
                                 {
-                                    Value = Map(++i, 0, count, 0, 100),
-                                    General = false,
-                                    Receive = false
-                                });
+                                    await SendMessage(CodeNames.FileTransmissionInterrupted);
+
+                                    return false;
+                                }
+
+                                if (!isPaused)
+                                {
+                                    var buffer = new byte[bufferLen];
+
+                                    var readLen = await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
+
+                                    //Debug.WriteLine(buffer.Length);
+
+                                    await SendPlainData(buffer.Take(readLen).ToArray());
+
+
+                                    SendFileProgress.Invoke(this, new SendProgressEvent
+                                    {
+                                        Value = Map(++i, 0, count, 0, 100),
+                                        General = false,
+                                        Receive = false
+                                    });
+                                }
                             }
                         }
 
