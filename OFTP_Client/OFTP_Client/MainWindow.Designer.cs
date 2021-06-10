@@ -47,6 +47,7 @@ namespace OFTP_Client
             this.ChooseDir = new System.Windows.Forms.Button();
             this.PauseButton = new System.Windows.Forms.Button();
             this.StopButton = new System.Windows.Forms.Button();
+            this.UserEncryptionCheckBox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // UsersListBox
@@ -198,7 +199,7 @@ namespace OFTP_Client
             // 
             // PauseButton
             // 
-            this.PauseButton.Location = new System.Drawing.Point(269, 57);
+            this.PauseButton.Location = new System.Drawing.Point(270, 42);
             this.PauseButton.Name = "PauseButton";
             this.PauseButton.Size = new System.Drawing.Size(60, 23);
             this.PauseButton.TabIndex = 16;
@@ -208,7 +209,7 @@ namespace OFTP_Client
             // 
             // StopButton
             // 
-            this.StopButton.Location = new System.Drawing.Point(335, 57);
+            this.StopButton.Location = new System.Drawing.Point(336, 42);
             this.StopButton.Name = "StopButton";
             this.StopButton.Size = new System.Drawing.Size(50, 23);
             this.StopButton.TabIndex = 17;
@@ -216,11 +217,25 @@ namespace OFTP_Client
             this.StopButton.UseVisualStyleBackColor = true;
             this.StopButton.Click += new System.EventHandler(this.StopButton_Click);
             // 
+            // UserEncryptionCheckBox
+            // 
+            this.UserEncryptionCheckBox.AutoSize = true;
+            this.UserEncryptionCheckBox.Checked = true;
+            this.UserEncryptionCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.UserEncryptionCheckBox.Location = new System.Drawing.Point(273, 75);
+            this.UserEncryptionCheckBox.Name = "UserEncryptionCheckBox";
+            this.UserEncryptionCheckBox.Size = new System.Drawing.Size(113, 19);
+            this.UserEncryptionCheckBox.TabIndex = 18;
+            this.UserEncryptionCheckBox.Text = "Użyj szyfrowania";
+            this.UserEncryptionCheckBox.UseVisualStyleBackColor = true;
+            this.UserEncryptionCheckBox.CheckedChanged += new System.EventHandler(this.UserEncryptionCheckBox_CheckedChanged);
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 460);
+            this.Controls.Add(this.UserEncryptionCheckBox);
             this.Controls.Add(this.StopButton);
             this.Controls.Add(this.PauseButton);
             this.Controls.Add(this.ChooseDir);
@@ -269,5 +284,6 @@ namespace OFTP_Client
         private System.Windows.Forms.Button ChooseDir;
         private System.Windows.Forms.Button PauseButton;
         private System.Windows.Forms.Button StopButton;
+        private System.Windows.Forms.CheckBox UserEncryptionCheckBox;
     }
 }

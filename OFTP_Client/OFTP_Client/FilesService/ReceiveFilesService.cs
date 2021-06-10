@@ -203,6 +203,7 @@ namespace OFTP_Client.FilesService
                         int fileLen = Convert.ToInt32(fileInfo[2]);
                         int totalFileLength = fileLen;
                         int receivedDataLen = 0;
+                        bool isEncryptionUsed = fileInfo[3] == "1" ? true : false;
 
                         int ok = fileLen;
 
@@ -231,12 +232,21 @@ namespace OFTP_Client.FilesService
 
                             if (!isPaused)
                             {
-                                var len = await ReceivePlainData();
+                                byte[] data = null;
 
-                                fileLen -= len.Length;
+                                if (isEncryptionUsed)
+                                {
+                                    data = await ReceiveData();
+                                }
+                                else
+                                {
+                                    data = await ReceivePlainData();
+                                }
 
-                                fs.Write(len, 0, len.Length);
-                                receivedDataLen += Convert.ToInt32(len.Length);
+                                fileLen -= data.Length;
+
+                                fs.Write(data, 0, data.Length);
+                                receivedDataLen += Convert.ToInt32(data.Length);
 
                                 SendFileProgressEvent.Invoke(this, new SendProgressEvent
                                 {

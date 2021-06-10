@@ -2,7 +2,6 @@
 using OFTP_Client.Resources;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
@@ -19,12 +18,14 @@ namespace OFTP_Client.FilesService
         private CryptoService _cryptoService;
         private int bufferLen = 1023; //25 KB 25599
         private bool isPaused = false, isStopped = false;
-
+        private bool _isEncryptionUsed;
 
         public event EventHandler<SendProgressEvent> SendFileProgress;
 
-        public SendFilesService(string serverIP)
+        public SendFilesService(string serverIP, bool isEncryptionUsed)
         {
+            _isEncryptionUsed = isEncryptionUsed;
+
             _serverIP = serverIP;
             _cryptoService = new CryptoService();
         }
@@ -63,13 +64,6 @@ namespace OFTP_Client.FilesService
             }
         }
 
-        private async Task SendData2(byte[] data)
-        {
-            var encryptedData = await _cryptoService.EncryptData(data);
-            Debug.WriteLine(encryptedData);
-            await _client.GetStream().WriteAsync(encryptedData);
-        }
-
         private async Task SendData(byte[] data)
         {
             var encryptedData = await _cryptoService.EncryptData(data);
@@ -82,8 +76,8 @@ namespace OFTP_Client.FilesService
             encryptedMessage[5] = (byte)(data.Length / 256);
             encryptedMessage[6] = (byte)(data.Length % 256);
             await Task.Run(() => _client.Client.Send(encryptedMessage, encryptedMessage.Length, SocketFlags.Partial));
-        }       
-        
+        }
+
         private async Task SendPlainData(byte[] data)
         {
             var message = new byte[data.Length + 5];
@@ -168,7 +162,9 @@ namespace OFTP_Client.FilesService
 
                         using var fileStream = File.OpenRead(file);
 
-                        await SendMessage(CodeNames.FileLength, $"{fi.Name}|{fi.Length}");
+                        var encryptionCode = _isEncryptionUsed ? "1" : "0";
+
+                        await SendMessage(CodeNames.FileLength, $"{fi.Name}|{fi.Length}|{encryptionCode}");
 
                         SendFileProgress.Invoke(this, new SendProgressEvent
                         {
@@ -198,8 +194,14 @@ namespace OFTP_Client.FilesService
 
                                     //Debug.WriteLine(buffer.Length);
 
-                                    await SendPlainData(buffer.Take(readLen).ToArray());
-
+                                    if (_isEncryptionUsed)
+                                    {
+                                        await SendData(buffer.Take(readLen).ToArray());
+                                    }
+                                    else
+                                    {
+                                        await SendPlainData(buffer.Take(readLen).ToArray());
+                                    }
 
                                     SendFileProgress.Invoke(this, new SendProgressEvent
                                     {
