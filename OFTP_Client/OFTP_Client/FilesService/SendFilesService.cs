@@ -202,9 +202,9 @@ namespace OFTP_Client.FilesService
                             Receive = false
                         });
 
-                        var endMessage = $"{CodeNames.EndFileTransmission}|";
+                        //var endMessage = $"{CodeNames.EndFileTransmission}|";
 
-                        await SendMessage(CodeNames.EndFileTransmission);
+                        //await SendMessage(CodeNames.EndFileTransmission);
 
                         while (await ReceiveMessage() != CodeNames.OK) ;
                     }
