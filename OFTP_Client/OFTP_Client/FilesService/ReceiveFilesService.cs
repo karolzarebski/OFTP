@@ -60,24 +60,25 @@ namespace OFTP_Client.FilesService
             await _client.GetStream().WriteAsync(encryptedMessage);
         }
 
-        private async Task<byte[]> ReceiveData2()
-        {
-            var codeBuffer = new byte[2];
-
-            await _client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
-
-            return await _cryptoService.DecryptDataB(codeBuffer);
-        }
-
-        private async Task<byte[]> ReceiveData()
+        private byte[] ReceiveEncryptedData()
         {
             var message = new byte[1031];
-            await Task.Run(() => _client.Client.Receive(message, SocketFlags.Partial));
+            _client.Client.Receive(message, SocketFlags.Partial);
 
             var len = message[3] * 256 + message[4];
             var fileLen = message[5] * 256 + message[6];
 
-            return (await _cryptoService.DecryptDataB(message.Skip(7).Take(len).ToArray())).Take(fileLen).ToArray();
+            return _cryptoService.DecryptDataB(message.Skip(7).Take(len).ToArray()).Take(fileLen).ToArray();
+        }       
+        
+        private byte[] ReceivePlainData()
+        {
+            var message = new byte[1029];
+            _client.Client.Receive(message, SocketFlags.Partial);
+
+            var len = message[3] * 256 + message[4];
+
+            return message.Skip(5).Take(len).ToArray();
         }
 
         private int Map(long x, long in_min, long in_max, long out_min, long out_max)
@@ -216,7 +217,8 @@ namespace OFTP_Client.FilesService
 
                             if (!isPaused)
                             {
-                                var len = await ReceiveData();
+                                var len = ReceivePlainData();
+                                //var len = ReceiveEncryptedData();
 
                                 fileLen -= len.Length;
 

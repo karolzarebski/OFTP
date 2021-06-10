@@ -52,7 +52,7 @@ namespace OFTP_Client
             }
         }
 
-        public Task<byte[]> DecryptDataB(byte[] encryptedData)
+        public byte[] DecryptDataB(byte[] encryptedData)
         {
             using (MemoryStream msDecrypt = new MemoryStream(encryptedData))
             {
@@ -60,7 +60,7 @@ namespace OFTP_Client
                 {
                     csDecrypt.Read(encryptedData, 0, encryptedData.Length);
                     //csDecrypt.FlushFinalBlock();
-                    return Task.FromResult(msDecrypt.ToArray());
+                    return msDecrypt.ToArray();
                 }
             }
         }
@@ -81,7 +81,7 @@ namespace OFTP_Client
             }
         }
 
-        public Task<byte[]> EncryptData(byte[] dataToEncrypt)
+        public byte[] EncryptData(byte[] dataToEncrypt)
         {
             using (MemoryStream msEncrypt = new MemoryStream())
             {
@@ -89,7 +89,7 @@ namespace OFTP_Client
                 {
                     csEncrypt.Write(dataToEncrypt, 0, dataToEncrypt.Length);
                     csEncrypt.FlushFinalBlock();
-                    return Task.FromResult(msEncrypt.ToArray());
+                    return msEncrypt.ToArray();
                 }
             }
         }
