@@ -461,19 +461,6 @@ namespace OFTP_Client
         private async void MainWindow_SendEmailEvent(object sender, SendEmailEvent e)
         {
             await SendMessage(EmailCodes.SendEmail, $"{e.UnavailableUsername}|{e.Username}");
-
-            var code = await ReceiveMessage();
-
-            if (code == EmailCodes.SendEmailSuccess)
-            {
-                MessageBox.Show("Email został pomyślnie wysłany", "Powodzenie",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            else
-            {
-                MessageBox.Show("Wystąpił błąd podczas próby wysłania Emaila", "Błąd",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
         }
     }
 }

@@ -237,6 +237,16 @@ namespace OFTP_Client
                                    MessageBox.Show("Użytkownik odmówił znjomości", "Nowy znajomy odrzucony",
                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
                                }
+                               else if (code == EmailCodes.SendEmailSuccess)
+                               {
+                                   MessageBox.Show("Email został pomyślnie wysłany", "Powodzenie",
+                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
+                               }
+                               else if (code == EmailCodes.SendEmailFailure)
+                               {
+                                   MessageBox.Show("Wystąpił błąd podczas próby wysłania Emaila", "Błąd",
+                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
+                               }
                            }
                        }
                    }
