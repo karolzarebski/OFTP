@@ -479,9 +479,31 @@ namespace OFTP_Client
 
         private void UsersListBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (!isConnected)
+            var selectedUser = UsersListBox.SelectedItem;
+
+            if (selectedUser != null)
             {
-                ConnectWithUserTextBox.Text = UsersListBox.SelectedItem?.ToString();
+                if (!isConnected)
+                {
+                    ConnectWithUserTextBox.Text = selectedUser.ToString();
+                }
+
+                if (_friends.Contains(selectedUser))
+                {
+                    FriendsListBox.SelectedItem = selectedUser;
+
+                    AddOrRemoveFriendButton.Text = "Usuń znajomego";
+                }
+                else
+                {
+                    AddOrRemoveFriendButton.Text = "Dodaj znajomego";
+                }
+
+                AddOrRemoveFriendButton.Enabled = true;
+            }
+            else
+            {
+                AddOrRemoveFriendButton.Enabled = false;
             }
         }
 
