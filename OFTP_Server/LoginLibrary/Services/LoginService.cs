@@ -2,7 +2,6 @@
 using DatabaseLibrary.Models;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -34,36 +33,6 @@ namespace LoginLibrary.Services
         private bool IsPasswordSecureEnough(string password) //Minimum ten characters, at least one uppercase letter, one lowercase letter and one number:
         {
             return Regex.IsMatch(password, "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{10,}$");
-        }
-
-        /// <summary>
-        /// Changes password
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns>True if operation was succesfull</returns>
-        public async Task<bool> ChangePassword(string login, string password)
-        {
-            if (!(await _storageService.GetUserDataAsync()).Any(u => u.Login == login))
-            {
-                return false;
-            }
-
-            try
-            {
-                _storageService.AddUserDataAsync(new User()
-                {
-                    Login = login,
-                    Password = await _cryptoService.EncryptData(password)
-                });
-            }
-            catch (Exception e)
-            {
-                _logger.LogInformation(e.Message);
-
-                return false;
-            }
-
-            return true;
         }
 
         /// <summary>
@@ -100,7 +69,7 @@ namespace LoginLibrary.Services
         /// </summary>
         /// <param name="data"></param>
         /// <returns>Status of registration</returns>
-        public async Task<int> RegisterAccount(string login, string password)
+        public async Task<int> RegisterAccount(string login, string password, string emailAddress)
         {
             if ((await _storageService.GetUserDataAsync()).Any(u => u.Login == login))
             {
@@ -108,7 +77,7 @@ namespace LoginLibrary.Services
             }
 
             try
-            {   
+            {
                 if (IsPasswordSecureEnough(password))
                 {
                     var salt = RandomString(8);
@@ -116,7 +85,9 @@ namespace LoginLibrary.Services
                     {
                         Login = login,
                         Password = _cryptoService.CreateHash(password, salt),
-                        Salt = salt
+                        Salt = salt,
+                        EmailAddress = emailAddress,
+                        CreatedAt = DateTime.Now
                     });
 
                     return 104; //CorrectRegisterData

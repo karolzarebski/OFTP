@@ -8,6 +8,8 @@ using Microsoft.Extensions.Logging;
 using ServerLibrary;
 using ServerLibrary.Resources;
 using ServerLibrary.Services;
+using SmtpLibrary;
+using SmtpLibrary.Services;
 using System.Threading.Tasks;
 
 namespace OFTP_Server
@@ -44,15 +46,18 @@ namespace OFTP_Server
         {
             var databaseConfiguration = _configuration.GetSection("DatabaseConfiguration").Get<DatabaseConfiguration>();
             var serverConfiguration = _configuration.GetSection("ServerConfiguration").Get<ServerConfiguration>();
+            var smtpConfiguration = _configuration.GetSection("SmtpConfiguration").Get<SmtpConfiguration>();
 
             servicesCollection
                 .AddSingleton(_configuration)
                 .AddSingleton(databaseConfiguration)
                 .AddSingleton(serverConfiguration)
+                .AddSingleton(smtpConfiguration)
                 .AddSingleton<IServerService, ServerService>()
                 .AddSingleton<IDatabaseService, DatabaseService>()
                 .AddSingleton<ICryptoService, CryptoService>()
                 .AddSingleton<ILoginService, LoginService>()
+                .AddSingleton<ISmtpService, SmtpService>()
                 .AddLogging(builder => builder.AddFile(_configuration.GetSection("Logging")));
 
             servicesCollection.RegisterDALDependiences();

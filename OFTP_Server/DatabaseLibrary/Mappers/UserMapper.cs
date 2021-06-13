@@ -19,6 +19,9 @@ namespace DatabaseLibrary.Mappers
             builder.Property(p => p.Password)
                 .IsRequired();
 
+            builder.Property(p => p.EmailAddress)
+                .IsRequired();
+
             builder.HasMany(p => p.Friend)
                 .WithOne(p => p.User)
                 .HasForeignKey(p => p.UserId)

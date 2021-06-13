@@ -268,7 +268,7 @@ namespace OFTP_Client
 
             if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
-                await SendMessage(CodeNames.Register, $"{login}|{password}");
+                await SendMessage(CodeNames.Register, $"{login}|{password}|marekmarczewski1234@gmail.com");
 
                 var message = await ReceiveMessage();
 
@@ -455,7 +455,7 @@ namespace OFTP_Client
 
         private async void MainWindow_SendEmailEvent(object sender, SendEmailEvent e)
         {
-            await SendMessage(CodeNames.SendEmail, e.UnavailableUsername);
+            await SendMessage(CodeNames.SendEmail, $"{e.UnavailableUsername}|{e.Username}");
 
             var code = await ReceiveMessage();
 

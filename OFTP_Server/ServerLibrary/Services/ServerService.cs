@@ -4,6 +4,7 @@ using LoginLibrary.Services;
 using Microsoft.Extensions.Logging;
 using ServerLibrary.Events;
 using ServerLibrary.Resources;
+using SmtpLibrary.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +21,7 @@ namespace ServerLibrary.Services
         private readonly ILoginService _loginService;
         private readonly ILogger<ServerService> _logger;
         private readonly IDatabaseService _storageService;
+        private readonly ISmtpService _smtpService;
 
         private readonly ServerConfiguration _serverConfiguration;
         private List<UsersConnection> usersConnections = new List<UsersConnection>();
@@ -31,12 +33,13 @@ namespace ServerLibrary.Services
         private event EventHandler<FriendsChangedEvent> friendsChangedEvent;
 
         public ServerService(ServerConfiguration serverConfiguration, ILoginService loginService,
-            ILogger<ServerService> logger, IDatabaseService storageService)
+            ILogger<ServerService> logger, IDatabaseService storageService, ISmtpService smtpService)
         {
             _serverConfiguration = serverConfiguration;
             _loginService = loginService;
             _logger = logger;
             _storageService = storageService;
+            _smtpService = smtpService;
 
             usersCountChangedEvent += RefreshAvailableUsers;
             friendsChangedEvent += ServerService_friendsChangedEvent;
@@ -260,7 +263,9 @@ namespace ServerLibrary.Services
                         else if (data[0] == CodeNames.Register)
                         {
                             login = data[1];
-                            int registrationResultCode = await _loginService.RegisterAccount(login, data[2]);
+                            int registrationResultCode = await _loginService.RegisterAccount(login, data[2], data[3]);
+
+                            await _smtpService.SendRegistrationEmail(data[3]);
 
                             if (registrationResultCode.ToString() == CodeNames.CorrectRegisterData)
                             {
@@ -557,30 +562,37 @@ namespace ServerLibrary.Services
                                 {
                                     try
                                     {
-                                        await Task.Run(() =>
-                                        {
-                                            using SmtpClient clientDetails = new SmtpClient();
+                                        var fileSender = await _storageService.GetUserByLogin(message[2]);
 
-                                            clientDetails.Port = 587;
-                                            clientDetails.Host = "smtp.gmail.com";
-                                            clientDetails.EnableSsl = true;
-                                            clientDetails.DeliveryMethod = SmtpDeliveryMethod.Network;
-                                            clientDetails.UseDefaultCredentials = false;
-                                            clientDetails.Credentials = new NetworkCredential("ankaankowska1@gmail.com", "chaeyai7");
+                                        var unavailableUser = await _storageService.GetUserByLogin(message[1]);
 
-                                            //Message Details
-                                            MailMessage mailDetails = new MailMessage();
-                                            mailDetails.From = new MailAddress("ankaankowska1@gmail.com");
-                                            mailDetails.To.Add("marekmarczewski1234@gmail.com");
-                                            //for multiple recipients
-                                            //mailDetails.To.Add("another recipient email address");
-                                            //for bcc
-                                            //mailDetails.Bcc.Add("bcc email address")
-                                            mailDetails.Subject = "OFTP subject";
-                                            mailDetails.Body = "OFTP Body";
+                                        await _smtpService.SendAbsenceEmail(unavailableUser.EmailAddress, 
+                                            fileSender.EmailAddress, fileSender.Login);
 
-                                            clientDetails.Send(mailDetails);
-                                        });
+                                        //await Task.Run(() =>
+                                        //{
+                                        //    using SmtpClient clientDetails = new SmtpClient();
+
+                                        //    clientDetails.Port = 587;
+                                        //    clientDetails.Host = "smtp.gmail.com";
+                                        //    clientDetails.EnableSsl = true;
+                                        //    clientDetails.DeliveryMethod = SmtpDeliveryMethod.Network;
+                                        //    clientDetails.UseDefaultCredentials = false;
+                                        //    clientDetails.Credentials = new NetworkCredential("ankaankowska1@gmail.com", "chaeyai7");
+
+                                        //    //Message Details
+                                        //    MailMessage mailDetails = new MailMessage();
+                                        //    mailDetails.From = new MailAddress("ankaankowska1@gmail.com");
+                                        //    mailDetails.To.Add("marekmarczewski1234@gmail.com");
+                                        //    //for multiple recipients
+                                        //    //mailDetails.To.Add("another recipient email address");
+                                        //    //for bcc
+                                        //    //mailDetails.Bcc.Add("bcc email address")
+                                        //    mailDetails.Subject = "OFTP subject";
+                                        //    mailDetails.Body = "OFTP Body";
+
+                                        //    clientDetails.Send(mailDetails);
+                                        //});
 
                                         await SendMessage(client, CodeNames.SendEmailSuccess);
                                     }
