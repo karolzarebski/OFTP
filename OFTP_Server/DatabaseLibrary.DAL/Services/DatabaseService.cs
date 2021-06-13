@@ -38,7 +38,7 @@ namespace DatabaseLibrary.DAL.Services
 
             try
             {
-                await _userContext.Users.LoadAsync();
+                await _userContext.Users.Include(u => u.Friend).LoadAsync();
             }
             finally
             {

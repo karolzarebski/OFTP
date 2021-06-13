@@ -519,8 +519,10 @@ namespace OFTP_Client
             MinimumSize = Size;
 
             UsersListBox.Items.AddRange(_availableUsers.ToArray());
+            FriendsListBox.Items.AddRange(_friends.ToArray());
 
             AvailableUsersLabel.Text = $"Dostępni użytownicy: {_availableUsers.Count}";
+            FriendsCountLabel.Text = $"Znajomi: {_friends.Count}";
         }
 
         private async void ConnectButton_Click(object sender, EventArgs e)
@@ -835,7 +837,7 @@ namespace OFTP_Client
             }
             else
             {
-                switch (MessageBox.Show($"Czy na pewno chcesz usunąć {selectedUser} z listy znajomych?",
+                switch (MessageBox.Show($"Czy na pewno chcesz usunąć {selectedFriend} z listy znajomych?",
                     "Potwierdzanie usuwania", MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                 {
                     case DialogResult.Yes:
