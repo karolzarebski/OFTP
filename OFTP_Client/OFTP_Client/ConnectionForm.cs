@@ -427,7 +427,7 @@ namespace OFTP_Client
 
         private void InitMainWindow()
         {
-            var mainWindow = new MainWindow(client, _cryptoService, friendsList, availableUsers, LoginTextBox.Text);
+            var mainWindow = new MainWindow(client, _cryptoService, availableUsers, friendsList, LoginTextBox.Text);
 
             mainWindow.FormClosing += (sender, e) =>
             {
