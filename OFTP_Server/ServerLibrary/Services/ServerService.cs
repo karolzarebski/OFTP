@@ -565,8 +565,8 @@ namespace ServerLibrary.Services
 
                                         var unavailableUser = await _storageService.GetUserByLogin(message[1]);
 
-                                        //await _smtpService.SendAbsenceEmail(unavailableUser.EmailAddress, 
-                                        //    fileSender.EmailAddress, fileSender.Login);
+                                        await _smtpService.SendAbsenceEmail(unavailableUser.EmailAddress,
+                                            fileSender.EmailAddress, fileSender.Login);
 
                                         await SendMessage(client, EmailCodes.SendEmailSuccess);
                                     }
