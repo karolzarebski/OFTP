@@ -284,20 +284,22 @@ namespace OFTP_Client
                     {
                         var processedUsersCount = Convert.ToInt32(availableUsersCount[1]);
 
-                        await SendMessage(CodeNames.ActiveUsers);
-
-                        while (processedUsersCount >= 0)
+                        if (processedUsersCount > 0)
                         {
-                            var users = (await ReceiveMessage()).Split('|')[1].Split('\n');  
+                            await SendMessage(CodeNames.ActiveUsers);
 
-                            foreach (var craftedUser in users)
+                            while (processedUsersCount >= 0)
                             {
-                                availableUsers.Add(craftedUser);
+                                var users = (await ReceiveMessage()).Split('|')[1].Split('\n');
+
+                                foreach (var craftedUser in users)
+                                {
+                                    availableUsers.Add(craftedUser);
+                                }
+
+                                processedUsersCount -= 100; //server sends 100 users in a row
                             }
-
-                            processedUsersCount -= 100; //server sends 100 users in a row
                         }
-
                     }
 
                     await SendMessage(CodeNames.Friends);

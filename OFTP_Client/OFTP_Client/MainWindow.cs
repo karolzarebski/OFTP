@@ -73,6 +73,10 @@ namespace OFTP_Client
                                    login = data[0];
                                    UsersChanged(login);
                                }
+                               else if (code == CodeNames.NewFriend)
+                               {
+                                   FriendsChanged(data[0]);
+                               }
                                else if (code == CodeNames.AskUserForConnection)
                                {
                                    login = data[0];
@@ -189,7 +193,7 @@ namespace OFTP_Client
                                }
                                else if (code == CodeNames.AskForFriendship)
                                {
-                                   switch (MessageBox.Show($"Czy chcesz dodać {data[1]} do listy znajomych?", "Nowy znajomy",
+                                   switch (MessageBox.Show($"Czy chcesz dodać {data[0]} do listy znajomych?", "Nowy znajomy",
                                        MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                                    {
                                        case DialogResult.Yes:
@@ -202,12 +206,12 @@ namespace OFTP_Client
                                            break;
                                    }
                                }
-                               else if (data[0] == CodeNames.AddToFriendsAccepted)
+                               else if (code == CodeNames.AddToFriendsAccepted)
                                {
                                    MessageBox.Show("Pomyślnie dodano użytkownika do znajomych", "Nowy znajomy",
                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
                                }
-                               else if (data[0] == CodeNames.AddToFriendsRejected)
+                               else if (code == CodeNames.AddToFriendsRejected)
                                {
                                    MessageBox.Show("Użytkownik odmówił znjomości", "Nowy znajomy odrzucony",
                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -340,6 +344,28 @@ namespace OFTP_Client
             encryptedMessage[3] = 0;
             encryptedMessage[4] = 0;
             await _tcpClient.GetStream().WriteAsync(encryptedMessage);
+        }
+
+        private void FriendsChanged(string friendName)
+        {
+            if (_friends.Contains(friendName))
+            {
+                _friends.Remove(friendName);
+
+                MessageBox.Show($"Usunięto {friendName} z listy znajomych", "Znajomy usunięty",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                _friends.Add(friendName);
+            }
+
+            FriendsListBox.Invoke((MethodInvoker)delegate
+            {
+                FriendsCountLabel.Text = $"Znajomi: {_friends.Count}";
+                FriendsListBox.Items.Clear();
+                FriendsListBox.Items.AddRange(_friends.ToArray());
+            });
         }
 
         private void UsersChanged(string userName)

@@ -538,7 +538,7 @@ namespace ServerLibrary.Services
                                     if (user.IsMe(login, availableUsers[login]))
                                     {
                                         user._userAccepted = true;
-                                        SendMessage(client, CodeNames.AcceptedIncomingConnection, $"{user._userStartingConnection}|{user._userStartingConnectionIP}");
+                                        SendMessage(client, CodeNames.AddToFriendsAccepted, $"{user._userStartingConnection}|{user._userStartingConnectionIP}");
                                     }
                                 }
                                 else if (message[0] == CodeNames.AddToFriendsRejected)
