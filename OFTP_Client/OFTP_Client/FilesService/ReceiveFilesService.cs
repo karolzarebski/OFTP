@@ -102,7 +102,7 @@ namespace OFTP_Client.FilesService
                 }
                 else
                 {
-                    await _client.GetStream().WriteAsync(Encoding.UTF8.GetBytes($"{CodeNames.Connected}00"));
+                    await _client.GetStream().WriteAsync(Encoding.UTF8.GetBytes($"{ServerRequestCodes.Connected}00"));
 
                     _cryptoService = new CryptoService();
 
@@ -111,7 +111,7 @@ namespace OFTP_Client.FilesService
                     var diffieHellmanMessage = new byte[publicKey.Length + 5];
 
                     Array.Copy(publicKey, 0, diffieHellmanMessage, 5, publicKey.Length);
-                    Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanKey), 0, diffieHellmanMessage, 0, 3);
+                    Array.Copy(Encoding.UTF8.GetBytes(ServerRequestCodes.DiffieHellmanKey), 0, diffieHellmanMessage, 0, 3);
                     diffieHellmanMessage[3] = 0;
                     diffieHellmanMessage[4] = 72;
                     await _client.GetStream().WriteAsync(diffieHellmanMessage);
@@ -124,7 +124,7 @@ namespace OFTP_Client.FilesService
                     var iv = _cryptoService.GenerateIV(clientPublicKey.Skip(5).ToArray());
 
                     Array.Copy(iv, 0, diffieHellmanMessage, 5, iv.Length);
-                    Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanIV), 0, diffieHellmanMessage, 0, 3);
+                    Array.Copy(Encoding.UTF8.GetBytes(ServerRequestCodes.DiffieHellmanIV), 0, diffieHellmanMessage, 0, 3);
                     diffieHellmanMessage[3] = 0;
                     diffieHellmanMessage[4] = 16;
 
@@ -140,21 +140,21 @@ namespace OFTP_Client.FilesService
         {
             var response = (await ReceiveMessage()).Split("|");
 
-            if (response[0] == CodeNames.BeginFileTransmission)
+            if (response[0] == FileTransmissionCodes.BeginFileTransmission)
             {
                 switch (MessageBox.Show($"Czy chcesz odebrać {response[1]} plików?", "Odbiór plików",
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                 {
                     case DialogResult.Yes:
-                        await SendMessage(CodeNames.AcceptFileTransmission);
+                        await SendMessage(FileTransmissionCodes.AcceptFileTransmission);
                         fileCount = Convert.ToInt32(response[1]);
                         return true;
                     case DialogResult.No:
-                        await SendMessage(CodeNames.RejectFileTransmission);
+                        await SendMessage(FileTransmissionCodes.RejectFileTransmission);
                         return false;
                 }
             }
-            if (response[0] == CodeNames.DisconnectFromClient)
+            if (response[0] == UserConnectionCodes.DisconnectFromClient)
             {
                 return false;
             }
@@ -187,7 +187,7 @@ namespace OFTP_Client.FilesService
                 {
                     var fileInfo = (await ReceiveMessage()).Split("|");
 
-                    if (fileInfo[0] == CodeNames.FileLength)
+                    if (fileInfo[0] == FileTransmissionCodes.FileLength)
                     {
                         int fileLen = Convert.ToInt32(fileInfo[2]);
                         int totalFileLength = fileLen;
@@ -209,7 +209,7 @@ namespace OFTP_Client.FilesService
                         {
                             if (isStopped)
                             {
-                                await SendMessage(CodeNames.FileTransmissionInterrupted);
+                                await SendMessage(FileTransmissionCodes.FileTransmissionInterrupted);
 
                                 return false;
                             }
@@ -234,7 +234,7 @@ namespace OFTP_Client.FilesService
 
                         fs.Flush();
 
-                        await SendMessage(CodeNames.OK);
+                        await SendMessage(FileTransmissionCodes.OK);
                     }
                 }
 

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ServerLibrary.Resources {
+namespace OFTP_Client.Resources {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace ServerLibrary.Resources {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class CodeNames {
+    internal class ServerRequestCodes {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal CodeNames() {
+        internal ServerRequestCodes() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace ServerLibrary.Resources {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("ServerLibrary.Resources.CodeNames", typeof(CodeNames).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("OFTP_Client.Resources.ServerRequestCodes", typeof(ServerRequestCodes).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,65 +61,11 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 502.
-        /// </summary>
-        internal static string AcceptedIncomingConnection {
-            get {
-                return ResourceManager.GetString("AcceptedIncomingConnection", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 107.
+        ///   Looks up a localized string similar to 108.
         /// </summary>
         internal static string ActiveUsers {
             get {
                 return ResourceManager.GetString("ActiveUsers", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 702.
-        /// </summary>
-        internal static string AddFriend {
-            get {
-                return ResourceManager.GetString("AddFriend", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 704.
-        /// </summary>
-        internal static string AddToFriendsAccepted {
-            get {
-                return ResourceManager.GetString("AddToFriendsAccepted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 705.
-        /// </summary>
-        internal static string AddToFriendsRejected {
-            get {
-                return ResourceManager.GetString("AddToFriendsRejected", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 701.
-        /// </summary>
-        internal static string AskForFriendship {
-            get {
-                return ResourceManager.GetString("AskForFriendship", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 501.
-        /// </summary>
-        internal static string AskUserForConnection {
-            get {
-                return ResourceManager.GetString("AskUserForConnection", resourceCulture);
             }
         }
         
@@ -142,7 +88,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 104.
+        ///   Looks up a localized string similar to 105.
         /// </summary>
         internal static string CorrectRegisterData {
             get {
@@ -151,7 +97,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 110.
+        ///   Looks up a localized string similar to 111.
         /// </summary>
         internal static string DiffieHellmanIV {
             get {
@@ -160,7 +106,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 109.
+        ///   Looks up a localized string similar to 110.
         /// </summary>
         internal static string DiffieHellmanKey {
             get {
@@ -169,7 +115,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 213.
+        ///   Looks up a localized string similar to 112.
         /// </summary>
         internal static string Disconnect {
             get {
@@ -178,7 +124,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 700.
+        ///   Looks up a localized string similar to 113.
         /// </summary>
         internal static string Friends {
             get {
@@ -196,7 +142,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 106.
+        ///   Looks up a localized string similar to 107.
         /// </summary>
         internal static string LogOut {
             get {
@@ -205,16 +151,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 706.
-        /// </summary>
-        internal static string NewFriend {
-            get {
-                return ResourceManager.GetString("NewFriend", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 105.
+        ///   Looks up a localized string similar to 106.
         /// </summary>
         internal static string NewUser {
             get {
@@ -232,43 +169,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 201.
-        /// </summary>
-        internal static string RegistrationLoginExists {
-            get {
-                return ResourceManager.GetString("RegistrationLoginExists", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 202.
-        /// </summary>
-        internal static string RegistrationPasswordWrong {
-            get {
-                return ResourceManager.GetString("RegistrationPasswordWrong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 503.
-        /// </summary>
-        internal static string RejectedIncomingConnection {
-            get {
-                return ResourceManager.GetString("RejectedIncomingConnection", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 703.
-        /// </summary>
-        internal static string RemoveFriend {
-            get {
-                return ResourceManager.GetString("RemoveFriend", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 108.
+        ///   Looks up a localized string similar to 109.
         /// </summary>
         internal static string UserAlreadyLoggedIn {
             get {
@@ -277,7 +178,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 200.
+        ///   Looks up a localized string similar to 104.
         /// </summary>
         internal static string WrongLoginData {
             get {

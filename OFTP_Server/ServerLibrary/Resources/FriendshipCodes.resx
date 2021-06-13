@@ -117,79 +117,22 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AcceptedIncomingConnection" xml:space="preserve">
-    <value>502</value>
-  </data>
-  <data name="ActiveUsers" xml:space="preserve">
-    <value>107</value>
-  </data>
   <data name="AddFriend" xml:space="preserve">
-    <value>702</value>
-  </data>
-  <data name="AddToFriendsAccepted" xml:space="preserve">
-    <value>704</value>
-  </data>
-  <data name="AddToFriendsRejected" xml:space="preserve">
-    <value>705</value>
-  </data>
-  <data name="AskForFriendship" xml:space="preserve">
     <value>701</value>
   </data>
-  <data name="AskUserForConnection" xml:space="preserve">
-    <value>501</value>
-  </data>
-  <data name="Connected" xml:space="preserve">
-    <value>100</value>
-  </data>
-  <data name="CorrectLoginData" xml:space="preserve">
-    <value>103</value>
-  </data>
-  <data name="CorrectRegisterData" xml:space="preserve">
-    <value>104</value>
-  </data>
-  <data name="DiffieHellmanIV" xml:space="preserve">
-    <value>110</value>
-  </data>
-  <data name="DiffieHellmanKey" xml:space="preserve">
-    <value>109</value>
-  </data>
-  <data name="Disconnect" xml:space="preserve">
-    <value>213</value>
-  </data>
-  <data name="Friends" xml:space="preserve">
-    <value>700</value>
-  </data>
-  <data name="Login" xml:space="preserve">
-    <value>101</value>
-  </data>
-  <data name="LogOut" xml:space="preserve">
-    <value>106</value>
-  </data>
-  <data name="NewFriend" xml:space="preserve">
-    <value>706</value>
-  </data>
-  <data name="NewUser" xml:space="preserve">
-    <value>105</value>
-  </data>
-  <data name="Register" xml:space="preserve">
-    <value>102</value>
-  </data>
-  <data name="RegistrationLoginExists" xml:space="preserve">
-    <value>201</value>
-  </data>
-  <data name="RegistrationPasswordWrong" xml:space="preserve">
-    <value>202</value>
-  </data>
-  <data name="RejectedIncomingConnection" xml:space="preserve">
-    <value>503</value>
-  </data>
-  <data name="RemoveFriend" xml:space="preserve">
+  <data name="AddToFriendsAccepted" xml:space="preserve">
     <value>703</value>
   </data>
-  <data name="UserAlreadyLoggedIn" xml:space="preserve">
-    <value>108</value>
+  <data name="AddToFriendsRejected" xml:space="preserve">
+    <value>704</value>
   </data>
-  <data name="WrongLoginData" xml:space="preserve">
-    <value>200</value>
+  <data name="AskForFriendship" xml:space="preserve">
+    <value>700</value>
+  </data>
+  <data name="NewFriend" xml:space="preserve">
+    <value>705</value>
+  </data>
+  <data name="RemoveFriend" xml:space="preserve">
+    <value>702</value>
   </data>
 </root>

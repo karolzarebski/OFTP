@@ -22,12 +22,14 @@ namespace OFTP_Client
         private SendFilesService sendFilesService;
         private ReceiveFilesService receiveFilesService;
 
-        private string filePath = "";
+        private string filePath = "", _loggedInAs = string.Empty;
         private List<string> selectedFilesPath = new List<string>();
 
         public TcpClient _tcpClient;
         private CryptoService _cryptoService;
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+        public event EventHandler<SendEmailEvent> SendEmailEvent;
 
         public MainWindow(TcpClient tcpClient, CryptoService cryptoService, List<string> availableUsers,
              List<string> friends, string loggedInAs)
@@ -38,6 +40,7 @@ namespace OFTP_Client
             _availableUsers = availableUsers;
             _tcpClient = tcpClient;
             _friends = friends;
+            _loggedInAs = loggedInAs;
 
             LoggedInAsLabel.Text = $"Zalogowano jako: {loggedInAs}";
 
@@ -69,16 +72,16 @@ namespace OFTP_Client
                                var data = (await cryptoService.DecryptData(buffer)).Split('|');
                                var login = string.Empty;
 
-                               if (code == CodeNames.NewUser)
+                               if (code == ServerRequestCodes.NewUser)
                                {
                                    login = data[0];
                                    UsersChanged(login);
                                }
-                               else if (code == CodeNames.NewFriend)
+                               else if (code == FriendshipCodes.NewFriend)
                                {
                                    FriendsChanged(data[0]);
                                }
-                               else if (code == CodeNames.AskUserForConnection)
+                               else if (code == UserConnectionCodes.AskUserForConnection)
                                {
                                    login = data[0];
 
@@ -86,7 +89,7 @@ namespace OFTP_Client
                                        MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                                    {
                                        case DialogResult.Yes:
-                                           await SendMessage(CodeNames.AcceptedIncomingConnection);
+                                           await SendMessage(UserConnectionCodes.AcceptedIncomingConnection);
 
                                            accepted = true;
 
@@ -99,7 +102,7 @@ namespace OFTP_Client
                                        case DialogResult.No:
                                            accepted = false;
 
-                                           await SendMessage(CodeNames.RejectedIncomingConnection);
+                                           await SendMessage(UserConnectionCodes.RejectedIncomingConnection);
                                            break;
                                    }
                                    if (accepted)
@@ -134,7 +137,7 @@ namespace OFTP_Client
                                        }
                                    }
                                }
-                               else if (code == CodeNames.AcceptedIncomingConnection)
+                               else if (code == UserConnectionCodes.AcceptedIncomingConnection)
                                {
                                    login = data[0];
 
@@ -192,22 +195,22 @@ namespace OFTP_Client
                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
                                    }
                                }
-                               else if (code == CodeNames.AskForFriendship)
+                               else if (code == FriendshipCodes.AskForFriendship)
                                {
                                    switch (MessageBox.Show($"Czy chcesz dodać {data[0]} do listy znajomych?", "Nowy znajomy",
                                        MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                                    {
                                        case DialogResult.Yes:
-                                           await SendMessage(CodeNames.AddToFriendsAccepted);
+                                           await SendMessage(FriendshipCodes.AddToFriendsAccepted);
 
                                            break;
                                        case DialogResult.No:
-                                           await SendMessage(CodeNames.AddToFriendsRejected);
+                                           await SendMessage(FriendshipCodes.AddToFriendsRejected);
 
                                            break;
                                    }
                                }
-                               else if (code == CodeNames.AddToFriendsAccepted)
+                               else if (code == FriendshipCodes.AddToFriendsAccepted)
                                {
                                    MessageBox.Show("Pomyślnie dodano użytkownika do znajomych", "Nowy znajomy",
                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -215,7 +218,7 @@ namespace OFTP_Client
                            }
                            else
                            {
-                               if (code == CodeNames.RejectedIncomingConnection)
+                               if (code == UserConnectionCodes.RejectedIncomingConnection)
                                {
                                    SendButton.Enabled = false;
                                    MessageBox.Show("Klient odmówił połączenia", "Odmowa połączenia",
@@ -229,9 +232,19 @@ namespace OFTP_Client
                                        StateLabel.Text = "Stan: Oczekiwanie";
                                    });
                                }
-                               else if (code == CodeNames.AddToFriendsRejected)
+                               else if (code == FriendshipCodes.AddToFriendsRejected)
                                {
                                    MessageBox.Show("Użytkownik odmówił znjomości", "Nowy znajomy odrzucony",
+                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
+                               }
+                               else if (code == EmailCodes.SendEmailSuccess)
+                               {
+                                   MessageBox.Show("Email został pomyślnie wysłany", "Powodzenie",
+                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
+                               }
+                               else if (code == EmailCodes.SendEmailFailure)
+                               {
+                                   MessageBox.Show("Wystąpił błąd podczas próby wysłania Emaila", "Błąd",
                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
                                }
                            }
@@ -409,7 +422,7 @@ namespace OFTP_Client
                 }
             }
 
-            await SendMessage(CodeNames.LogOut);
+            await SendMessage(ServerRequestCodes.LogOut);
 
             cancellationTokenSource.Cancel();
 
@@ -534,16 +547,17 @@ namespace OFTP_Client
                 if (selectedUser != null)
                 {
                     isConnected = true;
-                    await SendMessage(CodeNames.AskUserForConnection, selectedUser.ToString());
+                    await SendMessage(UserConnectionCodes.AskUserForConnection, selectedUser.ToString());
                     StateLabel.Text = $"Stan: Oczekiwanie na akceptację od {UsersListBox.SelectedItem}";
                     ConnectButton.Text = "Rozłącz";
                 }
                 else if (FriendsListBox.SelectedItem != null)
                 {
-                    if (!_availableUsers.Contains(FriendsListBox.SelectedItem))
+                    var selectedFriend = FriendsListBox.SelectedItem;
+
+                    if (!_availableUsers.Contains(selectedFriend))
                     {
-                        MessageBox.Show($"{FriendsListBox.SelectedItem} nie jest dostępny", "Brak użytkownika",
-                           MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        FriendIsUnavailable(selectedFriend.ToString());
                     }
                 }
                 else
@@ -773,7 +787,9 @@ namespace OFTP_Client
 
         private void FriendsListBox_DoubleClick(object sender, EventArgs e)
         {
-            if (FriendsListBox.SelectedItem != null)
+            var selectedFriend = FriendsListBox.SelectedItem;
+
+            if (selectedFriend != null)
             {
                 if (_availableUsers.Contains(FriendsListBox.SelectedItem))
                 {
@@ -781,9 +797,25 @@ namespace OFTP_Client
                 }
                 else
                 {
-                    MessageBox.Show($"{FriendsListBox.SelectedItem} nie jest dostępny", "Brak użytkownika",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    FriendIsUnavailable(selectedFriend.ToString());
                 }
+            }
+        }
+
+        private void FriendIsUnavailable(string unavailableUsername)
+        {
+            switch (MessageBox.Show($"{FriendsListBox.SelectedItem} nie jest dostępny\nCzy chcesz wysłać powiadomienie?",
+                "Brak użytkownika", MessageBoxButtons.YesNo, MessageBoxIcon.Information))
+            {
+                case DialogResult.Yes:
+                    SendEmailEvent.Invoke(this, new SendEmailEvent
+                    {
+                        UnavailableUsername = unavailableUsername,
+                        Username = _loggedInAs
+                    });
+                    break;
+                case DialogResult.No:
+                    break;
             }
         }
 
@@ -824,7 +856,7 @@ namespace OFTP_Client
                         "Potwierdzanie usuwania", MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                     {
                         case DialogResult.Yes:
-                            await SendMessage(CodeNames.RemoveFriend, selectedUser.ToString());
+                            await SendMessage(FriendshipCodes.RemoveFriend, selectedUser.ToString());
                             break;
                         case DialogResult.No:
                             break;
@@ -832,7 +864,7 @@ namespace OFTP_Client
                 }
                 else
                 {
-                    await SendMessage(CodeNames.AskForFriendship, selectedUser.ToString());
+                    await SendMessage(FriendshipCodes.AskForFriendship, selectedUser.ToString());
                 }
             }
             else
@@ -841,7 +873,7 @@ namespace OFTP_Client
                     "Potwierdzanie usuwania", MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                 {
                     case DialogResult.Yes:
-                        await SendMessage(CodeNames.RemoveFriend, selectedFriend.ToString());
+                        await SendMessage(FriendshipCodes.RemoveFriend, selectedFriend.ToString());
                         break;
                     case DialogResult.No:
                         break;
