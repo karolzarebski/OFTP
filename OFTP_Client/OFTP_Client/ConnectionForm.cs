@@ -126,7 +126,7 @@ namespace OFTP_Client
             var code = new byte[5]; //TODO check size
             await stream.ReadAsync(code, 0, code.Length);
 
-            if (Encoding.UTF8.GetString(code.Take(3).ToArray()) == CodeNames.Connected)
+            if (Encoding.UTF8.GetString(code.Take(3).ToArray()) == ServerRequestCodes.Connected)
             {
                 LoginButton.Enabled = true;
                 RegisterButton.Enabled = true;
@@ -140,7 +140,7 @@ namespace OFTP_Client
                 var clientPublicKey = new byte[77];           
 
                 Array.Copy(_cryptoService.GeneratePublicKey(), 0, clientPublicKey, 5, 72);
-                Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanKey), 0, clientPublicKey, 0, 3);
+                Array.Copy(Encoding.UTF8.GetBytes(ServerRequestCodes.DiffieHellmanKey), 0, clientPublicKey, 0, 3);
                 clientPublicKey[3] = 0;
                 clientPublicKey[4] = 72;
                 await client.GetStream().WriteAsync(clientPublicKey);
@@ -181,25 +181,25 @@ namespace OFTP_Client
 
             if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
-                await SendMessage(CodeNames.Login, $"{login}|{password}");
+                await SendMessage(ServerRequestCodes.Login, $"{login}|{password}");
                 var message = await ReceiveMessage();
 
-                if (message == CodeNames.CorrectLoginData)
+                if (message == ServerRequestCodes.CorrectLoginData)
                 {
                     MessageBox.Show("Pomyślnie zalogowano do serwera", "Logowanie",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    await SendMessage(CodeNames.ActiveUsers);
+                    await SendMessage(ServerRequestCodes.ActiveUsers);
 
                     var availableUsersCount = (await ReceiveMessage()).Split('|');
 
-                    if (availableUsersCount[0] == CodeNames.ActiveUsers)
+                    if (availableUsersCount[0] == ServerRequestCodes.ActiveUsers)
                     {
                         var processedUsersCount = Convert.ToInt32(availableUsersCount[1]);
 
                         if (processedUsersCount > 0)
                         {
-                            await SendMessage(CodeNames.ActiveUsers);
+                            await SendMessage(ServerRequestCodes.ActiveUsers);
 
                             while (processedUsersCount >= 0)
                             {
@@ -215,17 +215,17 @@ namespace OFTP_Client
                         }
                     }
 
-                    await SendMessage(CodeNames.Friends);
+                    await SendMessage(ServerRequestCodes.Friends);
 
                     var friendsCount = (await ReceiveMessage()).Split('|');
 
-                    if (friendsCount[0] == CodeNames.Friends)
+                    if (friendsCount[0] == ServerRequestCodes.Friends)
                     {
                         var processedFriendsCount = Convert.ToInt32(friendsCount[1]);
 
                         if (processedFriendsCount > 0)
                         {
-                            await SendMessage(CodeNames.Friends);
+                            await SendMessage(ServerRequestCodes.Friends);
 
                             while (processedFriendsCount >= 0)
                             {
@@ -243,12 +243,12 @@ namespace OFTP_Client
 
                     InitMainWindow();
                 }
-                else if (message == CodeNames.WrongLoginData)
+                else if (message == ServerRequestCodes.WrongLoginData)
                 {
                     MessageBox.Show("Błędne dane logowania\nPodaj nowe i spróbuj ponowne",
                         "Błąd logowania", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-                else if (message == CodeNames.UserAlreadyLoggedIn)
+                else if (message == ServerRequestCodes.UserAlreadyLoggedIn)
                 {
                     MessageBox.Show($"Użytkownik {login} jest już zalogowany", "Błąd logowania",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -268,26 +268,26 @@ namespace OFTP_Client
 
             if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
-                await SendMessage(CodeNames.Register, $"{login}|{password}|marekmarczewski1234@gmail.com");
+                await SendMessage(ServerRequestCodes.Register, $"{login}|{password}|marekmarczewski1234@gmail.com");
 
                 var message = await ReceiveMessage();
 
-                if (message == CodeNames.CorrectRegisterData)
+                if (message == ServerRequestCodes.CorrectRegisterData)
                 {
                     MessageBox.Show("Pomyślnie zarejestrowano", "Rejestracja",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    await SendMessage(CodeNames.ActiveUsers);
+                    await SendMessage(ServerRequestCodes.ActiveUsers);
 
                     var availableUsersCount = (await ReceiveMessage()).Split('|');
 
-                    if (availableUsersCount[0] == CodeNames.ActiveUsers)
+                    if (availableUsersCount[0] == ServerRequestCodes.ActiveUsers)
                     {
                         var processedUsersCount = Convert.ToInt32(availableUsersCount[1]);
 
                         if (processedUsersCount > 0)
                         {
-                            await SendMessage(CodeNames.ActiveUsers);
+                            await SendMessage(ServerRequestCodes.ActiveUsers);
 
                             while (processedUsersCount >= 0)
                             {
@@ -303,17 +303,17 @@ namespace OFTP_Client
                         }
                     }
 
-                    await SendMessage(CodeNames.Friends);
+                    await SendMessage(ServerRequestCodes.Friends);
 
                     var friendsCount = (await ReceiveMessage()).Split('|');
 
-                    if (friendsCount[0] == CodeNames.Friends)
+                    if (friendsCount[0] == ServerRequestCodes.Friends)
                     {
                         var processedFriendsCount = Convert.ToInt32(friendsCount[1]);
 
                         if (processedFriendsCount > 0)
                         {
-                            await SendMessage(CodeNames.Friends);
+                            await SendMessage(ServerRequestCodes.Friends);
 
                             while (processedFriendsCount >= 0)
                             {
@@ -331,12 +331,17 @@ namespace OFTP_Client
 
                     InitMainWindow();
                 }
-                else if (message == CodeNames.RegistrationLoginExists)
+                else if (message == RegisterCodes.RegistrationLoginExists)
                 {
                     MessageBox.Show("Błąd rejestracji\nKonto o podanym loginie już istnieje\nPodaj nowe i spróbuj ponowne",
                             "Błąd rejestracji", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-                else if (message == CodeNames.RegistrationPasswordWrong)
+                else if (message == RegisterCodes.RegistrationEmailExists)
+                {
+                    MessageBox.Show("Błąd rejestracji\nKonto o podanym adresie email już istnieje\nPodaj nowe i spróbuj ponowne",
+                            "Błąd rejestracji", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else if (message == RegisterCodes.RegistrationPasswordWrong)
                 {
                     MessageBox.Show("Błąd rejestracji\nHasło nie spełnia polityki\n" +
                         "Hasło musi składać się z min. 10 znaków, 1 wielka litera, 1 mała litera, 1 cyfra\n" +
@@ -455,18 +460,18 @@ namespace OFTP_Client
 
         private async void MainWindow_SendEmailEvent(object sender, SendEmailEvent e)
         {
-            await SendMessage(CodeNames.SendEmail, $"{e.UnavailableUsername}|{e.Username}");
+            await SendMessage(EmailCodes.SendEmail, $"{e.UnavailableUsername}|{e.Username}");
 
             var code = await ReceiveMessage();
 
-            if (code == CodeNames.SendEmailSuccess)
+            if (code == EmailCodes.SendEmailSuccess)
             {
-                MessageBox.Show("EMail został pomyślnie wysłany", "Powodzenie",
+                MessageBox.Show("Email został pomyślnie wysłany", "Powodzenie",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
             {
-                MessageBox.Show("Wystąpił błąd podczas próby wysłania Maila", "Błąd",
+                MessageBox.Show("Wystąpił błąd podczas próby wysłania Emaila", "Błąd",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }

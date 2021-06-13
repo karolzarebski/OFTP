@@ -44,7 +44,7 @@ namespace OFTP_Client.FilesService
                 var clientPublicKey = new byte[77];
 
                 Array.Copy(_cryptoService.GeneratePublicKey(), 0, clientPublicKey, 5, 72);
-                Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanKey), 0, clientPublicKey, 0, 3);
+                Array.Copy(Encoding.UTF8.GetBytes(ServerRequestCodes.DiffieHellmanKey), 0, clientPublicKey, 0, 3);
                 clientPublicKey[3] = 0;
                 clientPublicKey[4] = 72;
                 await _client.GetStream().WriteAsync(clientPublicKey);
@@ -75,7 +75,7 @@ namespace OFTP_Client.FilesService
             var encryptedData = await _cryptoService.EncryptData(data);
             var encryptedMessage = new byte[encryptedData.Length + 7];
             Array.Copy(encryptedData, 0, encryptedMessage, 7, encryptedData.Length);
-            Array.Copy(Encoding.UTF8.GetBytes(CodeNames.NextPartialData), 0, encryptedMessage, 0, 3);
+            Array.Copy(Encoding.UTF8.GetBytes(FileTransmissionCodes.NextPartialData), 0, encryptedMessage, 0, 3);
             var len = encryptedData.Length;
             encryptedMessage[3] = (byte)(len / 256);
             encryptedMessage[4] = (byte)(len % 256);
@@ -130,7 +130,7 @@ namespace OFTP_Client.FilesService
 
         public async Task SendEndConnection()
         {
-            await SendMessage(CodeNames.DisconnectFromClient);
+            await SendMessage(UserConnectionCodes.DisconnectFromClient);
         }
 
         public async Task<bool> SendFiles(List<string> _files)
@@ -141,11 +141,11 @@ namespace OFTP_Client.FilesService
 
                 int filesSent = 0;
 
-                await SendMessage(CodeNames.BeginFileTransmission, $"{files.Count}");
+                await SendMessage(FileTransmissionCodes.BeginFileTransmission, $"{files.Count}");
 
                 var responseCode = await ReceiveMessage();
 
-                if (responseCode == CodeNames.AcceptFileTransmission)
+                if (responseCode == FileTransmissionCodes.AcceptFileTransmission)
                 {
                     foreach (var file in files)
                     {
@@ -157,7 +157,7 @@ namespace OFTP_Client.FilesService
 
                         using var fileStream = File.OpenRead(file);
 
-                        await SendMessage(CodeNames.FileLength, $"{fi.Name}|{fi.Length}");
+                        await SendMessage(FileTransmissionCodes.FileLength, $"{fi.Name}|{fi.Length}");
 
                         SendFileProgress.Invoke(this, new SendProgressEvent
                         {
@@ -170,7 +170,7 @@ namespace OFTP_Client.FilesService
                         {
                             if (isStopped)
                             {
-                                await SendMessage(CodeNames.FileTransmissionInterrupted);
+                                await SendMessage(FileTransmissionCodes.FileTransmissionInterrupted);
 
                                 return false;
                             }
@@ -202,16 +202,16 @@ namespace OFTP_Client.FilesService
                             Receive = false
                         });
 
-                        var endMessage = $"{CodeNames.EndFileTransmission}|";
+                        var endMessage = $"{FileTransmissionCodes.EndFileTransmission}|";
 
-                        await SendMessage(CodeNames.EndFileTransmission);
+                        await SendMessage(FileTransmissionCodes.EndFileTransmission);
 
-                        while (await ReceiveMessage() != CodeNames.OK) ;
+                        while (await ReceiveMessage() != FileTransmissionCodes.OK) ;
                     }
 
                     return true;
                 }
-                else if (responseCode == CodeNames.RejectFileTransmission)
+                else if (responseCode == FileTransmissionCodes.RejectFileTransmission)
                 {
                     MessageBox.Show("Klient odmówił transmisji plików", "Odmowa",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);

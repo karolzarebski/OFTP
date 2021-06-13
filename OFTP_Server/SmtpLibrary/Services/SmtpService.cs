@@ -42,7 +42,7 @@ namespace SmtpLibrary.Services
                 mailDetails.From = new MailAddress(_smtpConfiguration.SenderCredentials.SenderLogin);
                 mailDetails.To.Add(destinationEmail);
                 mailDetails.Subject = "Nieodebrana transmisja plików";
-                mailDetails.Body = $"{DateTime.Now} - użytkownik {senderUsername} dokonał próby wysłania plików podczas twojej nieobecności\n" +
+                mailDetails.Body = $"{DateTime.Now} - użytkownik {senderUsername} dokonał próby wysłania plików podczas twojej nieobecności\n\n" +
                 $"Możesz skontakować się z nim wysyłając wiadomość na adres email: {senderEmail}";
 
                 _logger.LogInformation($"Trying to send email from {senderUsername} ({senderEmail}) to {destinationEmail}");

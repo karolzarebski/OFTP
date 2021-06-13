@@ -75,8 +75,8 @@ namespace ServerLibrary.Services
 
         private async void ServerService_friendsChangedEvent(object sender, FriendsChangedEvent e)
         {
-            await SendMessage(e.Client1, CodeNames.NewFriend, e.Username1);
-            await SendMessage(e.Client2, CodeNames.NewFriend, e.Username2);
+            await SendMessage(e.Client1, FriendshipCodes.NewFriend, e.Username1);
+            await SendMessage(e.Client2, FriendshipCodes.NewFriend, e.Username2);
         }
 
         private async void RefreshAvailableUsers(object sender, UsersCountChangedEvent e)
@@ -87,7 +87,7 @@ namespace ServerLibrary.Services
             {
                 if (e.newClient != client.Key)
                 {
-                    await SendMessage(client.Key, CodeNames.NewUser, e.Username);
+                    await SendMessage(client.Key, ServerRequestCodes.NewUser, e.Username);
                 }
             }
         }
@@ -183,7 +183,7 @@ namespace ServerLibrary.Services
 
                 Task.Run(async () =>
                 {
-                    await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes($"{CodeNames.Connected}00"));
+                    await client.GetStream().WriteAsync(Encoding.UTF8.GetBytes($"{ServerRequestCodes.Connected}00"));
 
                     var cryptoService = new CryptoService();
 
@@ -192,7 +192,7 @@ namespace ServerLibrary.Services
                     var diffieHellmanMessage = new byte[publicKey.Length + 5];
 
                     Array.Copy(publicKey, 0, diffieHellmanMessage, 5, publicKey.Length);
-                    Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanKey), 0, diffieHellmanMessage, 0, 3);
+                    Array.Copy(Encoding.UTF8.GetBytes(ServerRequestCodes.DiffieHellmanKey), 0, diffieHellmanMessage, 0, 3);
                     diffieHellmanMessage[3] = 0;
                     diffieHellmanMessage[4] = 72;
                     await client.GetStream().WriteAsync(diffieHellmanMessage);
@@ -205,7 +205,7 @@ namespace ServerLibrary.Services
                     var iv = cryptoService.GenerateIV(clientPublicKey.Skip(5).ToArray());
 
                     Array.Copy(iv, 0, diffieHellmanMessage, 5, iv.Length);
-                    Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanIV), 0, diffieHellmanMessage, 0, 3);
+                    Array.Copy(Encoding.UTF8.GetBytes(ServerRequestCodes.DiffieHellmanIV), 0, diffieHellmanMessage, 0, 3);
                     diffieHellmanMessage[3] = 0;
                     diffieHellmanMessage[4] = 16;
 
@@ -224,7 +224,7 @@ namespace ServerLibrary.Services
                     {
                         var data = (await ReceiveMessage(client)).Split('|');
 
-                        if (data[0] == CodeNames.Login)
+                        if (data[0] == ServerRequestCodes.Login)
                         {
                             login = data[1];
 
@@ -232,7 +232,7 @@ namespace ServerLibrary.Services
                             {
                                 if (await _loginService.CheckLoginCredentials(login, data[2]))
                                 {
-                                    await SendMessage(client, CodeNames.CorrectLoginData);
+                                    await SendMessage(client, ServerRequestCodes.CorrectLoginData);
                                     loggedIn = true;
 
                                     if (!availableUsers.ContainsKey(login))
@@ -248,7 +248,7 @@ namespace ServerLibrary.Services
 
                                 else
                                 {
-                                    await SendMessage(client, CodeNames.WrongLoginData);
+                                    await SendMessage(client, ServerRequestCodes.WrongLoginData);
                                     loggedIn = false;
                                     //clients.Remove(client);
                                 }
@@ -256,18 +256,18 @@ namespace ServerLibrary.Services
                             else
                             {
                                 loggedIn = false;
-                                await SendMessage(client, CodeNames.UserAlreadyLoggedIn);
+                                await SendMessage(client, ServerRequestCodes.UserAlreadyLoggedIn);
                             }
 
                         }
-                        else if (data[0] == CodeNames.Register)
+                        else if (data[0] == ServerRequestCodes.Register)
                         {
                             login = data[1];
                             int registrationResultCode = await _loginService.RegisterAccount(login, data[2], data[3]);
 
                             await _smtpService.SendRegistrationEmail(data[3]);
 
-                            if (registrationResultCode.ToString() == CodeNames.CorrectRegisterData)
+                            if (registrationResultCode.ToString() == ServerRequestCodes.CorrectRegisterData)
                             {
                                 await SendMessage(client, registrationResultCode.ToString());
                                 loggedIn = true;
@@ -289,7 +289,7 @@ namespace ServerLibrary.Services
                                 //clients.Remove(client);
                             }
                         }
-                        else if (data[0] == CodeNames.Disconnect)
+                        else if (data[0] == ServerRequestCodes.Disconnect)
                         {
                             clients.Remove(client);
                             client.Close();
@@ -306,15 +306,15 @@ namespace ServerLibrary.Services
                     {
                         var usersCode = await ReceiveMessage(client);
 
-                        if (usersCode == CodeNames.ActiveUsers)
+                        if (usersCode == ServerRequestCodes.ActiveUsers)
                         {
                             if (availableUsers.Count - 1 != 0)
                             {
                                 var tempUsers = availableUsers;
 
-                                await SendMessage(client, CodeNames.ActiveUsers, $"{tempUsers.Count - 1}");
+                                await SendMessage(client, ServerRequestCodes.ActiveUsers, $"{tempUsers.Count - 1}");
 
-                                if (await ReceiveMessage(client) == CodeNames.ActiveUsers)
+                                if (await ReceiveMessage(client) == ServerRequestCodes.ActiveUsers)
                                 {
                                     while (tempUsers.Any())
                                     {
@@ -331,7 +331,7 @@ namespace ServerLibrary.Services
                                             }
                                         }
 
-                                        await SendMessage(client, CodeNames.ActiveUsers, preparatedData.Remove(preparatedData.Length - 1));
+                                        await SendMessage(client, ServerRequestCodes.ActiveUsers, preparatedData.Remove(preparatedData.Length - 1));
 
                                         await Task.Delay(1); //server sends data too fast
                                     }
@@ -339,22 +339,22 @@ namespace ServerLibrary.Services
                             }
                             else
                             {
-                                await SendMessage(client, CodeNames.ActiveUsers, "-1");
+                                await SendMessage(client, ServerRequestCodes.ActiveUsers, "-1");
                             }
                         }
 
                         usersCode = await ReceiveMessage(client);
 
-                        if (usersCode == CodeNames.Friends)
+                        if (usersCode == ServerRequestCodes.Friends)
                         {
                             var friendsList = (await _storageService.GetUserDataAsync())
                                             .FirstOrDefault(u => u.Login == login).Friend;
 
-                            await SendMessage(client, CodeNames.Friends, friendsList.Count.ToString());
+                            await SendMessage(client, ServerRequestCodes.Friends, friendsList.Count.ToString());
 
                             if (friendsList.Count > 0)
                             {
-                                if (await ReceiveMessage(client) == CodeNames.Friends)
+                                if (await ReceiveMessage(client) == ServerRequestCodes.Friends)
                                 {
                                     while (friendsList.Any())
                                     {
@@ -368,7 +368,7 @@ namespace ServerLibrary.Services
                                             preparedData += $"{friend.Username}\n";
                                         }
 
-                                        await SendMessage(client, CodeNames.Friends, preparedData.Remove(preparedData.Length - 1));
+                                        await SendMessage(client, ServerRequestCodes.Friends, preparedData.Remove(preparedData.Length - 1));
 
                                         await Task.Delay(1);
                                     }
@@ -382,14 +382,14 @@ namespace ServerLibrary.Services
                             {
                                 var message = (await ReceiveMessage(client)).Split('|');
 
-                                if (message[0] == CodeNames.LogOut)
+                                if (message[0] == ServerRequestCodes.LogOut)
                                 {
                                     _logger.LogInformation($"User {client.Client.RemoteEndPoint} logged out");
                                     Console.WriteLine($"User {client.Client.RemoteEndPoint} logged out");
 
                                     usersCountChangedEvent.Invoke(this, new UsersCountChangedEvent { Username = login, newClient = client });
 
-                                    await SendMessage(client, CodeNames.LogOut);
+                                    await SendMessage(client, ServerRequestCodes.LogOut);
 
                                     clients.Remove(client);
                                     availableUsers.Remove(login);
@@ -399,7 +399,7 @@ namespace ServerLibrary.Services
                                     break;
                                 }
 
-                                else if (message[0] == CodeNames.AskUserForConnection)
+                                else if (message[0] == UsersConnectionCodes.AskUserForConnection)
                                 {
                                     var tempClientLogin = message[1];
                                     var tempClientIp = availableUsers[tempClientLogin];
@@ -408,7 +408,7 @@ namespace ServerLibrary.Services
 
                                     usersConnections.Add(new UsersConnection(login, availableUsers[login], tempClientLogin, tempClientIp));
 
-                                    await SendMessage(tempClient, CodeNames.AskUserForConnection, login);
+                                    await SendMessage(tempClient, UsersConnectionCodes.AskUserForConnection, login);
 
                                     var user = usersConnections.Where(x => x._userStartingConnection == login).FirstOrDefault();
 
@@ -416,16 +416,16 @@ namespace ServerLibrary.Services
 
                                     if (user._userRejected)
                                     {
-                                        await SendMessage(client, CodeNames.RejectedIncomingConnection); //0 tu było
+                                        await SendMessage(client, UsersConnectionCodes.RejectedIncomingConnection); //0 tu było
                                     }
                                     else
                                     {
-                                        await SendMessage(client, CodeNames.AcceptedIncomingConnection, $"{tempClientLogin}|{tempClientIp}");
+                                        await SendMessage(client, UsersConnectionCodes.AcceptedIncomingConnection, $"{tempClientLogin}|{tempClientIp}");
                                     }
 
                                     usersConnections.Remove(user);
                                 }
-                                else if (message[0] == CodeNames.AcceptedIncomingConnection)
+                                else if (message[0] == UsersConnectionCodes.AcceptedIncomingConnection)
                                 {
                                     var user = usersConnections.Where(x => x._userAcceptingConnection == login
                                                 && x._userAcceptingConnectionIP == availableUsers[login]).FirstOrDefault();
@@ -433,10 +433,10 @@ namespace ServerLibrary.Services
                                     if (user.IsMe(login, availableUsers[login]))
                                     {
                                         user._userAccepted = true;
-                                        SendMessage(client, CodeNames.AcceptedIncomingConnection, $"{user._userStartingConnection}|{user._userStartingConnectionIP}");
+                                        SendMessage(client, UsersConnectionCodes.AcceptedIncomingConnection, $"{user._userStartingConnection}|{user._userStartingConnectionIP}");
                                     }
                                 }
-                                else if (message[0] == CodeNames.RejectedIncomingConnection)
+                                else if (message[0] == UsersConnectionCodes.RejectedIncomingConnection)
                                 {
                                     var user = usersConnections.Where(x => x._userAcceptingConnection == login
                                                 && x._userAcceptingConnectionIP == availableUsers[login]).FirstOrDefault();
@@ -447,7 +447,7 @@ namespace ServerLibrary.Services
                                         user._userRejected = true;
                                     }
                                 }
-                                else if (message[0] == CodeNames.RemoveFriend)
+                                else if (message[0] == FriendshipCodes.RemoveFriend)
                                 {
                                     var tempClientLogin = message[1];
                                     var tempClientIp = availableUsers[tempClientLogin];
@@ -484,7 +484,7 @@ namespace ServerLibrary.Services
                                         Client2 = tempClient
                                     });
                                 }
-                                else if (message[0] == CodeNames.AskForFriendship)
+                                else if (message[0] == FriendshipCodes.AskForFriendship)
                                 {
                                     var tempClientLogin = message[1];
                                     var tempClientIp = availableUsers[tempClientLogin];
@@ -495,7 +495,7 @@ namespace ServerLibrary.Services
 
                                     usersFriendship.Add(usersConnection);
 
-                                    await SendMessage(tempClient, CodeNames.AskForFriendship, login);
+                                    await SendMessage(tempClient, FriendshipCodes.AskForFriendship, login);
 
                                     var user = usersFriendship.Where(x => x._userStartingConnection == login).FirstOrDefault();
 
@@ -503,7 +503,7 @@ namespace ServerLibrary.Services
 
                                     if (user._userRejected)
                                     {
-                                        await SendMessage(client, CodeNames.AddToFriendsRejected);
+                                        await SendMessage(client, FriendshipCodes.AddToFriendsRejected);
                                     }
                                     else
                                     {
@@ -523,7 +523,7 @@ namespace ServerLibrary.Services
 
                                         await _storageService.SaveChangesAsync();
 
-                                        await SendMessage(client, CodeNames.AddToFriendsAccepted, $"{tempClientLogin}|{tempClientIp}");
+                                        await SendMessage(client, FriendshipCodes.AddToFriendsAccepted, $"{tempClientLogin}|{tempClientIp}");
 
                                         friendsChangedEvent.Invoke(this, new FriendsChangedEvent
                                         {
@@ -536,7 +536,7 @@ namespace ServerLibrary.Services
 
                                     usersFriendship.Remove(user);
                                 }
-                                else if (message[0] == CodeNames.AddToFriendsAccepted)
+                                else if (message[0] == FriendshipCodes.AddToFriendsAccepted)
                                 {
                                     var user = usersFriendship.Where(x => x._userAcceptingConnection == login
                                         && x._userAcceptingConnectionIP == availableUsers[login]).FirstOrDefault();
@@ -544,10 +544,10 @@ namespace ServerLibrary.Services
                                     if (user.IsMe(login, availableUsers[login]))
                                     {
                                         user._userAccepted = true;
-                                        SendMessage(client, CodeNames.AddToFriendsAccepted, $"{user._userStartingConnection}|{user._userStartingConnectionIP}");
+                                        SendMessage(client, FriendshipCodes.AddToFriendsAccepted, $"{user._userStartingConnection}|{user._userStartingConnectionIP}");
                                     }
                                 }
-                                else if (message[0] == CodeNames.AddToFriendsRejected)
+                                else if (message[0] == FriendshipCodes.AddToFriendsRejected)
                                 {
                                     var user = usersFriendship.Where(x => x._userAcceptingConnection == login
                                         && x._userAcceptingConnectionIP == availableUsers[login]).FirstOrDefault();
@@ -558,7 +558,7 @@ namespace ServerLibrary.Services
                                         user._userRejected = true;
                                     }
                                 }
-                                else if (message[0] == CodeNames.SendEmail)
+                                else if (message[0] == EmailCodes.SendEmail)
                                 {
                                     try
                                     {
@@ -566,39 +566,14 @@ namespace ServerLibrary.Services
 
                                         var unavailableUser = await _storageService.GetUserByLogin(message[1]);
 
-                                        await _smtpService.SendAbsenceEmail(unavailableUser.EmailAddress, 
-                                            fileSender.EmailAddress, fileSender.Login);
+                                        //await _smtpService.SendAbsenceEmail(unavailableUser.EmailAddress, 
+                                        //    fileSender.EmailAddress, fileSender.Login);
 
-                                        //await Task.Run(() =>
-                                        //{
-                                        //    using SmtpClient clientDetails = new SmtpClient();
-
-                                        //    clientDetails.Port = 587;
-                                        //    clientDetails.Host = "smtp.gmail.com";
-                                        //    clientDetails.EnableSsl = true;
-                                        //    clientDetails.DeliveryMethod = SmtpDeliveryMethod.Network;
-                                        //    clientDetails.UseDefaultCredentials = false;
-                                        //    clientDetails.Credentials = new NetworkCredential("ankaankowska1@gmail.com", "chaeyai7");
-
-                                        //    //Message Details
-                                        //    MailMessage mailDetails = new MailMessage();
-                                        //    mailDetails.From = new MailAddress("ankaankowska1@gmail.com");
-                                        //    mailDetails.To.Add("marekmarczewski1234@gmail.com");
-                                        //    //for multiple recipients
-                                        //    //mailDetails.To.Add("another recipient email address");
-                                        //    //for bcc
-                                        //    //mailDetails.Bcc.Add("bcc email address")
-                                        //    mailDetails.Subject = "OFTP subject";
-                                        //    mailDetails.Body = "OFTP Body";
-
-                                        //    clientDetails.Send(mailDetails);
-                                        //});
-
-                                        await SendMessage(client, CodeNames.SendEmailSuccess);
+                                        await SendMessage(client, EmailCodes.SendEmailSuccess);
                                     }
                                     catch (Exception ex)
                                     {
-                                        await SendMessage(client, CodeNames.SendEmailFailure);
+                                        await SendMessage(client, EmailCodes.SendEmailFailure);
                                     }
                                 }
                             }

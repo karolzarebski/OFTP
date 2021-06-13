@@ -11,17 +11,62 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Resources\CodeNames.Designer.cs">
+    <Compile Update="Resources\FileTransmissionCodes.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
-      <DependentUpon>CodeNames.resx</DependentUpon>
+      <DependentUpon>FileTransmissionCodes.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\EmailCodes.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>EmailCodes.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\FriendshipCodes.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>FriendshipCodes.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\RegisterCodes.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>RegisterCodes.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\ServerRequestCodes.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ServerRequestCodes.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\UserConnectionCodes.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>UserConnectionCodes.resx</DependentUpon>
     </Compile>
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Resources\CodeNames.resx">
+    <EmbeddedResource Update="Resources\FileTransmissionCodes.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>CodeNames.Designer.cs</LastGenOutput>
+      <LastGenOutput>FileTransmissionCodes.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\EmailCodes.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>EmailCodes.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\FriendshipCodes.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>FriendshipCodes.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\RegisterCodes.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>RegisterCodes.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\ServerRequestCodes.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ServerRequestCodes.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\UserConnectionCodes.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>UserConnectionCodes.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 

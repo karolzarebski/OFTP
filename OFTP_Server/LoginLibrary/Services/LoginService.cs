@@ -76,6 +76,11 @@ namespace LoginLibrary.Services
                 return 201; //RegistrationLoginExists
             }
 
+            if ((await _storageService.GetUserDataAsync()).Any(u => u.EmailAddress == emailAddress))
+            {
+                return 203; //RegistrationEmailExists
+            }
+
             try
             {
                 if (IsPasswordSecureEnough(password))
@@ -90,7 +95,7 @@ namespace LoginLibrary.Services
                         CreatedAt = DateTime.Now
                     });
 
-                    return 104; //CorrectRegisterData
+                    return 105; //CorrectRegisterData
                 }
 
                 return 202; //RegistrationPasswordWrong
