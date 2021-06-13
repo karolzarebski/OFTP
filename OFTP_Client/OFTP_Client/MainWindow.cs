@@ -22,12 +22,14 @@ namespace OFTP_Client
         private SendFilesService sendFilesService;
         private ReceiveFilesService receiveFilesService;
 
-        private string filePath = "";
+        private string filePath = "", _loggedInAs = string.Empty;
         private List<string> selectedFilesPath = new List<string>();
 
         public TcpClient _tcpClient;
         private CryptoService _cryptoService;
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+        public event EventHandler<SendEmailEvent> SendEmailEvent;
 
         public MainWindow(TcpClient tcpClient, CryptoService cryptoService, List<string> availableUsers,
              List<string> friends, string loggedInAs)
@@ -38,6 +40,7 @@ namespace OFTP_Client
             _availableUsers = availableUsers;
             _tcpClient = tcpClient;
             _friends = friends;
+            _loggedInAs = loggedInAs;
 
             LoggedInAsLabel.Text = $"Zalogowano jako: {loggedInAs}";
 
@@ -540,10 +543,11 @@ namespace OFTP_Client
                 }
                 else if (FriendsListBox.SelectedItem != null)
                 {
-                    if (!_availableUsers.Contains(FriendsListBox.SelectedItem))
+                    var selectedFriend = FriendsListBox.SelectedItem;
+
+                    if (!_availableUsers.Contains(selectedFriend))
                     {
-                        MessageBox.Show($"{FriendsListBox.SelectedItem} nie jest dostępny", "Brak użytkownika",
-                           MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        FriendIsUnavailable(selectedFriend.ToString());
                     }
                 }
                 else
@@ -773,7 +777,9 @@ namespace OFTP_Client
 
         private void FriendsListBox_DoubleClick(object sender, EventArgs e)
         {
-            if (FriendsListBox.SelectedItem != null)
+            var selectedFriend = FriendsListBox.SelectedItem;
+
+            if (selectedFriend != null)
             {
                 if (_availableUsers.Contains(FriendsListBox.SelectedItem))
                 {
@@ -781,9 +787,25 @@ namespace OFTP_Client
                 }
                 else
                 {
-                    MessageBox.Show($"{FriendsListBox.SelectedItem} nie jest dostępny", "Brak użytkownika",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    FriendIsUnavailable(selectedFriend.ToString());
                 }
+            }
+        }
+
+        private void FriendIsUnavailable(string unavailableUsername)
+        {
+            switch (MessageBox.Show($"{FriendsListBox.SelectedItem} nie jest dostępny\nCzy chcesz wysłać maila?",
+                "Brak użytkownika", MessageBoxButtons.YesNo, MessageBoxIcon.Information))
+            {
+                case DialogResult.Yes:
+                    SendEmailEvent.Invoke(this, new SendEmailEvent
+                    {
+                        UnavailableUsername = unavailableUsername,
+                        Username = _loggedInAs
+                    });
+                    break;
+                case DialogResult.No:
+                    break;
             }
         }
 

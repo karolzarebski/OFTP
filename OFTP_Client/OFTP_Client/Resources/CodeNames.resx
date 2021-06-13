@@ -216,6 +216,15 @@
   <data name="RemoveFriend" xml:space="preserve">
     <value>703</value>
   </data>
+  <data name="SendEmail" xml:space="preserve">
+    <value>800</value>
+  </data>
+  <data name="SendEmailFailure" xml:space="preserve">
+    <value>802</value>
+  </data>
+  <data name="SendEmailSuccess" xml:space="preserve">
+    <value>801</value>
+  </data>
   <data name="UserAlreadyLoggedIn" xml:space="preserve">
     <value>108</value>
   </data>

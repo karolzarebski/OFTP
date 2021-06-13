@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Mail;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -550,6 +551,42 @@ namespace ServerLibrary.Services
                                     {
                                         user._userAccepted = true;
                                         user._userRejected = true;
+                                    }
+                                }
+                                else if (message[0] == CodeNames.SendEmail)
+                                {
+                                    try
+                                    {
+                                        await Task.Run(() =>
+                                        {
+                                            using SmtpClient clientDetails = new SmtpClient();
+
+                                            clientDetails.Port = 587;
+                                            clientDetails.Host = "smtp.gmail.com";
+                                            clientDetails.EnableSsl = true;
+                                            clientDetails.DeliveryMethod = SmtpDeliveryMethod.Network;
+                                            clientDetails.UseDefaultCredentials = false;
+                                            clientDetails.Credentials = new NetworkCredential("ankaankowska1@gmail.com", "chaeyai7");
+
+                                            //Message Details
+                                            MailMessage mailDetails = new MailMessage();
+                                            mailDetails.From = new MailAddress("ankaankowska1@gmail.com");
+                                            mailDetails.To.Add("marekmarczewski1234@gmail.com");
+                                            //for multiple recipients
+                                            //mailDetails.To.Add("another recipient email address");
+                                            //for bcc
+                                            //mailDetails.Bcc.Add("bcc email address")
+                                            mailDetails.Subject = "OFTP subject";
+                                            mailDetails.Body = "OFTP Body";
+
+                                            clientDetails.Send(mailDetails);
+                                        });
+
+                                        await SendMessage(client, CodeNames.SendEmailSuccess);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        await SendMessage(client, CodeNames.SendEmailFailure);
                                     }
                                 }
                             }

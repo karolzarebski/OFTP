@@ -1,4 +1,5 @@
-﻿using OFTP_Client.Resources;
+﻿using OFTP_Client.Events;
+using OFTP_Client.Resources;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -431,6 +432,8 @@ namespace OFTP_Client
         {
             var mainWindow = new MainWindow(client, _cryptoService, availableUsers, friendsList, LoginTextBox.Text);
 
+            mainWindow.SendEmailEvent += MainWindow_SendEmailEvent;
+
             mainWindow.FormClosing += (sender, e) =>
             {
                 ServerConnectionLabel.ForeColor = Color.Red;
@@ -443,10 +446,29 @@ namespace OFTP_Client
                 LoginTextBox.Text = "";
                 PasswordTextBox.Text = "";
                 connected = false;
+                mainWindow.SendEmailEvent -= MainWindow_SendEmailEvent;
             };
 
             mainWindow.Show();
             Hide();
+        }
+
+        private async void MainWindow_SendEmailEvent(object sender, SendEmailEvent e)
+        {
+            await SendMessage(CodeNames.SendEmail, e.UnavailableUsername);
+
+            var code = await ReceiveMessage();
+
+            if (code == CodeNames.SendEmailSuccess)
+            {
+                MessageBox.Show("EMail został pomyślnie wysłany", "Powodzenie",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                MessageBox.Show("Wystąpił błąd podczas próby wysłania Maila", "Błąd",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
         }
     }
 }

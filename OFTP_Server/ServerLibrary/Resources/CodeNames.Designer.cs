@@ -268,6 +268,33 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 800.
+        /// </summary>
+        internal static string SendEmail {
+            get {
+                return ResourceManager.GetString("SendEmail", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 802.
+        /// </summary>
+        internal static string SendEmailFailure {
+            get {
+                return ResourceManager.GetString("SendEmailFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 801.
+        /// </summary>
+        internal static string SendEmailSuccess {
+            get {
+                return ResourceManager.GetString("SendEmailSuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 108.
         /// </summary>
         internal static string UserAlreadyLoggedIn {
