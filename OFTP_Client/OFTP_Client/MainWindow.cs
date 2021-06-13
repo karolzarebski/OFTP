@@ -187,6 +187,31 @@ namespace OFTP_Client
                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
                                    }
                                }
+                               else if (code == CodeNames.AskForFriendship)
+                               {
+                                   switch (MessageBox.Show($"Czy chcesz dodać {data[1]} do listy znajomych?", "Nowy znajomy",
+                                       MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+                                   {
+                                       case DialogResult.Yes:
+                                           await SendMessage(CodeNames.AddToFriendsAccepted);
+
+                                           break;
+                                       case DialogResult.No:
+                                           await SendMessage(CodeNames.AddToFriendsRejected);
+
+                                           break;
+                                   }
+                               }
+                               else if (data[0] == CodeNames.AddToFriendsAccepted)
+                               {
+                                   MessageBox.Show("Pomyślnie dodano użytkownika do znajomych", "Nowy znajomy",
+                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
+                               }
+                               else if (data[0] == CodeNames.AddToFriendsRejected)
+                               {
+                                   MessageBox.Show("Użytkownik odmówił znjomości", "Nowy znajomy odrzucony",
+                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
+                               }
                            }
                            else
                            {

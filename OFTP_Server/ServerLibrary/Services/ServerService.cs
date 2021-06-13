@@ -480,7 +480,7 @@ namespace ServerLibrary.Services
                                 }
                                 else if (message[0] == CodeNames.AskForFriendship)
                                 {
-                                    var tempClientLogin = await ReceiveMessage(client);
+                                    var tempClientLogin = message[1];
                                     var tempClientIp = availableUsers[tempClientLogin];
 
                                     var tempClient = clients.Keys.Where(x => x.Client.RemoteEndPoint.ToString().StartsWith(tempClientIp)).FirstOrDefault();
