@@ -30,7 +30,7 @@ namespace LoginLibrary.Services
               .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        private bool IsPasswordSecureEnough(string password) //Minimum ten characters, at least one uppercase letter, one lowercase letter and one number:
+        public bool IsPasswordSecureEnough(string password) //Minimum ten characters, at least one uppercase letter, one lowercase letter and one number:
         {
             return Regex.IsMatch(password, "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{10,}$");
         }

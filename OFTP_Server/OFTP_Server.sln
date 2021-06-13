@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmtpLibrary", "SmtpLibrary\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmtpLibraryTests", "SmtpLibraryTests\SmtpLibraryTests.csproj", "{4C4DDD11-9EAD-4F6E-8128-3C6FF30C414D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoginLibraryTests", "LoginLibraryTests\LoginLibraryTests.csproj", "{1D6761E1-7833-439C-8C7E-2A96286E46CF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +58,10 @@ Global
 		{4C4DDD11-9EAD-4F6E-8128-3C6FF30C414D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4C4DDD11-9EAD-4F6E-8128-3C6FF30C414D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4C4DDD11-9EAD-4F6E-8128-3C6FF30C414D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D6761E1-7833-439C-8C7E-2A96286E46CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D6761E1-7833-439C-8C7E-2A96286E46CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D6761E1-7833-439C-8C7E-2A96286E46CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D6761E1-7833-439C-8C7E-2A96286E46CF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
