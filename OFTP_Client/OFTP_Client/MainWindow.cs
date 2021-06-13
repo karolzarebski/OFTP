@@ -59,10 +59,11 @@ namespace OFTP_Client
                        {
                            var msgLength = buffer[3] * 256 + buffer[4];
                            var code = Encoding.UTF8.GetString(buffer.Take(3).ToArray());
-                           buffer = new byte[msgLength];
 
                            if (msgLength != 0)
                            {
+                               buffer = new byte[msgLength];
+
                                await _tcpClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
 
                                var data = (await cryptoService.DecryptData(buffer)).Split('|');
@@ -211,11 +212,6 @@ namespace OFTP_Client
                                    MessageBox.Show("Pomyślnie dodano użytkownika do znajomych", "Nowy znajomy",
                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
                                }
-                               else if (code == CodeNames.AddToFriendsRejected)
-                               {
-                                   MessageBox.Show("Użytkownik odmówił znjomości", "Nowy znajomy odrzucony",
-                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
-                               }
                            }
                            else
                            {
@@ -232,6 +228,11 @@ namespace OFTP_Client
                                        ConnectButton.Text = "Połącz z użytkownikiem";
                                        StateLabel.Text = "Stan: Oczekiwanie";
                                    });
+                               }
+                               else if (code == CodeNames.AddToFriendsRejected)
+                               {
+                                   MessageBox.Show("Użytkownik odmówił znjomości", "Nowy znajomy odrzucony",
+                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
                                }
                            }
                        }
@@ -526,10 +527,28 @@ namespace OFTP_Client
         {
             if (!isConnected)
             {
-                isConnected = true;
-                await SendMessage(CodeNames.AskUserForConnection, UsersListBox.SelectedItem.ToString());
-                StateLabel.Text = $"Stan: Oczekiwanie na akceptację od {UsersListBox.SelectedItem}";
-                ConnectButton.Text = "Rozłącz";
+                var selectedUser = UsersListBox.SelectedItem;
+
+                if (selectedUser != null)
+                {
+                    isConnected = true;
+                    await SendMessage(CodeNames.AskUserForConnection, selectedUser.ToString());
+                    StateLabel.Text = $"Stan: Oczekiwanie na akceptację od {UsersListBox.SelectedItem}";
+                    ConnectButton.Text = "Rozłącz";
+                }
+                else if (FriendsListBox.SelectedItem != null)
+                {
+                    if (!_availableUsers.Contains(FriendsListBox.SelectedItem))
+                    {
+                        MessageBox.Show($"{FriendsListBox.SelectedItem} nie jest dostępny", "Brak użytkownika",
+                           MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Wybierz użytkownika z listy obok", "Brak użytkownika",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
             }
             else
             {
