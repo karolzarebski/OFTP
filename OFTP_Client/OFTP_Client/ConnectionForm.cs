@@ -16,6 +16,7 @@ namespace OFTP_Client
         private NetworkStream stream;
         private CryptoService _cryptoService = new CryptoService();
         private List<string> availableUsers = new List<string>();
+        private List<string> friendsList = new List<string>();
         private bool connected = false, loginSite = true;
 
         private string serverIpAddress = "192.168.1.14";
@@ -184,7 +185,8 @@ namespace OFTP_Client
 
                 if (message == CodeNames.CorrectLoginData)
                 {
-                    MessageBox.Show("Pomyślnie zalogowano do serwera", "Logowanie", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Pomyślnie zalogowano do serwera", "Logowanie",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                     await SendMessage(CodeNames.ActiveUsers);
 
@@ -194,20 +196,48 @@ namespace OFTP_Client
                     {
                         var processedUsersCount = Convert.ToInt32(availableUsersCount[1]);
 
-                        await SendMessage(CodeNames.ActiveUsers);
-
-                        while (processedUsersCount >= 0)
+                        if (processedUsersCount > 0)
                         {
-                            var users = (await ReceiveMessage()).Split('|')[1].Split('\n');
+                            await SendMessage(CodeNames.ActiveUsers);
 
-                            foreach (var craftedUser in users)
+                            while (processedUsersCount >= 0)
                             {
-                                availableUsers.Add(craftedUser);
+                                var users = (await ReceiveMessage()).Split('|')[1].Split('\n');
+
+                                foreach (var craftedUser in users)
+                                {
+                                    availableUsers.Add(craftedUser);
+                                }
+
+                                processedUsersCount -= 100; //server sends 100 users in a row
                             }
-
-                            processedUsersCount -= 100; //server sends 100 users in a row
                         }
+                    }
 
+                    await SendMessage(CodeNames.Friends);
+
+                    var friendsCount = (await ReceiveMessage()).Split('|');
+
+                    if (friendsCount[0] == CodeNames.Friends)
+                    {
+                        var processedFriendsCount = Convert.ToInt32(friendsCount[1]);
+
+                        if (processedFriendsCount > 0)
+                        {
+                            await SendMessage(CodeNames.Friends);
+
+                            while (processedFriendsCount >= 0)
+                            {
+                                var friends = (await ReceiveMessage()).Split('|')[1].Split('\n');
+
+                                foreach (var craftedFriend in friends)
+                                {
+                                    friendsList.Add(craftedFriend);
+                                }
+
+                                processedFriendsCount -= 100;
+                            }
+                        }
                     }
 
                     InitMainWindow();
@@ -268,6 +298,32 @@ namespace OFTP_Client
                             processedUsersCount -= 100; //server sends 100 users in a row
                         }
 
+                    }
+
+                    await SendMessage(CodeNames.Friends);
+
+                    var friendsCount = (await ReceiveMessage()).Split('|');
+
+                    if (friendsCount[0] == CodeNames.Friends)
+                    {
+                        var processedFriendsCount = Convert.ToInt32(friendsCount[1]);
+
+                        if (processedFriendsCount > 0)
+                        {
+                            await SendMessage(CodeNames.Friends);
+
+                            while (processedFriendsCount >= 0)
+                            {
+                                var friends = (await ReceiveMessage()).Split('|')[1].Split('\n');
+
+                                foreach (var craftedFriend in friends)
+                                {
+                                    friendsList.Add(craftedFriend);
+                                }
+
+                                processedFriendsCount -= 100;
+                            }
+                        }
                     }
 
                     InitMainWindow();
@@ -371,7 +427,7 @@ namespace OFTP_Client
 
         private void InitMainWindow()
         {
-            var mainWindow = new MainWindow(client, _cryptoService, availableUsers, LoginTextBox.Text);
+            var mainWindow = new MainWindow(client, _cryptoService, friendsList, availableUsers, LoginTextBox.Text);
 
             mainWindow.FormClosing += (sender, e) =>
             {

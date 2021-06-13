@@ -8,6 +8,8 @@ namespace DatabaseLibrary.Mappers
     {
         public void Configure(EntityTypeBuilder<User> builder)
         {
+            builder.HasKey(p => p.Id);
+
             builder.HasIndex(p => p.Login)
                 .IsUnique();
 
@@ -16,6 +18,11 @@ namespace DatabaseLibrary.Mappers
 
             builder.Property(p => p.Password)
                 .IsRequired();
+
+            builder.HasMany(p => p.Friend)
+                .WithOne(p => p.User)
+                .HasForeignKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

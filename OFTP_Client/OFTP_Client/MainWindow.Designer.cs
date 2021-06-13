@@ -47,6 +47,10 @@ namespace OFTP_Client
             this.ChooseDir = new System.Windows.Forms.Button();
             this.PauseButton = new System.Windows.Forms.Button();
             this.StopButton = new System.Windows.Forms.Button();
+            this.FriendsListBox = new System.Windows.Forms.ListBox();
+            this.FilterFriendsTextBox = new System.Windows.Forms.TextBox();
+            this.FriendsCountLabel = new System.Windows.Forms.Label();
+            this.AddOrRemoveFriendButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // UsersListBox
@@ -55,7 +59,7 @@ namespace OFTP_Client
             this.UsersListBox.ItemHeight = 15;
             this.UsersListBox.Location = new System.Drawing.Point(522, 32);
             this.UsersListBox.Name = "UsersListBox";
-            this.UsersListBox.Size = new System.Drawing.Size(266, 379);
+            this.UsersListBox.Size = new System.Drawing.Size(213, 379);
             this.UsersListBox.TabIndex = 0;
             this.UsersListBox.SelectedIndexChanged += new System.EventHandler(this.UsersListBox_SelectedIndexChanged);
             this.UsersListBox.DoubleClick += new System.EventHandler(this.UsersListBox_DoubleClick);
@@ -71,11 +75,11 @@ namespace OFTP_Client
             // 
             // ConnectButton
             // 
-            this.ConnectButton.Location = new System.Drawing.Point(343, 5);
+            this.ConnectButton.Location = new System.Drawing.Point(240, 42);
             this.ConnectButton.Name = "ConnectButton";
-            this.ConnectButton.Size = new System.Drawing.Size(161, 23);
+            this.ConnectButton.Size = new System.Drawing.Size(101, 23);
             this.ConnectButton.TabIndex = 2;
-            this.ConnectButton.Text = "Połącz z użytkownikiem";
+            this.ConnectButton.Text = "Połącz";
             this.ConnectButton.UseVisualStyleBackColor = true;
             this.ConnectButton.Click += new System.EventHandler(this.ConnectButton_Click);
             // 
@@ -109,7 +113,7 @@ namespace OFTP_Client
             // 
             this.FilterUsersTextBox.Location = new System.Drawing.Point(522, 427);
             this.FilterUsersTextBox.Name = "FilterUsersTextBox";
-            this.FilterUsersTextBox.Size = new System.Drawing.Size(266, 23);
+            this.FilterUsersTextBox.Size = new System.Drawing.Size(213, 23);
             this.FilterUsersTextBox.TabIndex = 6;
             this.FilterUsersTextBox.Text = "Filtruj";
             this.FilterUsersTextBox.TextChanged += new System.EventHandler(this.FilterUsersTextBox_TextChanged);
@@ -198,7 +202,7 @@ namespace OFTP_Client
             // 
             // PauseButton
             // 
-            this.PauseButton.Location = new System.Drawing.Point(269, 57);
+            this.PauseButton.Location = new System.Drawing.Point(353, 9);
             this.PauseButton.Name = "PauseButton";
             this.PauseButton.Size = new System.Drawing.Size(60, 23);
             this.PauseButton.TabIndex = 16;
@@ -208,7 +212,7 @@ namespace OFTP_Client
             // 
             // StopButton
             // 
-            this.StopButton.Location = new System.Drawing.Point(335, 57);
+            this.StopButton.Location = new System.Drawing.Point(419, 9);
             this.StopButton.Name = "StopButton";
             this.StopButton.Size = new System.Drawing.Size(50, 23);
             this.StopButton.TabIndex = 17;
@@ -216,11 +220,56 @@ namespace OFTP_Client
             this.StopButton.UseVisualStyleBackColor = true;
             this.StopButton.Click += new System.EventHandler(this.StopButton_Click);
             // 
+            // FriendsListBox
+            // 
+            this.FriendsListBox.FormattingEnabled = true;
+            this.FriendsListBox.ItemHeight = 15;
+            this.FriendsListBox.Location = new System.Drawing.Point(755, 32);
+            this.FriendsListBox.Name = "FriendsListBox";
+            this.FriendsListBox.Size = new System.Drawing.Size(213, 379);
+            this.FriendsListBox.TabIndex = 18;
+            this.FriendsListBox.SelectedIndexChanged += new System.EventHandler(this.FriendsListBox_SelectedIndexChanged);
+            this.FriendsListBox.DoubleClick += new System.EventHandler(this.FriendsListBox_DoubleClick);
+            // 
+            // FilterFriendsTextBox
+            // 
+            this.FilterFriendsTextBox.Location = new System.Drawing.Point(755, 427);
+            this.FilterFriendsTextBox.Name = "FilterFriendsTextBox";
+            this.FilterFriendsTextBox.Size = new System.Drawing.Size(213, 23);
+            this.FilterFriendsTextBox.TabIndex = 19;
+            this.FilterFriendsTextBox.Text = "Filtruj";
+            this.FilterFriendsTextBox.TextChanged += new System.EventHandler(this.FilterFriendsTextBox_TextChanged);
+            this.FilterFriendsTextBox.Enter += new System.EventHandler(this.FilterFriendsTextBox_Enter);
+            this.FilterFriendsTextBox.Leave += new System.EventHandler(this.FilterFriendsTextBox_Leave);
+            // 
+            // FriendsCountLabel
+            // 
+            this.FriendsCountLabel.AutoSize = true;
+            this.FriendsCountLabel.Location = new System.Drawing.Point(755, 13);
+            this.FriendsCountLabel.Name = "FriendsCountLabel";
+            this.FriendsCountLabel.Size = new System.Drawing.Size(51, 15);
+            this.FriendsCountLabel.TabIndex = 20;
+            this.FriendsCountLabel.Text = "Znajomi";
+            // 
+            // AddOrRemoveFriendButton
+            // 
+            this.AddOrRemoveFriendButton.Location = new System.Drawing.Point(224, 70);
+            this.AddOrRemoveFriendButton.Name = "AddOrRemoveFriendButton";
+            this.AddOrRemoveFriendButton.Size = new System.Drawing.Size(132, 23);
+            this.AddOrRemoveFriendButton.TabIndex = 21;
+            this.AddOrRemoveFriendButton.Text = "Dodaj znajomego";
+            this.AddOrRemoveFriendButton.UseVisualStyleBackColor = true;
+            this.AddOrRemoveFriendButton.Click += new System.EventHandler(this.AddOrRemoveFriendButton_Click);
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 460);
+            this.ClientSize = new System.Drawing.Size(998, 460);
+            this.Controls.Add(this.AddOrRemoveFriendButton);
+            this.Controls.Add(this.FriendsCountLabel);
+            this.Controls.Add(this.FilterFriendsTextBox);
+            this.Controls.Add(this.FriendsListBox);
             this.Controls.Add(this.StopButton);
             this.Controls.Add(this.PauseButton);
             this.Controls.Add(this.ChooseDir);
@@ -269,5 +318,9 @@ namespace OFTP_Client
         private System.Windows.Forms.Button ChooseDir;
         private System.Windows.Forms.Button PauseButton;
         private System.Windows.Forms.Button StopButton;
+        private System.Windows.Forms.ListBox FriendsListBox;
+        private System.Windows.Forms.TextBox FilterFriendsTextBox;
+        private System.Windows.Forms.Label FriendsCountLabel;
+        private System.Windows.Forms.Button AddOrRemoveFriendButton;
     }
 }

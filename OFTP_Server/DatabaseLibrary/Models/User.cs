@@ -1,4 +1,6 @@
-﻿namespace DatabaseLibrary.Models
+﻿using System.Collections.Generic;
+
+namespace DatabaseLibrary.Models
 {
     public class User
     {
@@ -6,5 +8,6 @@
         public string Login { get; set; }
         public byte[] Password { get; set; }
         public string Salt { get; set; }
+        public ICollection<Friend> Friend { get; set; } = new List<Friend>();
     }
 }

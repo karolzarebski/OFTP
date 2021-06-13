@@ -126,6 +126,18 @@
   <data name="ActiveUsers" xml:space="preserve">
     <value>107</value>
   </data>
+  <data name="AddFriend" xml:space="preserve">
+    <value>702</value>
+  </data>
+  <data name="AddToFriendsAccepted" xml:space="preserve">
+    <value>704</value>
+  </data>
+  <data name="AddToFriendsRejected" xml:space="preserve">
+    <value>705</value>
+  </data>
+  <data name="AskForFriendship" xml:space="preserve">
+    <value>701</value>
+  </data>
   <data name="AskUserForConnection" xml:space="preserve">
     <value>501</value>
   </data>
@@ -162,11 +174,17 @@
   <data name="FileTransmissionInterrupted" xml:space="preserve">
     <value>609</value>
   </data>
+  <data name="Friends" xml:space="preserve">
+    <value>700</value>
+  </data>
   <data name="Login" xml:space="preserve">
     <value>101</value>
   </data>
   <data name="LogOut" xml:space="preserve">
     <value>106</value>
+  </data>
+  <data name="NewFriend" xml:space="preserve">
+    <value>706</value>
   </data>
   <data name="NewUser" xml:space="preserve">
     <value>105</value>
@@ -194,6 +212,9 @@
   </data>
   <data name="RejectFileTransmission" xml:space="preserve">
     <value>603</value>
+  </data>
+  <data name="RemoveFriend" xml:space="preserve">
+    <value>703</value>
   </data>
   <data name="UserAlreadyLoggedIn" xml:space="preserve">
     <value>108</value>

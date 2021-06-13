@@ -1,4 +1,6 @@
-﻿using LoginLibrary.Services;
+﻿using DatabaseLibrary.DAL.Services;
+using DatabaseLibrary.Models;
+using LoginLibrary.Services;
 using Microsoft.Extensions.Logging;
 using ServerLibrary.Events;
 using ServerLibrary.Resources;
@@ -16,22 +18,27 @@ namespace ServerLibrary.Services
     {
         private readonly ILoginService _loginService;
         private readonly ILogger<ServerService> _logger;
+        private readonly IDatabaseService _storageService;
 
         private readonly ServerConfiguration _serverConfiguration;
         private List<UsersConnection> usersConnections = new List<UsersConnection>();
+        private List<UsersConnection> usersFriendship = new List<UsersConnection>();
         private Dictionary<string, string> availableUsers = new Dictionary<string, string>();
         Dictionary<TcpClient, CryptoService> clients = new Dictionary<TcpClient, CryptoService>();
 
         private event EventHandler<UsersCountChangedEvent> usersCountChangedEvent;
+        private event EventHandler<FriendsChangedEvent> friendsChangedEvent;
 
         public ServerService(ServerConfiguration serverConfiguration, ILoginService loginService,
-            ILogger<ServerService> logger)
+            ILogger<ServerService> logger, IDatabaseService storageService)
         {
             _serverConfiguration = serverConfiguration;
             _loginService = loginService;
             _logger = logger;
+            _storageService = storageService;
 
             usersCountChangedEvent += RefreshAvailableUsers;
+            friendsChangedEvent += ServerService_friendsChangedEvent;
 
             //Added for testing purposes
 
@@ -60,6 +67,12 @@ namespace ServerLibrary.Services
             //    { "Alexander", "192.168.251.43"},
             //    {"Harper" , "192.168.167.142"}
             //};
+        }
+
+        private async void ServerService_friendsChangedEvent(object sender, FriendsChangedEvent e)
+        {
+            await SendMessage(e.Client1, CodeNames.NewFriend, e.Username1);
+            await SendMessage(e.Client2, CodeNames.NewFriend, e.Username2);
         }
 
         private async void RefreshAvailableUsers(object sender, UsersCountChangedEvent e)
@@ -324,6 +337,39 @@ namespace ServerLibrary.Services
                             }
                         }
 
+                        usersCode = await ReceiveMessage(client);
+
+                        if (usersCode == CodeNames.Friends)
+                        {
+                            var friendsList = (await _storageService.GetUserDataAsync())
+                                            .FirstOrDefault(u => u.Login == login).Friend;
+
+                            await SendMessage(client, CodeNames.Friends, friendsList.Count.ToString());
+
+                            if (friendsList.Count > 0)
+                            {
+                                if (await ReceiveMessage(client) == CodeNames.Friends)
+                                {
+                                    while (friendsList.Any())
+                                    {
+                                        var preparedData = string.Empty;
+
+                                        var partOfData = friendsList.Take(100);
+                                        friendsList = friendsList.Skip(100).ToList();
+
+                                        foreach (var friend in partOfData)
+                                        {
+                                            preparedData += $"{friend.Username}\n";
+                                        }
+
+                                        await SendMessage(client, CodeNames.Friends, preparedData.Remove(preparedData.Length - 1));
+
+                                        await Task.Delay(1);
+                                    }
+                                }
+                            }
+                        }
+
                         while (true)
                         {
                             try
@@ -388,6 +434,117 @@ namespace ServerLibrary.Services
                                 {
                                     var user = usersConnections.Where(x => x._userAcceptingConnection == login
                                                 && x._userAcceptingConnectionIP == availableUsers[login]).FirstOrDefault();
+
+                                    if (user.IsMe(login, availableUsers[login]))
+                                    {
+                                        user._userAccepted = true;
+                                        user._userRejected = true;
+                                    }
+                                }
+                                else if (message[0] == CodeNames.RemoveFriend)
+                                {
+                                    var tempClientLogin = await ReceiveMessage(client);
+                                    var tempClientIp = availableUsers[tempClientLogin];
+
+                                    var tempClient = clients.Keys.Where(x => x.Client.RemoteEndPoint.ToString().StartsWith(tempClientIp)).FirstOrDefault();
+
+                                    var usersConnection = new UsersConnection(login, availableUsers[login], tempClientLogin, tempClientIp);
+
+                                    //usersFriendship.Add(usersConnection);
+
+                                    var firstUser = await _storageService.GetUserByLogin(tempClientLogin);
+                                    _storageService.RemoveFriend(firstUser, new Friend
+                                    {
+                                        UserId = firstUser.Id,
+                                        User = firstUser,
+                                        Username = login
+                                    });
+
+                                    var secondUser = await _storageService.GetUserByLogin(login);
+                                    _storageService.RemoveFriend(secondUser, new Friend
+                                    {
+                                        UserId = secondUser.Id,
+                                        User = secondUser,
+                                        Username = tempClientLogin
+                                    });
+
+                                    await _storageService.SaveChangesAsync();
+
+                                    friendsChangedEvent.Invoke(this, new FriendsChangedEvent
+                                    {
+                                        Username1 = tempClientLogin,
+                                        Username2 = login,
+                                        Client1 = client,
+                                        Client2 = tempClient
+                                    });
+                                }
+                                else if (message[0] == CodeNames.AskForFriendship)
+                                {
+                                    var tempClientLogin = await ReceiveMessage(client);
+                                    var tempClientIp = availableUsers[tempClientLogin];
+
+                                    var tempClient = clients.Keys.Where(x => x.Client.RemoteEndPoint.ToString().StartsWith(tempClientIp)).FirstOrDefault();
+
+                                    var usersConnection = new UsersConnection(login, availableUsers[login], tempClientLogin, tempClientIp);
+
+                                    usersFriendship.Add(usersConnection);
+
+                                    await SendMessage(tempClient, CodeNames.AskForFriendship, login);
+
+                                    var user = usersFriendship.Where(x => x._userStartingConnection == login).FirstOrDefault();
+
+                                    while (!user._userAccepted) { }
+
+                                    if (user._userRejected)
+                                    {
+                                        await SendMessage(client, CodeNames.AddToFriendsRejected);
+                                    }
+                                    else
+                                    {
+                                        var firstUser = await _storageService.GetUserByLogin(tempClientLogin);
+                                        _storageService.AddFriend(firstUser, new Friend
+                                        {
+                                            UserId = firstUser.Id,
+                                            Username = login
+                                        });
+
+                                        var secondUser = await _storageService.GetUserByLogin(login);
+                                        _storageService.AddFriend(secondUser, new Friend
+                                        {
+                                            UserId = secondUser.Id,
+                                            Username = tempClientLogin
+                                        });
+
+                                        await _storageService.SaveChangesAsync();
+
+                                        await SendMessage(client, CodeNames.AddToFriendsAccepted, $"{tempClientLogin}|{tempClientIp}");
+
+                                        friendsChangedEvent.Invoke(this, new FriendsChangedEvent
+                                        {
+                                            Username1 = tempClientLogin,
+                                            Username2 = login,
+                                            Client1 = client,
+                                            Client2 = tempClient
+                                        });
+                                    }
+
+                                    usersFriendship.Remove(user);
+                                }
+                                else if (message[0] == CodeNames.AddToFriendsAccepted)
+                                {
+                                    var user = usersFriendship.Where(x => x._userAcceptingConnection == login
+                                        && x._userAcceptingConnectionIP == availableUsers[login]).FirstOrDefault();
+
+                                    if (user.IsMe(login, availableUsers[login]))
+                                    {
+                                        user._userAccepted = true;
+                                        SendMessage(client, CodeNames.AcceptedIncomingConnection, $"{user._userStartingConnection}|{user._userStartingConnectionIP}");
+                                    }
+                                }
+                                else if (message[0] == CodeNames.AddToFriendsRejected)
+                                {
+                                    var user = usersFriendship.Where(x => x._userAcceptingConnection == login
+                                        && x._userAcceptingConnectionIP == availableUsers[login]).FirstOrDefault();
 
                                     if (user.IsMe(login, availableUsers[login]))
                                     {

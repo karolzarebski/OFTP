@@ -79,6 +79,42 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 702.
+        /// </summary>
+        internal static string AddFriend {
+            get {
+                return ResourceManager.GetString("AddFriend", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 704.
+        /// </summary>
+        internal static string AddToFriendsAccepted {
+            get {
+                return ResourceManager.GetString("AddToFriendsAccepted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 705.
+        /// </summary>
+        internal static string AddToFriendsRejected {
+            get {
+                return ResourceManager.GetString("AddToFriendsRejected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 701.
+        /// </summary>
+        internal static string AskForFriendship {
+            get {
+                return ResourceManager.GetString("AskForFriendship", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 501.
         /// </summary>
         internal static string AskUserForConnection {
@@ -142,6 +178,15 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 700.
+        /// </summary>
+        internal static string Friends {
+            get {
+                return ResourceManager.GetString("Friends", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 101.
         /// </summary>
         internal static string Login {
@@ -156,6 +201,15 @@ namespace ServerLibrary.Resources {
         internal static string LogOut {
             get {
                 return ResourceManager.GetString("LogOut", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 706.
+        /// </summary>
+        internal static string NewFriend {
+            get {
+                return ResourceManager.GetString("NewFriend", resourceCulture);
             }
         }
         
@@ -201,6 +255,15 @@ namespace ServerLibrary.Resources {
         internal static string RejectedIncomingConnection {
             get {
                 return ResourceManager.GetString("RejectedIncomingConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 703.
+        /// </summary>
+        internal static string RemoveFriend {
+            get {
+                return ResourceManager.GetString("RemoveFriend", resourceCulture);
             }
         }
         

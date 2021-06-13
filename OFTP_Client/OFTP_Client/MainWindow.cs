@@ -18,6 +18,7 @@ namespace OFTP_Client
     {
         private bool isConnected = false, isLoggedIn = true, isPaused = false;
         private List<string> _availableUsers = new List<string>();
+        private List<string> _friends = new List<string>();
         private SendFilesService sendFilesService;
         private ReceiveFilesService receiveFilesService;
 
@@ -28,13 +29,15 @@ namespace OFTP_Client
         private CryptoService _cryptoService;
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
-        public MainWindow(TcpClient tcpClient, CryptoService cryptoService, List<string> availableUsers, string loggedInAs)
+        public MainWindow(TcpClient tcpClient, CryptoService cryptoService, List<string> availableUsers,
+             List<string> friends, string loggedInAs)
         {
             InitializeComponent();
 
             _cryptoService = cryptoService;
             _availableUsers = availableUsers;
             _tcpClient = tcpClient;
+            _friends = friends;
 
             LoggedInAsLabel.Text = $"Zalogowano jako: {loggedInAs}";
 
@@ -453,7 +456,7 @@ namespace OFTP_Client
                 isConnected = true;
                 await SendMessage(CodeNames.AskUserForConnection, UsersListBox.SelectedItem.ToString());
                 StateLabel.Text = $"Stan: Oczekiwanie na akceptację od {UsersListBox.SelectedItem}";
-                ConnectButton.Text = "Rozłącz z użytkownikiem";
+                ConnectButton.Text = "Rozłącz";
             }
             else
             {
@@ -644,6 +647,129 @@ namespace OFTP_Client
                 PauseButton.Text = "Pauza";
                 MessageBox.Show("Przesyłanie plików wznowione", "Wznów",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void FilterFriendsTextBox_TextChanged(object sender, EventArgs e)
+        {
+            var text = FilterFriendsTextBox.Text.ToLower();
+
+            if (text != "filtruj")
+            {
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    FriendsListBox.Items.Clear();
+                    var filteredUserList = _friends.Where(x => x.ToLower().Contains(text));
+
+                    FriendsCountLabel.Text = $"Znajomi: {filteredUserList.Count()}";
+
+                    FriendsListBox.Items.AddRange(filteredUserList.ToArray());
+                }
+                else
+                {
+                    FriendsListBox.Items.Clear();
+
+                    FriendsCountLabel.Text = $"Znajomi: {_friends.Count()}";
+
+                    FriendsListBox.Items.AddRange(_friends.ToArray());
+
+                }
+            }
+        }
+
+        private void FriendsListBox_DoubleClick(object sender, EventArgs e)
+        {
+            if (FriendsListBox.SelectedItem != null)
+            {
+                if (_availableUsers.Contains(FriendsListBox.SelectedItem))
+                {
+                    ConnectButton.PerformClick();
+                }
+                else
+                {
+                    MessageBox.Show($"{FriendsListBox.SelectedItem} nie jest dostępny", "Brak użytkownika",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+
+        private void FriendsListBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var selectedFriend = FriendsListBox.SelectedItem;
+
+            if (selectedFriend != null)
+            {
+                if (_availableUsers.Contains(selectedFriend))
+                {
+                    UsersListBox.SelectedItem = selectedFriend;
+                }
+
+                if (_friends.Contains(FriendsListBox.SelectedItem))
+                {
+                    AddOrRemoveFriendButton.Text = "Usuń znajomego";
+                }
+
+                AddOrRemoveFriendButton.Enabled = true;
+            }
+            else
+            {
+                AddOrRemoveFriendButton.Enabled = false;
+            }
+        }
+
+        private async void AddOrRemoveFriendButton_Click(object sender, EventArgs e)
+        {
+            var selectedUser = UsersListBox.SelectedItem;
+            var selectedFriend = FriendsListBox.SelectedItem;
+
+            if (selectedUser != null)
+            {
+                if (_friends.Contains(selectedUser))
+                {
+                    switch (MessageBox.Show($"Czy na pewno chcesz usunąć {selectedUser} z listy znajomych?",
+                        "Potwierdzanie usuwania", MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+                    {
+                        case DialogResult.Yes:
+                            await SendMessage(CodeNames.RemoveFriend, selectedUser.ToString());
+                            break;
+                        case DialogResult.No:
+                            break;
+                    }
+                }
+                else
+                {
+                    await SendMessage(CodeNames.AskForFriendship, selectedUser.ToString());
+                }
+            }
+            else
+            {
+                switch (MessageBox.Show($"Czy na pewno chcesz usunąć {selectedUser} z listy znajomych?",
+                    "Potwierdzanie usuwania", MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+                {
+                    case DialogResult.Yes:
+                        await SendMessage(CodeNames.RemoveFriend, selectedFriend.ToString());
+                        break;
+                    case DialogResult.No:
+                        break;
+                }
+            }
+        }
+
+        private void FilterFriendsTextBox_Leave(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(FilterFriendsTextBox.Text))
+            {
+                FilterFriendsTextBox.Text = "Filtruj";
+            }
+        }
+
+        private void FilterFriendsTextBox_Enter(object sender, EventArgs e)
+        {
+            var filterTerm = FilterFriendsTextBox.Text;
+
+            if (!string.IsNullOrEmpty(filterTerm) && filterTerm == "Filtruj")
+            {
+                FilterFriendsTextBox.Text = "";
             }
         }
 
