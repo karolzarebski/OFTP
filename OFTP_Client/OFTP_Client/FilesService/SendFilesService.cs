@@ -83,7 +83,7 @@ namespace OFTP_Client.FilesService
         {
             var message = new byte[data.Length + 5];
             Array.Copy(data, 0, message, 5, data.Length);
-            Array.Copy(Encoding.UTF8.GetBytes(CodeNames.NextPartialData), 0, message, 0, 3);
+            Array.Copy(Encoding.UTF8.GetBytes(FileTransmissionCodes.NextPartialData), 0, message, 0, 3);
             var len = data.Length;
             message[3] = (byte)(len / 256);
             message[4] = (byte)(len % 256);

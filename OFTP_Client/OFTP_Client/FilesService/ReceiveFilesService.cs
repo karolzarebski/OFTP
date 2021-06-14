@@ -219,7 +219,7 @@ namespace OFTP_Client.FilesService
                             FilesCount = fileCount
                         });
 
-                        await SendMessage(CodeNames.OK);
+                        await SendMessage(FileTransmissionCodes.OK);
 
                         while (fileLen > 0)
                         {
@@ -255,7 +255,7 @@ namespace OFTP_Client.FilesService
                                     Receive = true
                                 });
 
-                                await SendMessage(CodeNames.OK);
+                                await SendMessage(FileTransmissionCodes.OK);
                             }
                         }
 
