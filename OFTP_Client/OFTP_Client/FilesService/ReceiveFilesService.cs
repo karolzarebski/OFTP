@@ -75,6 +75,11 @@ namespace OFTP_Client.FilesService
             var message = new byte[1031];
             await Task.Run(() => _client.Client.Receive(message, SocketFlags.Partial));
 
+            if (Encoding.UTF8.GetString(message.Take(3).ToArray()) == FileTransmissionCodes.FileTransmissionInterrupted)
+            {
+                return null;
+            }
+
             var len = message[3] * 256 + message[4];
             var fileLen = message[5] * 256 + message[6];
 
@@ -85,6 +90,11 @@ namespace OFTP_Client.FilesService
         {
             var message = new byte[1028];
             await Task.Run(() => _client.Client.Receive(message, SocketFlags.Partial));
+
+            if (Encoding.UTF8.GetString(message.Take(3).ToArray()) == FileTransmissionCodes.FileTransmissionInterrupted)
+            {
+                return null;
+            }
 
             var len = message[3] * 256 + message[4];
 
@@ -241,6 +251,11 @@ namespace OFTP_Client.FilesService
                                 else
                                 {
                                     data = await ReceivePlainData();
+                                }
+
+                                if (data == null)
+                                {
+                                    return false;
                                 }
 
                                 fileLen -= data.Length;

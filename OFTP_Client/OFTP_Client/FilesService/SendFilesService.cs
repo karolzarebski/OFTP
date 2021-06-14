@@ -117,7 +117,7 @@ namespace OFTP_Client.FilesService
             var len = encryptedData.Length;
             encryptedMessage[3] = (byte)(len / 256);
             encryptedMessage[4] = (byte)(len % 256);
-            await _client.GetStream().WriteAsync(encryptedMessage);
+            await _client.GetStream().WriteAsync(encryptedMessage);        
         }
 
         private async Task SendMessage(string code)
@@ -182,7 +182,19 @@ namespace OFTP_Client.FilesService
                             {
                                 if (isStopped)
                                 {
-                                    await SendMessage(FileTransmissionCodes.FileTransmissionInterrupted);
+                                    if (_isEncryptionUsed)
+                                    {
+                                        var encryptedMessage = new byte[1031];
+                                        Array.Copy(Encoding.UTF8.GetBytes(FileTransmissionCodes.FileTransmissionInterrupted), 0, encryptedMessage, 0, 3);
+                                        var len = 1023;
+                                        encryptedMessage[3] = (byte)(len / 256);
+                                        encryptedMessage[4] = (byte)(len % 256);
+                                        await _client.GetStream().WriteAsync(encryptedMessage);
+                                    }
+                                    else
+                                    {
+                                        await SendMessage(FileTransmissionCodes.FileTransmissionInterrupted, new string('0', 1023));
+                                    }
 
                                     return false;
                                 }
@@ -205,12 +217,12 @@ namespace OFTP_Client.FilesService
                                     }
                                 }
 
-                                    SendFileProgress.Invoke(this, new SendProgressEvent
-                                    {
-                                        Value = Map(++i, 0, count, 0, 100),
-                                        General = false,
-                                        Receive = false
-                                    });
+                                SendFileProgress.Invoke(this, new SendProgressEvent
+                                {
+                                    Value = Map(++i, 0, count, 0, 100),
+                                    General = false,
+                                    Receive = false
+                                });
                             }
                         }
 
