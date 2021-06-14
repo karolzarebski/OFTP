@@ -224,6 +224,13 @@ namespace OFTP_Client.FilesService
                                     Receive = false
                                 });
                             }
+                            else if (responseCode == FileTransmissionCodes.FileTransmissionInterrupted)
+                            {
+                                MessageBox.Show("Transmisja plików została przerwana przez odbiorcę", "Przerwanie transmisji plików",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                                return false;
+                            }
                         }
 
                         SendFileProgress.Invoke(this, new SendProgressEvent
