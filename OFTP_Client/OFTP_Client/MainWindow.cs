@@ -16,7 +16,7 @@ namespace OFTP_Client
 {
     public partial class MainWindow : Form
     {
-        private bool isConnected = false, isLoggedIn = true, isPaused = false;
+        private bool isConnected = false, isLoggedIn = true, isPaused = false, isEncryptionUsed = true;
         private List<string> _availableUsers = new List<string>();
         private List<string> _friends = new List<string>();
         private SendFilesService sendFilesService;
@@ -897,6 +897,11 @@ namespace OFTP_Client
             {
                 FilterFriendsTextBox.Text = "Filtruj";
             }
+        }
+
+        private void UserEncryptionCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            isEncryptionUsed = !isEncryptionUsed;
         }
 
         private void FilterFriendsTextBox_Enter(object sender, EventArgs e)

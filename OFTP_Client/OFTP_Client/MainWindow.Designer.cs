@@ -266,12 +266,13 @@ namespace OFTP_Client
             // UserEncryptionCheckBox
             // 
             this.UserEncryptionCheckBox.AutoSize = true;
-            this.UserEncryptionCheckBox.Location = new System.Drawing.Point(317, 71);
+            this.UserEncryptionCheckBox.Location = new System.Drawing.Point(348, 74);
             this.UserEncryptionCheckBox.Name = "UserEncryptionCheckBox";
-            this.UserEncryptionCheckBox.Size = new System.Drawing.Size(83, 19);
+            this.UserEncryptionCheckBox.Size = new System.Drawing.Size(113, 19);
             this.UserEncryptionCheckBox.TabIndex = 22;
-            this.UserEncryptionCheckBox.Text = "checkBox1";
+            this.UserEncryptionCheckBox.Text = "Użyj szyfrowania";
             this.UserEncryptionCheckBox.UseVisualStyleBackColor = true;
+            this.UserEncryptionCheckBox.CheckedChanged += new System.EventHandler(this.UserEncryptionCheckBox_CheckedChanged);
             // 
             // MainWindow
             // 
