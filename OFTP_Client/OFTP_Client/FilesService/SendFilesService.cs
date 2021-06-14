@@ -19,13 +19,15 @@ namespace OFTP_Client.FilesService
         private CryptoService _cryptoService;
         private int bufferLen = 1023; //25 KB 25599
         private bool isPaused = false, isStopped = false;
+        private readonly bool _isEncryptionUsed;
 
 
         public event EventHandler<SendProgressEvent> SendFileProgress;
 
-        public SendFilesService(string serverIP)
+        public SendFilesService(string serverIP, bool isEncryptionUsed)
         {
             _serverIP = serverIP;
+            _isEncryptionUsed = isEncryptionUsed;
             _cryptoService = new CryptoService();
         }
 
@@ -157,7 +159,9 @@ namespace OFTP_Client.FilesService
 
                         using var fileStream = File.OpenRead(file);
 
-                        await SendMessage(FileTransmissionCodes.FileLength, $"{fi.Name}|{fi.Length}");
+                        var encryptionCode = _isEncryptionUsed ? "1" : "0";
+
+                        await SendMessage(FileTransmissionCodes.FileLength, $"{fi.Name}|{fi.Length}|{encryptionCode}");
 
                         SendFileProgress.Invoke(this, new SendProgressEvent
                         {
@@ -168,30 +172,35 @@ namespace OFTP_Client.FilesService
 
                         while (fileStream.Position != fi.Length)
                         {
-                            if (isStopped)
+                            responseCode = await ReceiveMessage();
+
+                            if (responseCode == FileTransmissionCodes.OK)
                             {
-                                await SendMessage(FileTransmissionCodes.FileTransmissionInterrupted);
-
-                                return false;
-                            }
-
-                            if (!isPaused)
-                            {
-                                var buffer = new byte[bufferLen];
-
-                                var readLen = await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
-
-                                //Debug.WriteLine(buffer.Length);
-
-                                await SendData(buffer.Take(readLen).ToArray());
-
-
-                                SendFileProgress.Invoke(this, new SendProgressEvent
+                                if (isStopped)
                                 {
-                                    Value = Map(++i, 0, count, 0, 100),
-                                    General = false,
-                                    Receive = false
-                                });
+                                    await SendMessage(FileTransmissionCodes.FileTransmissionInterrupted);
+
+                                    return false;
+                                }
+
+                                if (!isPaused)
+                                {
+                                    var buffer = new byte[bufferLen];
+
+                                    var readLen = await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
+
+                                    //Debug.WriteLine(buffer.Length);
+
+                                    await SendData(buffer.Take(readLen).ToArray());
+
+
+                                    SendFileProgress.Invoke(this, new SendProgressEvent
+                                    {
+                                        Value = Map(++i, 0, count, 0, 100),
+                                        General = false,
+                                        Receive = false
+                                    });
+                                }
                             }
                         }
 
@@ -202,9 +211,9 @@ namespace OFTP_Client.FilesService
                             Receive = false
                         });
 
-                        var endMessage = $"{FileTransmissionCodes.EndFileTransmission}|";
+                        //var endMessage = $"{FileTransmissionCodes.EndFileTransmission}|";
 
-                        await SendMessage(FileTransmissionCodes.EndFileTransmission);
+                        //await SendMessage(FileTransmissionCodes.EndFileTransmission);
 
                         while (await ReceiveMessage() != FileTransmissionCodes.OK) ;
                     }
