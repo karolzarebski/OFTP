@@ -262,14 +262,16 @@ namespace ServerLibrary.Services
                         else if (data[0] == ServerRequestCodes.Register)
                         {
                             login = data[1];
-                            int registrationResultCode = await _loginService.RegisterAccount(login, data[2], data[3]);
 
-                            await _smtpService.SendRegistrationEmail(data[3]);
+                            int registrationResultCode = await _loginService.RegisterAccount(login, data[2], data[3]);
 
                             if (registrationResultCode.ToString() == ServerRequestCodes.CorrectRegisterData)
                             {
                                 await SendMessage(client, registrationResultCode.ToString());
+
                                 loggedIn = true;
+
+                                await _smtpService.SendRegistrationEmail(data[3]);
 
                                 if (!availableUsers.ContainsKey(login))
                                 {
