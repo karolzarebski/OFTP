@@ -493,6 +493,7 @@ namespace OFTP_Client
                 Show();
                 LoginButton.Enabled = false;
                 RegisterButton.Enabled = false;
+                TryAgainButton.Enabled = true;
                 TryAgainButton.Text = "Połącz";
                 LoginTextBox.Text = "";
                 PasswordTextBox.Text = "";

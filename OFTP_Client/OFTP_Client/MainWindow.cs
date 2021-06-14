@@ -99,6 +99,8 @@ namespace OFTP_Client
 
                                                StopButton.Enabled = true;
                                                PauseButton.Enabled = true;
+
+                                               ConnectButton.Enabled = false;
                                            });
 
                                            break;
@@ -401,6 +403,8 @@ namespace OFTP_Client
                     "Wylogowywanie", MessageBoxButtons.YesNo, MessageBoxIcon.Information))
                 {
                     case DialogResult.Yes:
+
+                        StopButton.PerformClick();
 
                         isConnected = false;
 
