@@ -275,7 +275,7 @@ namespace OFTP_Client
 
                 return;
             }
-            if(login.Contains("|"))
+            if(Regex.IsMatch(login, "[^a-zA-z0-9]"))
             {
                 MessageBox.Show("Login zawiera niedozwolone znaki\nPodaj nowy i spróbuj ponownie", "Puste dane",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -421,6 +421,8 @@ namespace OFTP_Client
                 EmailAddressTextBox.Visible = true;
                 EmailAddressLabel.Visible = true;
 
+                LoginTextBox.TextChanged += LoginTextBox_TextChanged;
+
                 Size = new Size(320, 424);
             }
             else
@@ -438,7 +440,22 @@ namespace OFTP_Client
                 EmailAddressTextBox.Visible = false;
                 EmailAddressLabel.Visible = false;
 
+                LoginTextBox.TextChanged -= LoginTextBox_TextChanged;
+
                 Size = new Size(320, 335);
+            }
+        }
+
+        private void LoginTextBox_TextChanged(object sender, EventArgs e)
+        {
+            string login = LoginTextBox.Text;
+            if(login.Length <= 32 && login.Length > 0 && !Regex.IsMatch(login, "[^a-zA-z0-9]"))
+            {
+                RegisterLoginLabel.BackColor = Color.PaleGreen;
+            }
+            else
+            {
+                RegisterLoginLabel.BackColor = Color.Tomato;
             }
         }
 
