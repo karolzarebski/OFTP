@@ -18,7 +18,7 @@ namespace OFTP_Client.FilesService
         private CryptoService _cryptoService;
         private int bufferLen = 1023; //25 KB 25599
         private bool isPaused = false, isStopped = false;
-        private bool _isEncryptionUsed;
+        private readonly bool _isEncryptionUsed;
 
         public event EventHandler<SendProgressEvent> SendFileProgress;
 
@@ -27,6 +27,7 @@ namespace OFTP_Client.FilesService
             _isEncryptionUsed = isEncryptionUsed;
 
             _serverIP = serverIP;
+            _isEncryptionUsed = isEncryptionUsed;
             _cryptoService = new CryptoService();
         }
 
@@ -45,7 +46,7 @@ namespace OFTP_Client.FilesService
                 var clientPublicKey = new byte[77];
 
                 Array.Copy(_cryptoService.GeneratePublicKey(), 0, clientPublicKey, 5, 72);
-                Array.Copy(Encoding.UTF8.GetBytes(CodeNames.DiffieHellmanKey), 0, clientPublicKey, 0, 3);
+                Array.Copy(Encoding.UTF8.GetBytes(ServerRequestCodes.DiffieHellmanKey), 0, clientPublicKey, 0, 3);
                 clientPublicKey[3] = 0;
                 clientPublicKey[4] = 72;
                 await _client.GetStream().WriteAsync(clientPublicKey);
@@ -69,7 +70,7 @@ namespace OFTP_Client.FilesService
             var encryptedData = await _cryptoService.EncryptData(data);
             var encryptedMessage = new byte[encryptedData.Length + 7];
             Array.Copy(encryptedData, 0, encryptedMessage, 7, encryptedData.Length);
-            Array.Copy(Encoding.UTF8.GetBytes(CodeNames.NextPartialData), 0, encryptedMessage, 0, 3);
+            Array.Copy(Encoding.UTF8.GetBytes(FileTransmissionCodes.NextPartialData), 0, encryptedMessage, 0, 3);
             var len = encryptedData.Length;
             encryptedMessage[3] = (byte)(len / 256);
             encryptedMessage[4] = (byte)(len % 256);
@@ -82,7 +83,7 @@ namespace OFTP_Client.FilesService
         {
             var message = new byte[data.Length + 5];
             Array.Copy(data, 0, message, 5, data.Length);
-            Array.Copy(Encoding.UTF8.GetBytes(CodeNames.NextPartialData), 0, message, 0, 3);
+            Array.Copy(Encoding.UTF8.GetBytes(FileTransmissionCodes.NextPartialData), 0, message, 0, 3);
             var len = data.Length;
             message[3] = (byte)(len / 256);
             message[4] = (byte)(len % 256);
@@ -116,7 +117,7 @@ namespace OFTP_Client.FilesService
             var len = encryptedData.Length;
             encryptedMessage[3] = (byte)(len / 256);
             encryptedMessage[4] = (byte)(len % 256);
-            await _client.GetStream().WriteAsync(encryptedMessage);
+            await _client.GetStream().WriteAsync(encryptedMessage);        
         }
 
         private async Task SendMessage(string code)
@@ -135,7 +136,7 @@ namespace OFTP_Client.FilesService
 
         public async Task SendEndConnection()
         {
-            await SendMessage(CodeNames.DisconnectFromClient);
+            await SendMessage(UserConnectionCodes.DisconnectFromClient);
         }
 
         public async Task<bool> SendFiles(List<string> _files)
@@ -146,11 +147,11 @@ namespace OFTP_Client.FilesService
 
                 int filesSent = 0;
 
-                await SendMessage(CodeNames.BeginFileTransmission, $"{files.Count}");
+                await SendMessage(FileTransmissionCodes.BeginFileTransmission, $"{files.Count}");
 
                 var responseCode = await ReceiveMessage();
 
-                if (responseCode == CodeNames.AcceptFileTransmission)
+                if (responseCode == FileTransmissionCodes.AcceptFileTransmission)
                 {
                     foreach (var file in files)
                     {
@@ -164,7 +165,7 @@ namespace OFTP_Client.FilesService
 
                         var encryptionCode = _isEncryptionUsed ? "1" : "0";
 
-                        await SendMessage(CodeNames.FileLength, $"{fi.Name}|{fi.Length}|{encryptionCode}");
+                        await SendMessage(FileTransmissionCodes.FileLength, $"{fi.Name}|{fi.Length}|{encryptionCode}");
 
                         SendFileProgress.Invoke(this, new SendProgressEvent
                         {
@@ -177,11 +178,23 @@ namespace OFTP_Client.FilesService
                         {
                             responseCode = await ReceiveMessage();
 
-                            if (responseCode == CodeNames.OK)
+                            if (responseCode == FileTransmissionCodes.OK)
                             {
                                 if (isStopped)
                                 {
-                                    await SendMessage(CodeNames.FileTransmissionInterrupted);
+                                    if (_isEncryptionUsed)
+                                    {
+                                        var encryptedMessage = new byte[1031];
+                                        Array.Copy(Encoding.UTF8.GetBytes(FileTransmissionCodes.FileTransmissionInterrupted), 0, encryptedMessage, 0, 3);
+                                        var len = 1023;
+                                        encryptedMessage[3] = (byte)(len / 256);
+                                        encryptedMessage[4] = (byte)(len % 256);
+                                        await _client.GetStream().WriteAsync(encryptedMessage);
+                                    }
+                                    else
+                                    {
+                                        await SendMessage(FileTransmissionCodes.FileTransmissionInterrupted, new string('0', 1023));
+                                    }
 
                                     return false;
                                 }
@@ -202,14 +215,21 @@ namespace OFTP_Client.FilesService
                                     {
                                         await SendPlainData(buffer.Take(readLen).ToArray());
                                     }
-
-                                    SendFileProgress.Invoke(this, new SendProgressEvent
-                                    {
-                                        Value = Map(++i, 0, count, 0, 100),
-                                        General = false,
-                                        Receive = false
-                                    });
                                 }
+
+                                SendFileProgress.Invoke(this, new SendProgressEvent
+                                {
+                                    Value = Map(++i, 0, count, 0, 100),
+                                    General = false,
+                                    Receive = false
+                                });
+                            }
+                            else if (responseCode == FileTransmissionCodes.FileTransmissionInterrupted)
+                            {
+                                MessageBox.Show("Transmisja plików została przerwana przez odbiorcę", "Przerwanie transmisji plików",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                                return false;
                             }
                         }
 
@@ -220,16 +240,16 @@ namespace OFTP_Client.FilesService
                             Receive = false
                         });
 
-                        //var endMessage = $"{CodeNames.EndFileTransmission}|";
+                        //var endMessage = $"{FileTransmissionCodes.EndFileTransmission}|";
 
-                        //await SendMessage(CodeNames.EndFileTransmission);
+                        //await SendMessage(FileTransmissionCodes.EndFileTransmission);
 
-                        while (await ReceiveMessage() != CodeNames.OK) ;
+                        while (await ReceiveMessage() != FileTransmissionCodes.OK) ;
                     }
 
-                    return true;
+                    return false;
                 }
-                else if (responseCode == CodeNames.RejectFileTransmission)
+                else if (responseCode == FileTransmissionCodes.RejectFileTransmission)
                 {
                     MessageBox.Show("Klient odmówił transmisji plików", "Odmowa",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);

@@ -9,6 +9,7 @@ namespace DatabaseLibrary.Context
     public interface IUserContext
     {
         DbSet<User> Users { get; set; }
+        DbSet<Friend> Friends { get; set; }
         DatabaseFacade Database { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

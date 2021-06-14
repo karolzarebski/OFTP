@@ -27,6 +27,7 @@
     <ProjectReference Include="..\DatabaseLibrary\DatabaseLibrary.csproj" />
     <ProjectReference Include="..\LoginLibrary\LoginLibrary.csproj" />
     <ProjectReference Include="..\ServerLibrary\ServerLibrary.csproj" />
+    <ProjectReference Include="..\SmtpLibrary\SmtpLibrary.csproj" />
   </ItemGroup>
 
   <ItemGroup>

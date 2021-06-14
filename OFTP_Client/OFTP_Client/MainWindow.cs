@@ -18,23 +18,29 @@ namespace OFTP_Client
     {
         private bool isConnected = false, isLoggedIn = true, isPaused = false, isEncryptionUsed = true;
         private List<string> _availableUsers = new List<string>();
+        private List<string> _friends = new List<string>();
         private SendFilesService sendFilesService;
         private ReceiveFilesService receiveFilesService;
 
-        private string filePath = "";
+        private string filePath = "", _loggedInAs = string.Empty;
         private List<string> selectedFilesPath = new List<string>();
 
         public TcpClient _tcpClient;
         private CryptoService _cryptoService;
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
-        public MainWindow(TcpClient tcpClient, CryptoService cryptoService, List<string> availableUsers, string loggedInAs)
+        public event EventHandler<SendEmailEvent> SendEmailEvent;
+
+        public MainWindow(TcpClient tcpClient, CryptoService cryptoService, List<string> availableUsers,
+             List<string> friends, string loggedInAs)
         {
             InitializeComponent();
 
             _cryptoService = cryptoService;
             _availableUsers = availableUsers;
             _tcpClient = tcpClient;
+            _friends = friends;
+            _loggedInAs = loggedInAs;
 
             LoggedInAsLabel.Text = $"Zalogowano jako: {loggedInAs}";
 
@@ -56,21 +62,26 @@ namespace OFTP_Client
                        {
                            var msgLength = buffer[3] * 256 + buffer[4];
                            var code = Encoding.UTF8.GetString(buffer.Take(3).ToArray());
-                           buffer = new byte[msgLength];
 
                            if (msgLength != 0)
                            {
+                               buffer = new byte[msgLength];
+
                                await _tcpClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
 
                                var data = (await cryptoService.DecryptData(buffer)).Split('|');
                                var login = string.Empty;
 
-                               if (code == CodeNames.NewUser)
+                               if (code == ServerRequestCodes.NewUser)
                                {
                                    login = data[0];
                                    UsersChanged(login);
                                }
-                               else if (code == CodeNames.AskUserForConnection)
+                               else if (code == FriendshipCodes.NewFriend)
+                               {
+                                   FriendsChanged(data[0]);
+                               }
+                               else if (code == UserConnectionCodes.AskUserForConnection)
                                {
                                    login = data[0];
 
@@ -78,20 +89,26 @@ namespace OFTP_Client
                                        MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                                    {
                                        case DialogResult.Yes:
-                                           await SendMessage(CodeNames.AcceptedIncomingConnection);
+                                           await SendMessage(UserConnectionCodes.AcceptedIncomingConnection);
 
                                            accepted = true;
+                                           isConnected = true;
 
-                                           StateLabel.Invoke((MethodInvoker)delegate
+                                           Invoke((MethodInvoker)delegate
                                            {
                                                StateLabel.Text = $"Połączono z: {login}";
+
+                                               StopButton.Enabled = true;
+                                               PauseButton.Enabled = true;
+
+                                               ConnectButton.Enabled = false;
                                            });
 
                                            break;
                                        case DialogResult.No:
                                            accepted = false;
 
-                                           await SendMessage(CodeNames.RejectedIncomingConnection);
+                                           await SendMessage(UserConnectionCodes.RejectedIncomingConnection);
                                            break;
                                    }
                                    if (accepted)
@@ -126,7 +143,7 @@ namespace OFTP_Client
                                        }
                                    }
                                }
-                               else if (code == CodeNames.AcceptedIncomingConnection)
+                               else if (code == UserConnectionCodes.AcceptedIncomingConnection)
                                {
                                    login = data[0];
 
@@ -185,22 +202,57 @@ namespace OFTP_Client
                                            MessageBoxButtons.OK, MessageBoxIcon.Error);
                                    }
                                }
+                               else if (code == FriendshipCodes.AskForFriendship)
+                               {
+                                   switch (MessageBox.Show($"Czy chcesz dodać {data[0]} do listy znajomych?", "Nowy znajomy",
+                                       MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+                                   {
+                                       case DialogResult.Yes:
+                                           await SendMessage(FriendshipCodes.AddToFriendsAccepted);
+
+                                           break;
+                                       case DialogResult.No:
+                                           await SendMessage(FriendshipCodes.AddToFriendsRejected);
+
+                                           break;
+                                   }
+                               }
+                               else if (code == FriendshipCodes.AddToFriendsAccepted)
+                               {
+                                   MessageBox.Show("Pomyślnie dodano użytkownika do znajomych", "Nowy znajomy",
+                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
+                               }
                            }
                            else
                            {
-                               if (code == CodeNames.RejectedIncomingConnection)
+                               if (code == UserConnectionCodes.RejectedIncomingConnection)
                                {
-                                   SendButton.Enabled = false;
                                    MessageBox.Show("Klient odmówił połączenia", "Odmowa połączenia",
                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                                    isConnected = false;
 
-                                   ConnectButton.Invoke((MethodInvoker)delegate
+                                   Invoke((MethodInvoker)delegate
                                    {
-                                       ConnectButton.Text = "Połącz z użytkownikiem";
+                                       ConnectButton.Text = "Połącz";
                                        StateLabel.Text = "Stan: Oczekiwanie";
+                                       SendButton.Enabled = false;
                                    });
+                               }
+                               else if (code == FriendshipCodes.AddToFriendsRejected)
+                               {
+                                   MessageBox.Show("Użytkownik odmówił znjomości", "Nowy znajomy odrzucony",
+                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
+                               }
+                               else if (code == EmailCodes.SendEmailSuccess)
+                               {
+                                   MessageBox.Show("Email został pomyślnie wysłany", "Powodzenie",
+                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
+                               }
+                               else if (code == EmailCodes.SendEmailFailure)
+                               {
+                                   MessageBox.Show("Wystąpił błąd podczas próby wysłania Emaila", "Błąd",
+                                       MessageBoxButtons.OK, MessageBoxIcon.Information);
                                }
                            }
                        }
@@ -303,6 +355,28 @@ namespace OFTP_Client
             await _tcpClient.GetStream().WriteAsync(encryptedMessage);
         }
 
+        private void FriendsChanged(string friendName)
+        {
+            if (_friends.Contains(friendName))
+            {
+                _friends.Remove(friendName);
+
+                MessageBox.Show($"Usunięto {friendName} z listy znajomych", "Znajomy usunięty",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                _friends.Add(friendName);
+            }
+
+            FriendsListBox.Invoke((MethodInvoker)delegate
+            {
+                FriendsCountLabel.Text = $"Znajomi: {_friends.Count}";
+                FriendsListBox.Items.Clear();
+                FriendsListBox.Items.AddRange(_friends.ToArray());
+            });
+        }
+
         private void UsersChanged(string userName)
         {
             if (_availableUsers.Contains(userName))
@@ -331,6 +405,8 @@ namespace OFTP_Client
                 {
                     case DialogResult.Yes:
 
+                        StopButton.PerformClick();
+
                         isConnected = false;
 
                         break;
@@ -343,7 +419,7 @@ namespace OFTP_Client
                 }
             }
 
-            await SendMessage(CodeNames.LogOut);
+            await SendMessage(ServerRequestCodes.LogOut);
 
             cancellationTokenSource.Cancel();
 
@@ -414,9 +490,34 @@ namespace OFTP_Client
 
         private void UsersListBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (!isConnected)
+            var selectedUser = UsersListBox.SelectedItem;
+
+            if (selectedUser != null)
             {
-                ConnectWithUserTextBox.Text = UsersListBox.SelectedItem?.ToString();
+                if (!isConnected)
+                {
+                    ConnectWithUserTextBox.Text = selectedUser.ToString();
+                }
+
+                if (_friends.Contains(selectedUser))
+                {
+                    FriendsListBox.SelectedItem = selectedUser;
+
+                    AddOrRemoveFriendButton.Text = "Usuń znajomego";
+                }
+                else
+                {
+                    AddOrRemoveFriendButton.Text = "Dodaj znajomego";
+                }
+
+                if (!isConnected)
+                {
+                    AddOrRemoveFriendButton.Enabled = true;
+                }
+            }
+            else
+            {
+                AddOrRemoveFriendButton.Enabled = false;
             }
         }
 
@@ -431,18 +532,44 @@ namespace OFTP_Client
             MinimumSize = Size;
 
             UsersListBox.Items.AddRange(_availableUsers.ToArray());
+            FriendsListBox.Items.AddRange(_friends.ToArray());
 
             AvailableUsersLabel.Text = $"Dostępni użytownicy: {_availableUsers.Count}";
+            FriendsCountLabel.Text = $"Znajomi: {_friends.Count}";
         }
 
         private async void ConnectButton_Click(object sender, EventArgs e)
         {
             if (!isConnected)
             {
-                isConnected = true;
-                await SendMessage(CodeNames.AskUserForConnection, UsersListBox.SelectedItem.ToString());
-                StateLabel.Text = $"Stan: Oczekiwanie na akceptację od {UsersListBox.SelectedItem}";
-                ConnectButton.Text = "Rozłącz z użytkownikiem";
+                AddOrRemoveFriendButton.Enabled = false;
+
+                StopButton.Enabled = true;
+                PauseButton.Enabled = true;
+
+                var selectedUser = UsersListBox.SelectedItem;
+
+                if (selectedUser != null)
+                {
+                    isConnected = true;
+                    await SendMessage(UserConnectionCodes.AskUserForConnection, selectedUser.ToString());
+                    StateLabel.Text = $"Stan: Oczekiwanie na akceptację od {UsersListBox.SelectedItem}";
+                    ConnectButton.Text = "Rozłącz";
+                }
+                else if (FriendsListBox.SelectedItem != null)
+                {
+                    var selectedFriend = FriendsListBox.SelectedItem;
+
+                    if (!_availableUsers.Contains(selectedFriend))
+                    {
+                        FriendIsUnavailable(selectedFriend.ToString());
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Wybierz użytkownika z listy obok", "Brak użytkownika",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
             }
             else
             {
@@ -451,7 +578,7 @@ namespace OFTP_Client
                 sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
 
                 isConnected = false;
-                ConnectButton.Text = "Połącz z użytkownikiem";
+                ConnectButton.Text = "Połącz";
                 StateLabel.Text = "Stan: Oczekiwanie";
 
                 GeneralProgressBar.Value = 0;
@@ -461,6 +588,10 @@ namespace OFTP_Client
                 SendFileProgressLabel.Text = "Postęp: ";
 
                 selectedFilesPath.Clear();
+
+                AddOrRemoveFriendButton.Enabled = true;
+                StopButton.Enabled = true;
+                PauseButton.Enabled = true;
             }
         }
 
@@ -521,7 +652,8 @@ namespace OFTP_Client
                 allFiles += i + "\r\n";
             }
 
-            MessageBox.Show("Wybrane pliki : \r\n" + allFiles, "Wybrane pliki", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("Wybrane pliki : \r\n" + allFiles, "Wybrane pliki", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             //SendButton.Enabled = false;
             //FilesTreeView.Nodes.Clear();
@@ -533,7 +665,7 @@ namespace OFTP_Client
             if (!isClientConnected)
             {
                 isConnected = false;
-                ConnectButton.Text = "Połącz z użytkownikiem";
+                ConnectButton.Text = "Połącz";
                 StateLabel.Text = "Stan: Oczekiwanie";
 
                 GeneralProgressBar.Value = 0;
@@ -541,6 +673,10 @@ namespace OFTP_Client
 
                 GeneralProgressLabel.Text = "Wysłano plików: ";
                 SendFileProgressLabel.Text = "Postęp: ";
+
+                SendButton.Enabled = false;
+
+                FilesTreeView.Nodes.Clear();
             }
         }
 
@@ -636,9 +772,153 @@ namespace OFTP_Client
             }
         }
 
+        private void FilterFriendsTextBox_TextChanged(object sender, EventArgs e)
+        {
+            var text = FilterFriendsTextBox.Text.ToLower();
+
+            if (text != "filtruj")
+            {
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    FriendsListBox.Items.Clear();
+                    var filteredUserList = _friends.Where(x => x.ToLower().Contains(text));
+
+                    FriendsCountLabel.Text = $"Znajomi: {filteredUserList.Count()}";
+
+                    FriendsListBox.Items.AddRange(filteredUserList.ToArray());
+                }
+                else
+                {
+                    FriendsListBox.Items.Clear();
+
+                    FriendsCountLabel.Text = $"Znajomi: {_friends.Count()}";
+
+                    FriendsListBox.Items.AddRange(_friends.ToArray());
+
+                }
+            }
+        }
+
+        private void FriendsListBox_DoubleClick(object sender, EventArgs e)
+        {
+            var selectedFriend = FriendsListBox.SelectedItem;
+
+            if (selectedFriend != null)
+            {
+                if (_availableUsers.Contains(FriendsListBox.SelectedItem))
+                {
+                    ConnectButton.PerformClick();
+                }
+                else
+                {
+                    FriendIsUnavailable(selectedFriend.ToString());
+                }
+            }
+        }
+
+        private void FriendIsUnavailable(string unavailableUsername)
+        {
+            switch (MessageBox.Show($"{FriendsListBox.SelectedItem} nie jest dostępny\nCzy chcesz wysłać powiadomienie?",
+                "Brak użytkownika", MessageBoxButtons.YesNo, MessageBoxIcon.Information))
+            {
+                case DialogResult.Yes:
+                    SendEmailEvent.Invoke(this, new SendEmailEvent
+                    {
+                        UnavailableUsername = unavailableUsername,
+                        Username = _loggedInAs
+                    });
+                    break;
+                case DialogResult.No:
+                    break;
+            }
+        }
+
+        private void FriendsListBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var selectedFriend = FriendsListBox.SelectedItem;
+
+            if (selectedFriend != null)
+            {
+                if (_availableUsers.Contains(selectedFriend))
+                {
+                    UsersListBox.SelectedItem = selectedFriend;
+                }
+
+                if (_friends.Contains(FriendsListBox.SelectedItem))
+                {
+                    AddOrRemoveFriendButton.Text = "Usuń znajomego";
+                }
+
+                if (!isConnected)
+                {
+                    AddOrRemoveFriendButton.Enabled = true;
+                }
+            }
+            else
+            {
+                AddOrRemoveFriendButton.Enabled = false;
+            }
+        }
+
+        private async void AddOrRemoveFriendButton_Click(object sender, EventArgs e)
+        {
+            var selectedUser = UsersListBox.SelectedItem;
+            var selectedFriend = FriendsListBox.SelectedItem;
+
+            if (selectedUser != null)
+            {
+                if (_friends.Contains(selectedUser))
+                {
+                    switch (MessageBox.Show($"Czy na pewno chcesz usunąć {selectedUser} z listy znajomych?",
+                        "Potwierdzanie usuwania", MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+                    {
+                        case DialogResult.Yes:
+                            await SendMessage(FriendshipCodes.RemoveFriend, selectedUser.ToString());
+                            break;
+                        case DialogResult.No:
+                            break;
+                    }
+                }
+                else
+                {
+                    await SendMessage(FriendshipCodes.AskForFriendship, selectedUser.ToString());
+                }
+            }
+            else
+            {
+                switch (MessageBox.Show($"Czy na pewno chcesz usunąć {selectedFriend} z listy znajomych?",
+                    "Potwierdzanie usuwania", MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+                {
+                    case DialogResult.Yes:
+                        await SendMessage(FriendshipCodes.RemoveFriend, selectedFriend.ToString());
+                        break;
+                    case DialogResult.No:
+                        break;
+                }
+            }
+        }
+
+        private void FilterFriendsTextBox_Leave(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(FilterFriendsTextBox.Text))
+            {
+                FilterFriendsTextBox.Text = "Filtruj";
+            }
+        }
+
         private void UserEncryptionCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             isEncryptionUsed = !isEncryptionUsed;
+        }
+
+        private void FilterFriendsTextBox_Enter(object sender, EventArgs e)
+        {
+            var filterTerm = FilterFriendsTextBox.Text;
+
+            if (!string.IsNullOrEmpty(filterTerm) && filterTerm == "Filtruj")
+            {
+                FilterFriendsTextBox.Text = "";
+            }
         }
 
         private void StopButton_Click(object sender, EventArgs e)

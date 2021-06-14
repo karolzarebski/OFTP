@@ -10,7 +10,8 @@ namespace DatabaseLibrary.DAL.Services
         Task SaveChangesAsync();
         Task<List<User>> GetUserDataAsync();
         void AddUserDataAsync(User userData);
-
-        User Users { get; set; }
+        void AddFriend(User user, Friend friend);
+        void RemoveFriend(User user, Friend friend);
+        Task<User> GetUserByLogin(string login);
     }
 }

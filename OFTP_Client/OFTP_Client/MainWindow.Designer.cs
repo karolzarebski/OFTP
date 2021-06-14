@@ -47,6 +47,10 @@ namespace OFTP_Client
             this.ChooseDir = new System.Windows.Forms.Button();
             this.PauseButton = new System.Windows.Forms.Button();
             this.StopButton = new System.Windows.Forms.Button();
+            this.FriendsListBox = new System.Windows.Forms.ListBox();
+            this.FilterFriendsTextBox = new System.Windows.Forms.TextBox();
+            this.FriendsCountLabel = new System.Windows.Forms.Label();
+            this.AddOrRemoveFriendButton = new System.Windows.Forms.Button();
             this.UserEncryptionCheckBox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
@@ -56,7 +60,7 @@ namespace OFTP_Client
             this.UsersListBox.ItemHeight = 15;
             this.UsersListBox.Location = new System.Drawing.Point(522, 32);
             this.UsersListBox.Name = "UsersListBox";
-            this.UsersListBox.Size = new System.Drawing.Size(266, 379);
+            this.UsersListBox.Size = new System.Drawing.Size(213, 379);
             this.UsersListBox.TabIndex = 0;
             this.UsersListBox.SelectedIndexChanged += new System.EventHandler(this.UsersListBox_SelectedIndexChanged);
             this.UsersListBox.DoubleClick += new System.EventHandler(this.UsersListBox_DoubleClick);
@@ -72,11 +76,11 @@ namespace OFTP_Client
             // 
             // ConnectButton
             // 
-            this.ConnectButton.Location = new System.Drawing.Point(343, 5);
+            this.ConnectButton.Location = new System.Drawing.Point(396, 128);
             this.ConnectButton.Name = "ConnectButton";
-            this.ConnectButton.Size = new System.Drawing.Size(161, 23);
+            this.ConnectButton.Size = new System.Drawing.Size(108, 23);
             this.ConnectButton.TabIndex = 2;
-            this.ConnectButton.Text = "Połącz z użytkownikiem";
+            this.ConnectButton.Text = "Połącz";
             this.ConnectButton.UseVisualStyleBackColor = true;
             this.ConnectButton.Click += new System.EventHandler(this.ConnectButton_Click);
             // 
@@ -84,7 +88,8 @@ namespace OFTP_Client
             // 
             this.ConnectWithUserTextBox.Location = new System.Drawing.Point(70, 6);
             this.ConnectWithUserTextBox.Name = "ConnectWithUserTextBox";
-            this.ConnectWithUserTextBox.Size = new System.Drawing.Size(152, 23);
+            this.ConnectWithUserTextBox.ReadOnly = true;
+            this.ConnectWithUserTextBox.Size = new System.Drawing.Size(270, 23);
             this.ConnectWithUserTextBox.TabIndex = 3;
             // 
             // label2
@@ -98,9 +103,9 @@ namespace OFTP_Client
             // 
             // LogoutButton
             // 
-            this.LogoutButton.Location = new System.Drawing.Point(240, 5);
+            this.LogoutButton.Location = new System.Drawing.Point(364, 6);
             this.LogoutButton.Name = "LogoutButton";
-            this.LogoutButton.Size = new System.Drawing.Size(75, 23);
+            this.LogoutButton.Size = new System.Drawing.Size(140, 23);
             this.LogoutButton.TabIndex = 5;
             this.LogoutButton.Text = "Wyloguj";
             this.LogoutButton.UseVisualStyleBackColor = true;
@@ -110,7 +115,7 @@ namespace OFTP_Client
             // 
             this.FilterUsersTextBox.Location = new System.Drawing.Point(522, 427);
             this.FilterUsersTextBox.Name = "FilterUsersTextBox";
-            this.FilterUsersTextBox.Size = new System.Drawing.Size(266, 23);
+            this.FilterUsersTextBox.Size = new System.Drawing.Size(213, 23);
             this.FilterUsersTextBox.TabIndex = 6;
             this.FilterUsersTextBox.Text = "Filtruj";
             this.FilterUsersTextBox.TextChanged += new System.EventHandler(this.FilterUsersTextBox_TextChanged);
@@ -140,16 +145,16 @@ namespace OFTP_Client
             this.FilesTreeView.CheckBoxes = true;
             this.FilesTreeView.Location = new System.Drawing.Point(13, 105);
             this.FilesTreeView.Name = "FilesTreeView";
-            this.FilesTreeView.Size = new System.Drawing.Size(491, 291);
+            this.FilesTreeView.Size = new System.Drawing.Size(374, 291);
             this.FilesTreeView.TabIndex = 9;
             this.FilesTreeView.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.FilesTreeView_AfterCheck);
             // 
             // SendButton
             // 
             this.SendButton.Enabled = false;
-            this.SendButton.Location = new System.Drawing.Point(398, 71);
+            this.SendButton.Location = new System.Drawing.Point(396, 241);
             this.SendButton.Name = "SendButton";
-            this.SendButton.Size = new System.Drawing.Size(97, 23);
+            this.SendButton.Size = new System.Drawing.Size(108, 23);
             this.SendButton.TabIndex = 10;
             this.SendButton.Text = "Wyślij pliki";
             this.SendButton.UseVisualStyleBackColor = true;
@@ -189,9 +194,9 @@ namespace OFTP_Client
             // 
             // ChooseDir
             // 
-            this.ChooseDir.Location = new System.Drawing.Point(398, 42);
+            this.ChooseDir.Location = new System.Drawing.Point(396, 191);
             this.ChooseDir.Name = "ChooseDir";
-            this.ChooseDir.Size = new System.Drawing.Size(97, 23);
+            this.ChooseDir.Size = new System.Drawing.Size(108, 23);
             this.ChooseDir.TabIndex = 15;
             this.ChooseDir.Text = "Wybór folderu";
             this.ChooseDir.UseVisualStyleBackColor = true;
@@ -199,9 +204,10 @@ namespace OFTP_Client
             // 
             // PauseButton
             // 
-            this.PauseButton.Location = new System.Drawing.Point(270, 42);
+            this.PauseButton.Enabled = false;
+            this.PauseButton.Location = new System.Drawing.Point(396, 298);
             this.PauseButton.Name = "PauseButton";
-            this.PauseButton.Size = new System.Drawing.Size(60, 23);
+            this.PauseButton.Size = new System.Drawing.Size(108, 23);
             this.PauseButton.TabIndex = 16;
             this.PauseButton.Text = "Pauza";
             this.PauseButton.UseVisualStyleBackColor = true;
@@ -209,23 +215,65 @@ namespace OFTP_Client
             // 
             // StopButton
             // 
-            this.StopButton.Location = new System.Drawing.Point(336, 42);
+            this.StopButton.Enabled = false;
+            this.StopButton.Location = new System.Drawing.Point(396, 327);
             this.StopButton.Name = "StopButton";
-            this.StopButton.Size = new System.Drawing.Size(50, 23);
+            this.StopButton.Size = new System.Drawing.Size(108, 23);
             this.StopButton.TabIndex = 17;
             this.StopButton.Text = "Stop";
             this.StopButton.UseVisualStyleBackColor = true;
             this.StopButton.Click += new System.EventHandler(this.StopButton_Click);
+            // 
+            // FriendsListBox
+            // 
+            this.FriendsListBox.FormattingEnabled = true;
+            this.FriendsListBox.ItemHeight = 15;
+            this.FriendsListBox.Location = new System.Drawing.Point(755, 32);
+            this.FriendsListBox.Name = "FriendsListBox";
+            this.FriendsListBox.Size = new System.Drawing.Size(213, 379);
+            this.FriendsListBox.TabIndex = 18;
+            this.FriendsListBox.SelectedIndexChanged += new System.EventHandler(this.FriendsListBox_SelectedIndexChanged);
+            this.FriendsListBox.DoubleClick += new System.EventHandler(this.FriendsListBox_DoubleClick);
+            // 
+            // FilterFriendsTextBox
+            // 
+            this.FilterFriendsTextBox.Location = new System.Drawing.Point(755, 427);
+            this.FilterFriendsTextBox.Name = "FilterFriendsTextBox";
+            this.FilterFriendsTextBox.Size = new System.Drawing.Size(213, 23);
+            this.FilterFriendsTextBox.TabIndex = 19;
+            this.FilterFriendsTextBox.Text = "Filtruj";
+            this.FilterFriendsTextBox.TextChanged += new System.EventHandler(this.FilterFriendsTextBox_TextChanged);
+            this.FilterFriendsTextBox.Enter += new System.EventHandler(this.FilterFriendsTextBox_Enter);
+            this.FilterFriendsTextBox.Leave += new System.EventHandler(this.FilterFriendsTextBox_Leave);
+            // 
+            // FriendsCountLabel
+            // 
+            this.FriendsCountLabel.AutoSize = true;
+            this.FriendsCountLabel.Location = new System.Drawing.Point(755, 13);
+            this.FriendsCountLabel.Name = "FriendsCountLabel";
+            this.FriendsCountLabel.Size = new System.Drawing.Size(51, 15);
+            this.FriendsCountLabel.TabIndex = 20;
+            this.FriendsCountLabel.Text = "Znajomi";
+            // 
+            // AddOrRemoveFriendButton
+            // 
+            this.AddOrRemoveFriendButton.Location = new System.Drawing.Point(364, 32);
+            this.AddOrRemoveFriendButton.Name = "AddOrRemoveFriendButton";
+            this.AddOrRemoveFriendButton.Size = new System.Drawing.Size(140, 23);
+            this.AddOrRemoveFriendButton.TabIndex = 21;
+            this.AddOrRemoveFriendButton.Text = "Dodaj znajomego";
+            this.AddOrRemoveFriendButton.UseVisualStyleBackColor = true;
+            this.AddOrRemoveFriendButton.Click += new System.EventHandler(this.AddOrRemoveFriendButton_Click);
             // 
             // UserEncryptionCheckBox
             // 
             this.UserEncryptionCheckBox.AutoSize = true;
             this.UserEncryptionCheckBox.Checked = true;
             this.UserEncryptionCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.UserEncryptionCheckBox.Location = new System.Drawing.Point(273, 75);
+            this.UserEncryptionCheckBox.Location = new System.Drawing.Point(348, 74);
             this.UserEncryptionCheckBox.Name = "UserEncryptionCheckBox";
             this.UserEncryptionCheckBox.Size = new System.Drawing.Size(113, 19);
-            this.UserEncryptionCheckBox.TabIndex = 18;
+            this.UserEncryptionCheckBox.TabIndex = 22;
             this.UserEncryptionCheckBox.Text = "Użyj szyfrowania";
             this.UserEncryptionCheckBox.UseVisualStyleBackColor = true;
             this.UserEncryptionCheckBox.CheckedChanged += new System.EventHandler(this.UserEncryptionCheckBox_CheckedChanged);
@@ -234,8 +282,12 @@ namespace OFTP_Client
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 460);
+            this.ClientSize = new System.Drawing.Size(998, 460);
             this.Controls.Add(this.UserEncryptionCheckBox);
+            this.Controls.Add(this.AddOrRemoveFriendButton);
+            this.Controls.Add(this.FriendsCountLabel);
+            this.Controls.Add(this.FilterFriendsTextBox);
+            this.Controls.Add(this.FriendsListBox);
             this.Controls.Add(this.StopButton);
             this.Controls.Add(this.PauseButton);
             this.Controls.Add(this.ChooseDir);
@@ -284,6 +336,10 @@ namespace OFTP_Client
         private System.Windows.Forms.Button ChooseDir;
         private System.Windows.Forms.Button PauseButton;
         private System.Windows.Forms.Button StopButton;
+        private System.Windows.Forms.ListBox FriendsListBox;
+        private System.Windows.Forms.TextBox FilterFriendsTextBox;
+        private System.Windows.Forms.Label FriendsCountLabel;
+        private System.Windows.Forms.Button AddOrRemoveFriendButton;
         private System.Windows.Forms.CheckBox UserEncryptionCheckBox;
     }
 }

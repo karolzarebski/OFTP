@@ -41,6 +41,9 @@ namespace OFTP_Client
             this.RegisterOrLoginLabel = new System.Windows.Forms.Label();
             this.RepeatPasswordTextBox = new System.Windows.Forms.TextBox();
             this.RepeatPasswordLabel = new System.Windows.Forms.Label();
+            this.EmailAddressLabel = new System.Windows.Forms.Label();
+            this.EmailAddressTextBox = new System.Windows.Forms.TextBox();
+            this.RegisterLoginLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // LoginButton
@@ -100,7 +103,7 @@ namespace OFTP_Client
             // RegisterButton
             // 
             this.RegisterButton.Enabled = false;
-            this.RegisterButton.Location = new System.Drawing.Point(49, 301);
+            this.RegisterButton.Location = new System.Drawing.Point(49, 346);
             this.RegisterButton.Name = "RegisterButton";
             this.RegisterButton.Size = new System.Drawing.Size(212, 23);
             this.RegisterButton.TabIndex = 8;
@@ -114,7 +117,7 @@ namespace OFTP_Client
             this.ServerConnectionLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.ServerConnectionLabel.Location = new System.Drawing.Point(58, 46);
             this.ServerConnectionLabel.Name = "ServerConnectionLabel";
-            this.ServerConnectionLabel.Size = new System.Drawing.Size(203, 21);
+            this.ServerConnectionLabel.Size = new System.Drawing.Size(204, 21);
             this.ServerConnectionLabel.TabIndex = 9;
             this.ServerConnectionLabel.Text = "Stan połączenia: Rozłączono";
             // 
@@ -153,15 +156,45 @@ namespace OFTP_Client
             this.RepeatPasswordLabel.AutoSize = true;
             this.RepeatPasswordLabel.Location = new System.Drawing.Point(28, 233);
             this.RepeatPasswordLabel.Name = "RepeatPasswordLabel";
-            this.RepeatPasswordLabel.Size = new System.Drawing.Size(103, 15);
+            this.RepeatPasswordLabel.Size = new System.Drawing.Size(105, 15);
             this.RepeatPasswordLabel.TabIndex = 13;
             this.RepeatPasswordLabel.Text = "POWTÓRZ HASŁO";
+            // 
+            // EmailAddressLabel
+            // 
+            this.EmailAddressLabel.AutoSize = true;
+            this.EmailAddressLabel.Location = new System.Drawing.Point(28, 283);
+            this.EmailAddressLabel.Name = "EmailAddressLabel";
+            this.EmailAddressLabel.Size = new System.Drawing.Size(84, 15);
+            this.EmailAddressLabel.TabIndex = 15;
+            this.EmailAddressLabel.Text = "ADRES E-MAIL";
+            // 
+            // EmailAddressTextBox
+            // 
+            this.EmailAddressTextBox.Location = new System.Drawing.Point(28, 301);
+            this.EmailAddressTextBox.Name = "EmailAddressTextBox";
+            this.EmailAddressTextBox.Size = new System.Drawing.Size(249, 23);
+            this.EmailAddressTextBox.TabIndex = 14;
+            this.EmailAddressTextBox.TextChanged += new System.EventHandler(this.EmailAddressTextBox_TextChanged);
+            // 
+            // RegisterLoginLabel
+            // 
+            this.RegisterLoginLabel.AutoSize = true;
+            this.RegisterLoginLabel.Location = new System.Drawing.Point(76, 134);
+            this.RegisterLoginLabel.Name = "RegisterLoginLabel";
+            this.RegisterLoginLabel.Size = new System.Drawing.Size(139, 15);
+            this.RegisterLoginLabel.TabIndex = 16;
+            this.RegisterLoginLabel.Text = "(max 32 litery oraz liczby)";
+            this.RegisterLoginLabel.Visible = false;
             // 
             // ConnectionForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(304, 337);
+            this.ClientSize = new System.Drawing.Size(304, 386);
+            this.Controls.Add(this.RegisterLoginLabel);
+            this.Controls.Add(this.EmailAddressLabel);
+            this.Controls.Add(this.EmailAddressTextBox);
             this.Controls.Add(this.RepeatPasswordLabel);
             this.Controls.Add(this.RepeatPasswordTextBox);
             this.Controls.Add(this.RegisterOrLoginLabel);
@@ -196,6 +229,9 @@ namespace OFTP_Client
         private System.Windows.Forms.Label RegisterOrLoginLabel;
         private System.Windows.Forms.TextBox RepeatPasswordTextBox;
         private System.Windows.Forms.Label RepeatPasswordLabel;
+        private System.Windows.Forms.Label EmailAddressLabel;
+        private System.Windows.Forms.TextBox EmailAddressTextBox;
+        private System.Windows.Forms.Label RegisterLoginLabel;
     }
 }
 

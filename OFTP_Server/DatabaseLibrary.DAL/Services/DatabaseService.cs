@@ -38,7 +38,7 @@ namespace DatabaseLibrary.DAL.Services
 
             try
             {
-                await _userContext.Users.LoadAsync();
+                await _userContext.Users.Include(u => u.Friend).LoadAsync();
             }
             finally
             {
@@ -74,6 +74,23 @@ namespace DatabaseLibrary.DAL.Services
             {
                 semaphoreSlim.Release();
             }
+        }
+
+        public void AddFriend(User user, Friend friend)
+        {
+            user.Friend.Add(friend);
+        }
+
+        public async Task<User> GetUserByLogin(string login)
+        {
+            return (await GetUserDataAsync()).FirstOrDefault(x => x.Login == login);
+        }
+
+        public void RemoveFriend(User user, Friend friend)
+        {
+            var tempFriend = user.Friend.Where(x => x.Username == friend.Username).FirstOrDefault();
+
+            user.Friend.Remove(tempFriend);
         }
     }
 }
