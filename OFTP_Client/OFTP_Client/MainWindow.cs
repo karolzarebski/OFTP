@@ -95,7 +95,7 @@ namespace OFTP_Client
 
                                            StateLabel.Invoke((MethodInvoker)delegate
                                            {
-                                               StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
+                                               StateLabel.Text = $"Połączono z: {login}";
                                            });
 
                                            break;
@@ -122,7 +122,7 @@ namespace OFTP_Client
                                                }
                                            }
 
-                                           StateLabel.Invoke((MethodInvoker)delegate
+                                           Invoke((MethodInvoker)delegate
                                            {
                                                StateLabel.Text = "Stan: Oczekiwanie";
                                                GeneralProgressBar.Value = 0;
@@ -141,14 +141,15 @@ namespace OFTP_Client
                                {
                                    login = data[0];
 
-                                   StateLabel.Invoke((MethodInvoker)delegate
+                                   Invoke((MethodInvoker)delegate
                                    {
-                                       StateLabel.Text = $"Połączono z: {login}"; //don't know if it's correct
+                                       StateLabel.Text = $"Połączono z: {login}";
+                                       UserEncryptionCheckBox.Enabled = false;
                                    });
 
                                    string ip = data[1];
 
-                                   sendFilesService = new SendFilesService(ip);
+                                   sendFilesService = new SendFilesService(ip, isEncryptionUsed);
                                    sendFilesService.SendFileProgress += SendFilesService_SendFileProgress;
 
                                    if (await sendFilesService.Connect())
@@ -300,6 +301,8 @@ namespace OFTP_Client
                             Task.Run(() => MessageBox.Show("Pomyślnie wysłano pliki", "Transfer zakończony",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information));
 
+                            UserEncryptionCheckBox.Enabled = true;
+
                             selectedFilesPath.Clear();
                         }
                     }
@@ -323,20 +326,6 @@ namespace OFTP_Client
             }
 
             return Encoding.UTF8.GetString(header.Take(3).ToArray());
-
-            //if (isCodeReceived)
-            //{
-            //    var codeBuffer = new byte[256]; //TODO check length
-            //    await client.GetStream().ReadAsync(codeBuffer, 0, codeBuffer.Length);
-            //    return await clients[client].DecryptData(codeBuffer.Skip(2).Take(codeBuffer[0] * 256 + codeBuffer[1]).ToArray());
-            //}
-            //else
-            //{
-            //    var messageBuffer = new byte[1024];
-            //    await client.GetStream().ReadAsync(messageBuffer, 0, messageBuffer.Length);
-            //    return await clients[client].DecryptData(messageBuffer.Skip(2)
-            //            .Take(messageBuffer[0] * 256 + messageBuffer[1]).ToArray());
-            //}
         }
 
         private async Task SendMessage(string code, string message)
