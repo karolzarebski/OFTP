@@ -224,16 +224,16 @@ namespace OFTP_Client
                            {
                                if (code == UserConnectionCodes.RejectedIncomingConnection)
                                {
-                                   SendButton.Enabled = false;
                                    MessageBox.Show("Klient odmówił połączenia", "Odmowa połączenia",
                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                                    isConnected = false;
 
-                                   ConnectButton.Invoke((MethodInvoker)delegate
+                                   Invoke((MethodInvoker)delegate
                                    {
                                        ConnectButton.Text = "Połącz";
                                        StateLabel.Text = "Stan: Oczekiwanie";
+                                       SendButton.Enabled = false;
                                    });
                                }
                                else if (code == FriendshipCodes.AddToFriendsRejected)
@@ -647,7 +647,8 @@ namespace OFTP_Client
                 allFiles += i + "\r\n";
             }
 
-            MessageBox.Show("Wybrane pliki : \r\n" + allFiles, "Wybrane pliki", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("Wybrane pliki : \r\n" + allFiles, "Wybrane pliki", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             //SendButton.Enabled = false;
             //FilesTreeView.Nodes.Clear();
@@ -667,6 +668,8 @@ namespace OFTP_Client
 
                 GeneralProgressLabel.Text = "Wysłano plików: ";
                 SendFileProgressLabel.Text = "Postęp: ";
+
+                SendButton.Enabled = false;
 
                 FilesTreeView.Nodes.Clear();
             }
