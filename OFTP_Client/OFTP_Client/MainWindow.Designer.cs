@@ -204,6 +204,7 @@ namespace OFTP_Client
             // 
             // PauseButton
             // 
+            this.PauseButton.Enabled = false;
             this.PauseButton.Location = new System.Drawing.Point(396, 298);
             this.PauseButton.Name = "PauseButton";
             this.PauseButton.Size = new System.Drawing.Size(108, 23);
@@ -214,6 +215,7 @@ namespace OFTP_Client
             // 
             // StopButton
             // 
+            this.StopButton.Enabled = false;
             this.StopButton.Location = new System.Drawing.Point(396, 327);
             this.StopButton.Name = "StopButton";
             this.StopButton.Size = new System.Drawing.Size(108, 23);

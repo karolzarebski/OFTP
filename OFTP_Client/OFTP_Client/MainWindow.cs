@@ -536,6 +536,9 @@ namespace OFTP_Client
             {
                 AddOrRemoveFriendButton.Enabled = false;
 
+                StopButton.Enabled = true;
+                PauseButton.Enabled = true;
+
                 var selectedUser = UsersListBox.SelectedItem;
 
                 if (selectedUser != null)
@@ -579,6 +582,8 @@ namespace OFTP_Client
                 selectedFilesPath.Clear();
 
                 AddOrRemoveFriendButton.Enabled = true;
+                StopButton.Enabled = true;
+                PauseButton.Enabled = true;
             }
         }
 
