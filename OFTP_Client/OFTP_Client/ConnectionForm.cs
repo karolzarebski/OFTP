@@ -268,6 +268,21 @@ namespace OFTP_Client
             string password = PasswordTextBox.Text;
             string emailAddress = EmailAddressTextBox.Text;
 
+            if(login.Length > 32)
+            {
+                MessageBox.Show("Login jest zbyt długi\nPodaj nowy i spróbuj ponownie", "Puste dane",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                return;
+            }
+            if(login.Contains("|"))
+            {
+                MessageBox.Show("Login zawiera niedozwolone znaki\nPodaj nowy i spróbuj ponownie", "Puste dane",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                return;
+            }
+
             if (!string.IsNullOrWhiteSpace(login) || !string.IsNullOrWhiteSpace(password))
             {
                 await SendMessage(ServerRequestCodes.Register, $"{login}|{password}|{emailAddress}");
@@ -399,6 +414,7 @@ namespace OFTP_Client
                 LoginButton.Visible = false;
                 RegisterButton.Visible = true;
                 RegisterButton.Enabled = false;
+                RegisterLoginLabel.Visible = true;
 
                 RepeatPasswordLabel.Visible = true;
                 RepeatPasswordTextBox.Visible = true;
@@ -415,6 +431,7 @@ namespace OFTP_Client
                 RegisterOrLoginLabel.Text = "Zarejestruj się";
                 LoginButton.Visible = true;
                 RegisterButton.Visible = false;
+                RegisterLoginLabel.Visible = false;
 
                 RepeatPasswordTextBox.Visible = false;
                 RepeatPasswordLabel.Visible = false;

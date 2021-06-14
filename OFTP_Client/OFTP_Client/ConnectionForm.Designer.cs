@@ -43,6 +43,7 @@ namespace OFTP_Client
             this.RepeatPasswordLabel = new System.Windows.Forms.Label();
             this.EmailAddressLabel = new System.Windows.Forms.Label();
             this.EmailAddressTextBox = new System.Windows.Forms.TextBox();
+            this.RegisterLoginLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // LoginButton
@@ -176,11 +177,22 @@ namespace OFTP_Client
             this.EmailAddressTextBox.TabIndex = 14;
             this.EmailAddressTextBox.TextChanged += new System.EventHandler(this.EmailAddressTextBox_TextChanged);
             // 
+            // RegisterLoginLabel
+            // 
+            this.RegisterLoginLabel.AutoSize = true;
+            this.RegisterLoginLabel.Location = new System.Drawing.Point(76, 134);
+            this.RegisterLoginLabel.Name = "RegisterLoginLabel";
+            this.RegisterLoginLabel.Size = new System.Drawing.Size(139, 15);
+            this.RegisterLoginLabel.TabIndex = 16;
+            this.RegisterLoginLabel.Text = "(max 32 litery oraz liczby)";
+            this.RegisterLoginLabel.Visible = false;
+            // 
             // ConnectionForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(304, 386);
+            this.Controls.Add(this.RegisterLoginLabel);
             this.Controls.Add(this.EmailAddressLabel);
             this.Controls.Add(this.EmailAddressTextBox);
             this.Controls.Add(this.RepeatPasswordLabel);
@@ -219,6 +231,7 @@ namespace OFTP_Client
         private System.Windows.Forms.Label RepeatPasswordLabel;
         private System.Windows.Forms.Label EmailAddressLabel;
         private System.Windows.Forms.TextBox EmailAddressTextBox;
+        private System.Windows.Forms.Label RegisterLoginLabel;
     }
 }
 
