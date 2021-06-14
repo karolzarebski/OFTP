@@ -667,6 +667,8 @@ namespace OFTP_Client
 
                 GeneralProgressLabel.Text = "Wysłano plików: ";
                 SendFileProgressLabel.Text = "Postęp: ";
+
+                FilesTreeView.Nodes.Clear();
             }
         }
 

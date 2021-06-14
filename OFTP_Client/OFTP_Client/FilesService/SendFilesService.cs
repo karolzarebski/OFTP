@@ -247,7 +247,7 @@ namespace OFTP_Client.FilesService
                         while (await ReceiveMessage() != FileTransmissionCodes.OK) ;
                     }
 
-                    return true;
+                    return false;
                 }
                 else if (responseCode == FileTransmissionCodes.RejectFileTransmission)
                 {

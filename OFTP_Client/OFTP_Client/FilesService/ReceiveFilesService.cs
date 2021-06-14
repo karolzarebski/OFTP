@@ -293,7 +293,7 @@ namespace OFTP_Client.FilesService
                     FilesCount = fileCount
                 });
 
-                return true;
+                return false;
             }
             catch (Exception ex)
             {
