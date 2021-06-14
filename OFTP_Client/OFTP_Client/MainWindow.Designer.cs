@@ -266,6 +266,8 @@ namespace OFTP_Client
             // UserEncryptionCheckBox
             // 
             this.UserEncryptionCheckBox.AutoSize = true;
+            this.UserEncryptionCheckBox.Checked = true;
+            this.UserEncryptionCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.UserEncryptionCheckBox.Location = new System.Drawing.Point(348, 74);
             this.UserEncryptionCheckBox.Name = "UserEncryptionCheckBox";
             this.UserEncryptionCheckBox.Size = new System.Drawing.Size(113, 19);
