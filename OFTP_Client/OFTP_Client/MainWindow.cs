@@ -92,6 +92,7 @@ namespace OFTP_Client
                                            await SendMessage(UserConnectionCodes.AcceptedIncomingConnection);
 
                                            accepted = true;
+                                           isConnected = true;
 
                                            Invoke((MethodInvoker)delegate
                                            {
