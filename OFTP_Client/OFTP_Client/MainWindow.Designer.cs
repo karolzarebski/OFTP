@@ -75,7 +75,7 @@ namespace OFTP_Client
             // 
             // ConnectButton
             // 
-            this.ConnectButton.Location = new System.Drawing.Point(240, 42);
+            this.ConnectButton.Location = new System.Drawing.Point(275, 42);
             this.ConnectButton.Name = "ConnectButton";
             this.ConnectButton.Size = new System.Drawing.Size(101, 23);
             this.ConnectButton.TabIndex = 2;
@@ -253,7 +253,7 @@ namespace OFTP_Client
             // 
             // AddOrRemoveFriendButton
             // 
-            this.AddOrRemoveFriendButton.Location = new System.Drawing.Point(224, 70);
+            this.AddOrRemoveFriendButton.Location = new System.Drawing.Point(255, 70);
             this.AddOrRemoveFriendButton.Name = "AddOrRemoveFriendButton";
             this.AddOrRemoveFriendButton.Size = new System.Drawing.Size(132, 23);
             this.AddOrRemoveFriendButton.TabIndex = 21;

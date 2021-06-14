@@ -228,7 +228,7 @@ namespace OFTP_Client
 
                                    ConnectButton.Invoke((MethodInvoker)delegate
                                    {
-                                       ConnectButton.Text = "Połącz z użytkownikiem";
+                                       ConnectButton.Text = "Połącz";
                                        StateLabel.Text = "Stan: Oczekiwanie";
                                    });
                                }
@@ -513,7 +513,10 @@ namespace OFTP_Client
                     AddOrRemoveFriendButton.Text = "Dodaj znajomego";
                 }
 
-                AddOrRemoveFriendButton.Enabled = true;
+                if (!isConnected)
+                {
+                    AddOrRemoveFriendButton.Enabled = true;
+                }
             }
             else
             {
@@ -542,6 +545,8 @@ namespace OFTP_Client
         {
             if (!isConnected)
             {
+                AddOrRemoveFriendButton.Enabled = false;
+
                 var selectedUser = UsersListBox.SelectedItem;
 
                 if (selectedUser != null)
@@ -573,7 +578,7 @@ namespace OFTP_Client
                 sendFilesService.SendFileProgress -= SendFilesService_SendFileProgress;
 
                 isConnected = false;
-                ConnectButton.Text = "Połącz z użytkownikiem";
+                ConnectButton.Text = "Połącz";
                 StateLabel.Text = "Stan: Oczekiwanie";
 
                 GeneralProgressBar.Value = 0;
@@ -583,6 +588,8 @@ namespace OFTP_Client
                 SendFileProgressLabel.Text = "Postęp: ";
 
                 selectedFilesPath.Clear();
+
+                AddOrRemoveFriendButton.Enabled = true;
             }
         }
 
@@ -655,7 +662,7 @@ namespace OFTP_Client
             if (!isClientConnected)
             {
                 isConnected = false;
-                ConnectButton.Text = "Połącz z użytkownikiem";
+                ConnectButton.Text = "Połącz";
                 StateLabel.Text = "Stan: Oczekiwanie";
 
                 GeneralProgressBar.Value = 0;
@@ -835,7 +842,10 @@ namespace OFTP_Client
                     AddOrRemoveFriendButton.Text = "Usuń znajomego";
                 }
 
-                AddOrRemoveFriendButton.Enabled = true;
+                if (!isConnected)
+                {
+                    AddOrRemoveFriendButton.Enabled = true;
+                }
             }
             else
             {
