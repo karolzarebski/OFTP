@@ -2,7 +2,6 @@
 using OFTP_Client.Resources;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
@@ -19,12 +18,14 @@ namespace OFTP_Client.FilesService
         private CryptoService _cryptoService;
         private int bufferLen = 1023; //25 KB 25599
         private bool isPaused = false, isStopped = false;
-
+        private bool _isEncryptionUsed;
 
         public event EventHandler<SendProgressEvent> SendFileProgress;
 
-        public SendFilesService(string serverIP)
+        public SendFilesService(string serverIP, bool isEncryptionUsed)
         {
+            _isEncryptionUsed = isEncryptionUsed;
+
             _serverIP = serverIP;
             _cryptoService = new CryptoService();
         }
@@ -63,13 +64,6 @@ namespace OFTP_Client.FilesService
             }
         }
 
-        private async Task SendData2(byte[] data)
-        {
-            var encryptedData = await _cryptoService.EncryptData(data);
-            Debug.WriteLine(encryptedData);
-            await _client.GetStream().WriteAsync(encryptedData);
-        }
-
         private async Task SendData(byte[] data)
         {
             var encryptedData = await _cryptoService.EncryptData(data);
@@ -82,6 +76,17 @@ namespace OFTP_Client.FilesService
             encryptedMessage[5] = (byte)(data.Length / 256);
             encryptedMessage[6] = (byte)(data.Length % 256);
             await Task.Run(() => _client.Client.Send(encryptedMessage, encryptedMessage.Length, SocketFlags.Partial));
+        }
+
+        private async Task SendPlainData(byte[] data)
+        {
+            var message = new byte[data.Length + 5];
+            Array.Copy(data, 0, message, 5, data.Length);
+            Array.Copy(Encoding.UTF8.GetBytes(CodeNames.NextPartialData), 0, message, 0, 3);
+            var len = data.Length;
+            message[3] = (byte)(len / 256);
+            message[4] = (byte)(len % 256);
+            await Task.Run(() => _client.Client.Send(message, message.Length, SocketFlags.Partial));
         }
 
         private async Task<string> ReceiveMessage()
@@ -157,7 +162,9 @@ namespace OFTP_Client.FilesService
 
                         using var fileStream = File.OpenRead(file);
 
-                        await SendMessage(CodeNames.FileLength, $"{fi.Name}|{fi.Length}");
+                        var encryptionCode = _isEncryptionUsed ? "1" : "0";
+
+                        await SendMessage(CodeNames.FileLength, $"{fi.Name}|{fi.Length}|{encryptionCode}");
 
                         SendFileProgress.Invoke(this, new SendProgressEvent
                         {
@@ -168,30 +175,41 @@ namespace OFTP_Client.FilesService
 
                         while (fileStream.Position != fi.Length)
                         {
-                            if (isStopped)
+                            responseCode = await ReceiveMessage();
+
+                            if (responseCode == CodeNames.OK)
                             {
-                                await SendMessage(CodeNames.FileTransmissionInterrupted);
-
-                                return false;
-                            }
-
-                            if (!isPaused)
-                            {
-                                var buffer = new byte[bufferLen];
-
-                                var readLen = await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
-
-                                //Debug.WriteLine(buffer.Length);
-
-                                await SendData(buffer.Take(readLen).ToArray());
-
-
-                                SendFileProgress.Invoke(this, new SendProgressEvent
+                                if (isStopped)
                                 {
-                                    Value = Map(++i, 0, count, 0, 100),
-                                    General = false,
-                                    Receive = false
-                                });
+                                    await SendMessage(CodeNames.FileTransmissionInterrupted);
+
+                                    return false;
+                                }
+
+                                if (!isPaused)
+                                {
+                                    var buffer = new byte[bufferLen];
+
+                                    var readLen = await fileStream.ReadAsync(buffer, 0, buffer.Length); //added await
+
+                                    //Debug.WriteLine(buffer.Length);
+
+                                    if (_isEncryptionUsed)
+                                    {
+                                        await SendData(buffer.Take(readLen).ToArray());
+                                    }
+                                    else
+                                    {
+                                        await SendPlainData(buffer.Take(readLen).ToArray());
+                                    }
+
+                                    SendFileProgress.Invoke(this, new SendProgressEvent
+                                    {
+                                        Value = Map(++i, 0, count, 0, 100),
+                                        General = false,
+                                        Receive = false
+                                    });
+                                }
                             }
                         }
 
@@ -202,9 +220,9 @@ namespace OFTP_Client.FilesService
                             Receive = false
                         });
 
-                        var endMessage = $"{CodeNames.EndFileTransmission}|";
+                        //var endMessage = $"{CodeNames.EndFileTransmission}|";
 
-                        await SendMessage(CodeNames.EndFileTransmission);
+                        //await SendMessage(CodeNames.EndFileTransmission);
 
                         while (await ReceiveMessage() != CodeNames.OK) ;
                     }

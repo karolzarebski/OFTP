@@ -1,6 +1,7 @@
 ﻿using OFTP_Client.Events;
 using OFTP_Client.Resources;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -78,6 +79,16 @@ namespace OFTP_Client.FilesService
             var fileLen = message[5] * 256 + message[6];
 
             return (await _cryptoService.DecryptDataB(message.Skip(7).Take(len).ToArray())).Take(fileLen).ToArray();
+        }    
+        
+        private async Task<byte[]> ReceivePlainData()
+        {
+            var message = new byte[1028];
+            await Task.Run(() => _client.Client.Receive(message, SocketFlags.Partial));
+
+            var len = message[3] * 256 + message[4];
+
+            return message.Skip(5).Take(len).ToArray();
         }
 
         private int Map(long x, long in_min, long in_max, long out_min, long out_max)
@@ -192,6 +203,9 @@ namespace OFTP_Client.FilesService
                         int fileLen = Convert.ToInt32(fileInfo[2]);
                         int totalFileLength = fileLen;
                         int receivedDataLen = 0;
+                        bool isEncryptionUsed = fileInfo[3] == "1" ? true : false;
+
+                        int ok = fileLen;
 
                         var fileDestination = Path.Combine(filePath, fileInfo[1]);
 
@@ -205,6 +219,8 @@ namespace OFTP_Client.FilesService
                             FilesCount = fileCount
                         });
 
+                        await SendMessage(CodeNames.OK);
+
                         while (fileLen > 0)
                         {
                             if (isStopped)
@@ -216,12 +232,21 @@ namespace OFTP_Client.FilesService
 
                             if (!isPaused)
                             {
-                                var len = await ReceiveData();
+                                byte[] data = null;
 
-                                fileLen -= len.Length;
+                                if (isEncryptionUsed)
+                                {
+                                    data = await ReceiveData();
+                                }
+                                else
+                                {
+                                    data = await ReceivePlainData();
+                                }
 
-                                fs.Write(len, 0, len.Length);
-                                receivedDataLen += Convert.ToInt32(len.Length);
+                                fileLen -= data.Length;
+
+                                fs.Write(data, 0, data.Length);
+                                receivedDataLen += Convert.ToInt32(data.Length);
 
                                 SendFileProgressEvent.Invoke(this, new SendProgressEvent
                                 {
@@ -229,8 +254,12 @@ namespace OFTP_Client.FilesService
                                     General = false,
                                     Receive = true
                                 });
+
+                                await SendMessage(CodeNames.OK);
                             }
                         }
+
+                        Debug.WriteLine($"{ok} {receivedDataLen}");
 
                         fs.Flush();
 
