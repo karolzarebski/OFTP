@@ -93,9 +93,12 @@ namespace OFTP_Client
 
                                            accepted = true;
 
-                                           StateLabel.Invoke((MethodInvoker)delegate
+                                           Invoke((MethodInvoker)delegate
                                            {
                                                StateLabel.Text = $"Połączono z: {login}";
+
+                                               StopButton.Enabled = true;
+                                               PauseButton.Enabled = true;
                                            });
 
                                            break;

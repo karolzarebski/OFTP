@@ -255,6 +255,9 @@ namespace OFTP_Client.FilesService
 
                                 if (data == null)
                                 {
+                                    MessageBox.Show("Transmisja plików została przerwana przez wysyłającego", "Przerwanie transmisji plików",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+
                                     return false;
                                 }
 
