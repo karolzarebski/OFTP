@@ -76,8 +76,8 @@ namespace OFTP_Client
             encryptedMessage[3] = (byte)(len / 256);
             encryptedMessage[4] = (byte)(len % 256);
             await stream.WriteAsync(encryptedMessage);
-        }       
-        
+        }
+
         private async Task SendMessage(string code)
         {
             var encryptedMessage = new byte[5];
@@ -138,7 +138,7 @@ namespace OFTP_Client
                 byte[] publicKey = new byte[77];
                 await stream.ReadAsync(publicKey, 0, publicKey.Length);
 
-                var clientPublicKey = new byte[77];           
+                var clientPublicKey = new byte[77];
 
                 Array.Copy(_cryptoService.GeneratePublicKey(), 0, clientPublicKey, 5, 72);
                 Array.Copy(Encoding.UTF8.GetBytes(ServerRequestCodes.DiffieHellmanKey), 0, clientPublicKey, 0, 3);
@@ -170,7 +170,7 @@ namespace OFTP_Client
             //}
             //else
             //{
-                ConnectToServer();
+            ConnectToServer();
             //}
         }
 
@@ -268,14 +268,14 @@ namespace OFTP_Client
             string password = PasswordTextBox.Text;
             string emailAddress = EmailAddressTextBox.Text;
 
-            if(login.Length > 32)
+            if (login.Length > 32)
             {
                 MessageBox.Show("Login jest zbyt długi\nPodaj nowy i spróbuj ponownie", "Puste dane",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
                 return;
             }
-            if(Regex.IsMatch(login, "[^a-zA-z0-9]"))
+            if (Regex.IsMatch(login, "[^a-zA-z0-9]"))
             {
                 MessageBox.Show("Login zawiera niedozwolone znaki\nPodaj nowy i spróbuj ponownie", "Puste dane",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -449,7 +449,7 @@ namespace OFTP_Client
         private void LoginTextBox_TextChanged(object sender, EventArgs e)
         {
             string login = LoginTextBox.Text;
-            if(login.Length <= 32 && login.Length > 0 && !Regex.IsMatch(login, "[^a-zA-z0-9]"))
+            if (login.Length <= 32 && login.Length > 0 && !Regex.IsMatch(login, "[^a-zA-z0-9]"))
             {
                 RegisterLoginLabel.BackColor = Color.PaleGreen;
             }
@@ -506,37 +506,50 @@ namespace OFTP_Client
             Hide();
         }
 
-        private void EmailAddressTextBox_TextChanged(object sender, EventArgs e)
+        public bool IsEmailCorrect(string email)
         {
-            if (EmailAddressTextBox.Text != string.Empty)
+            if (email != string.Empty)
             {
                 System.Net.Mail.MailAddress eMailValidator = null;
-                if (System.Net.Mail.MailAddress.TryCreate(EmailAddressTextBox.Text, out eMailValidator))
+
+                if (System.Net.Mail.MailAddress.TryCreate(email, out eMailValidator))
                 {
                     if (Regex.IsMatch(eMailValidator.Host, "[a-zA-z]+\\.[a-zA-z]+"))
                     {
-                        EmailAddressTextBox.BackColor = Color.PaleGreen;
-
-                        emailOk = true;
-
-                        if (connected && passwordOk && emailOk)
-                        {
-                            RegisterButton.Enabled = true;
-                        }
+                        return true;
                     }
                     else
                     {
-                        EmailAddressTextBox.BackColor = Color.Tomato;
-                        emailOk = false;
-                        RegisterButton.Enabled = false;
+                        return false;
                     }
                 }
                 else
                 {
-                    EmailAddressTextBox.BackColor = Color.Tomato;
-                    emailOk = false;
-                    RegisterButton.Enabled = false;
+                    return false;
                 }
+            }
+
+            return false;
+        }
+
+        private void EmailAddressTextBox_TextChanged(object sender, EventArgs e)
+        {
+            if (IsEmailCorrect(EmailAddressTextBox.Text))
+            {
+                EmailAddressTextBox.BackColor = Color.PaleGreen;
+
+                emailOk = true;
+
+                if (connected && passwordOk && emailOk)
+                {
+                    RegisterButton.Enabled = true;
+                }
+            }
+            else
+            {
+                EmailAddressTextBox.BackColor = Color.Tomato;
+                emailOk = false;
+                RegisterButton.Enabled = false;
             }
         }
 
