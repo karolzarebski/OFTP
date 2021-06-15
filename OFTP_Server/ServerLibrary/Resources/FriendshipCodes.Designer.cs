@@ -61,7 +61,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 701.
+        ///   Looks up a localized string similar to 401.
         /// </summary>
         internal static string AddFriend {
             get {
@@ -70,7 +70,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 703.
+        ///   Looks up a localized string similar to 403.
         /// </summary>
         internal static string AddToFriendsAccepted {
             get {
@@ -79,7 +79,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 704.
+        ///   Looks up a localized string similar to 404.
         /// </summary>
         internal static string AddToFriendsRejected {
             get {
@@ -88,7 +88,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 700.
+        ///   Looks up a localized string similar to 400.
         /// </summary>
         internal static string AskForFriendship {
             get {
@@ -97,7 +97,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 705.
+        ///   Looks up a localized string similar to 405.
         /// </summary>
         internal static string NewFriend {
             get {
@@ -106,7 +106,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 702.
+        ///   Looks up a localized string similar to 402.
         /// </summary>
         internal static string RemoveFriend {
             get {

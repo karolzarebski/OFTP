@@ -118,12 +118,12 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SendEmail" xml:space="preserve">
-    <value>800</value>
+    <value>500</value>
   </data>
   <data name="SendEmailFailure" xml:space="preserve">
-    <value>802</value>
+    <value>502</value>
   </data>
   <data name="SendEmailSuccess" xml:space="preserve">
-    <value>801</value>
+    <value>501</value>
   </data>
 </root>

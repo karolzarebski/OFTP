@@ -130,16 +130,13 @@
     <value>606</value>
   </data>
   <data name="FileTransmissionInterrupted" xml:space="preserve">
-    <value>609</value>
-  </data>
-  <data name="NextDataLength" xml:space="preserve">
-    <value>607</value>
+    <value>608</value>
   </data>
   <data name="NextPartialData" xml:space="preserve">
     <value>605</value>
   </data>
   <data name="OK" xml:space="preserve">
-    <value>608</value>
+    <value>607</value>
   </data>
   <data name="RejectFileTransmission" xml:space="preserve">
     <value>603</value>

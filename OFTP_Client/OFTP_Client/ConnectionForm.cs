@@ -490,15 +490,16 @@ namespace OFTP_Client
                 ServerConnectionLabel.ForeColor = Color.Red;
                 ServerConnectionLabel.Text = "Stan: Rozłączono";
 
-                Show();
                 LoginButton.Enabled = false;
                 RegisterButton.Enabled = false;
                 TryAgainButton.Enabled = true;
                 TryAgainButton.Text = "Połącz";
+                TryAgainButton.Visible = true;
                 LoginTextBox.Text = "";
                 PasswordTextBox.Text = "";
                 connected = false;
                 mainWindow.SendEmailEvent -= MainWindow_SendEmailEvent;
+                Show();
             };
 
             mainWindow.Show();

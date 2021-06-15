@@ -97,20 +97,11 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 609.
+        ///   Looks up a localized string similar to 608.
         /// </summary>
         internal static string FileTransmissionInterrupted {
             get {
                 return ResourceManager.GetString("FileTransmissionInterrupted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 607.
-        /// </summary>
-        internal static string NextDataLength {
-            get {
-                return ResourceManager.GetString("NextDataLength", resourceCulture);
             }
         }
         
@@ -124,7 +115,7 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 608.
+        ///   Looks up a localized string similar to 607.
         /// </summary>
         internal static string OK {
             get {

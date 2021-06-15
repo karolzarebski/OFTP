@@ -61,7 +61,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 502.
+        ///   Looks up a localized string similar to 301.
         /// </summary>
         internal static string AcceptedIncomingConnection {
             get {
@@ -70,7 +70,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 501.
+        ///   Looks up a localized string similar to 300.
         /// </summary>
         internal static string AskUserForConnection {
             get {
@@ -79,7 +79,7 @@ namespace ServerLibrary.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 503.
+        ///   Looks up a localized string similar to 302.
         /// </summary>
         internal static string RejectedIncomingConnection {
             get {

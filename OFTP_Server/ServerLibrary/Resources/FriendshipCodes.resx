@@ -118,21 +118,21 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AddFriend" xml:space="preserve">
-    <value>701</value>
+    <value>401</value>
   </data>
   <data name="AddToFriendsAccepted" xml:space="preserve">
-    <value>703</value>
+    <value>403</value>
   </data>
   <data name="AddToFriendsRejected" xml:space="preserve">
-    <value>704</value>
+    <value>404</value>
   </data>
   <data name="AskForFriendship" xml:space="preserve">
-    <value>700</value>
+    <value>400</value>
   </data>
   <data name="NewFriend" xml:space="preserve">
-    <value>705</value>
+    <value>405</value>
   </data>
   <data name="RemoveFriend" xml:space="preserve">
-    <value>702</value>
+    <value>402</value>
   </data>
 </root>

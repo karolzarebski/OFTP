@@ -61,7 +61,7 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 800.
+        ///   Looks up a localized string similar to 500.
         /// </summary>
         internal static string SendEmail {
             get {
@@ -70,7 +70,7 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 802.
+        ///   Looks up a localized string similar to 502.
         /// </summary>
         internal static string SendEmailFailure {
             get {
@@ -79,7 +79,7 @@ namespace OFTP_Client.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 801.
+        ///   Looks up a localized string similar to 501.
         /// </summary>
         internal static string SendEmailSuccess {
             get {

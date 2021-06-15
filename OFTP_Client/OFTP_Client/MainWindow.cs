@@ -429,6 +429,7 @@ namespace OFTP_Client
 
             UsersListBox.Items.Clear();
             _availableUsers.Clear();
+            _friends.Clear();
         }
 
         private void LogoutButton_Click(object sender, EventArgs e)
