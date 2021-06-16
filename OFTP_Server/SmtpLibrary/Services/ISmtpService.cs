@@ -6,5 +6,6 @@ namespace SmtpLibrary.Services
     {
         Task<bool> SendAbsenceEmail(string destinationEmail, string senderEmail, string senderUsername);
         Task<bool> SendRegistrationEmail(string destinationEmail);
+        bool IsEmailCorrect(string email);
     }
 }

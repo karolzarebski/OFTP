@@ -2,6 +2,7 @@
 using System;
 using System.Net;
 using System.Net.Mail;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SmtpLibrary.Services
@@ -19,6 +20,32 @@ namespace SmtpLibrary.Services
             _logger = logger;
 
             ConfigureSmtpClient();
+        }
+
+        public bool IsEmailCorrect(string email)
+        {
+            if (email != string.Empty)
+            {
+                MailAddress eMailValidator = null;
+
+                if (MailAddress.TryCreate(email, out eMailValidator))
+                {
+                    if (Regex.IsMatch(eMailValidator.Host, "[a-zA-z]+\\.[a-zA-z]+"))
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            return false;
         }
 
         private void ConfigureSmtpClient()
