@@ -296,6 +296,8 @@ namespace OFTP_Client
                         {
                             MessageBox.Show("Pomyślnie odebrano pliki", "Transfer zakończony",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                            UserEncryptionCheckBox.Enabled = true;
                         }
                     }
                     else
@@ -548,6 +550,8 @@ namespace OFTP_Client
                 StopButton.Enabled = true;
                 PauseButton.Enabled = true;
 
+                ModifyAccountButton.Enabled = false;
+
                 var selectedUser = UsersListBox.SelectedItem;
 
                 if (selectedUser != null)
@@ -593,6 +597,8 @@ namespace OFTP_Client
                 AddOrRemoveFriendButton.Enabled = true;
                 StopButton.Enabled = true;
                 PauseButton.Enabled = true;
+
+                ModifyAccountButton.Enabled = true;
             }
         }
 
@@ -653,7 +659,7 @@ namespace OFTP_Client
                 allFiles += i + "\r\n";
             }
 
-            MessageBox.Show("Wybrane pliki : \r\n" + allFiles, "Wybrane pliki", 
+            MessageBox.Show("Wybrane pliki : \r\n" + allFiles, "Wybrane pliki",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             //SendButton.Enabled = false;
@@ -676,6 +682,8 @@ namespace OFTP_Client
                 SendFileProgressLabel.Text = "Postęp: ";
 
                 SendButton.Enabled = false;
+
+                UserEncryptionCheckBox.Enabled = true;
 
                 FilesTreeView.Nodes.Clear();
             }
@@ -907,6 +915,16 @@ namespace OFTP_Client
             }
         }
 
+        private void ModifyAccountButton_Click(object sender, EventArgs e)
+        {
+            var modifyAccountWindow = new AccountModification(_loggedInAs);
+
+            if (modifyAccountWindow.ShowDialog() == DialogResult.Yes)
+            {
+                LogoutButton.PerformClick();
+            }
+        }
+
         private void UserEncryptionCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             isEncryptionUsed = !isEncryptionUsed;
@@ -944,6 +962,8 @@ namespace OFTP_Client
 
                         MessageBox.Show("Wysyłanie plików zostało pomyślnie przerwane", "Stop",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                        UserEncryptionCheckBox.Enabled = true;
                         break;
                     case DialogResult.No:
                         break;

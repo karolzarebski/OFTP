@@ -28,8 +28,8 @@ namespace OFTP_Client
             InitializeComponent();
 
             //ServerIpTextBox.Text = "192.168.1.14";
-            LoginTextBox.Text = "karol123";
-            PasswordTextBox.Text = "Ww123456789";
+            //LoginTextBox.Text = "karol123";
+            //PasswordTextBox.Text = "Ww123456789";
 
             ConnectToServer();
         }

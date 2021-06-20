@@ -52,6 +52,7 @@ namespace OFTP_Client
             this.FriendsCountLabel = new System.Windows.Forms.Label();
             this.AddOrRemoveFriendButton = new System.Windows.Forms.Button();
             this.UserEncryptionCheckBox = new System.Windows.Forms.CheckBox();
+            this.ModifyAccountButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // UsersListBox
@@ -78,7 +79,7 @@ namespace OFTP_Client
             // 
             this.ConnectButton.Location = new System.Drawing.Point(396, 128);
             this.ConnectButton.Name = "ConnectButton";
-            this.ConnectButton.Size = new System.Drawing.Size(108, 23);
+            this.ConnectButton.Size = new System.Drawing.Size(120, 23);
             this.ConnectButton.TabIndex = 2;
             this.ConnectButton.Text = "Połącz";
             this.ConnectButton.UseVisualStyleBackColor = true;
@@ -154,7 +155,7 @@ namespace OFTP_Client
             this.SendButton.Enabled = false;
             this.SendButton.Location = new System.Drawing.Point(396, 241);
             this.SendButton.Name = "SendButton";
-            this.SendButton.Size = new System.Drawing.Size(108, 23);
+            this.SendButton.Size = new System.Drawing.Size(120, 23);
             this.SendButton.TabIndex = 10;
             this.SendButton.Text = "Wyślij pliki";
             this.SendButton.UseVisualStyleBackColor = true;
@@ -196,7 +197,7 @@ namespace OFTP_Client
             // 
             this.ChooseDir.Location = new System.Drawing.Point(396, 191);
             this.ChooseDir.Name = "ChooseDir";
-            this.ChooseDir.Size = new System.Drawing.Size(108, 23);
+            this.ChooseDir.Size = new System.Drawing.Size(120, 23);
             this.ChooseDir.TabIndex = 15;
             this.ChooseDir.Text = "Wybór folderu";
             this.ChooseDir.UseVisualStyleBackColor = true;
@@ -207,7 +208,7 @@ namespace OFTP_Client
             this.PauseButton.Enabled = false;
             this.PauseButton.Location = new System.Drawing.Point(396, 298);
             this.PauseButton.Name = "PauseButton";
-            this.PauseButton.Size = new System.Drawing.Size(108, 23);
+            this.PauseButton.Size = new System.Drawing.Size(120, 23);
             this.PauseButton.TabIndex = 16;
             this.PauseButton.Text = "Pauza";
             this.PauseButton.UseVisualStyleBackColor = true;
@@ -218,7 +219,7 @@ namespace OFTP_Client
             this.StopButton.Enabled = false;
             this.StopButton.Location = new System.Drawing.Point(396, 327);
             this.StopButton.Name = "StopButton";
-            this.StopButton.Size = new System.Drawing.Size(108, 23);
+            this.StopButton.Size = new System.Drawing.Size(120, 23);
             this.StopButton.TabIndex = 17;
             this.StopButton.Text = "Stop";
             this.StopButton.UseVisualStyleBackColor = true;
@@ -278,11 +279,22 @@ namespace OFTP_Client
             this.UserEncryptionCheckBox.UseVisualStyleBackColor = true;
             this.UserEncryptionCheckBox.CheckedChanged += new System.EventHandler(this.UserEncryptionCheckBox_CheckedChanged);
             // 
+            // ModifyAccountButton
+            // 
+            this.ModifyAccountButton.Location = new System.Drawing.Point(396, 372);
+            this.ModifyAccountButton.Name = "ModifyAccountButton";
+            this.ModifyAccountButton.Size = new System.Drawing.Size(120, 23);
+            this.ModifyAccountButton.TabIndex = 23;
+            this.ModifyAccountButton.Text = "Modyfikuj konto";
+            this.ModifyAccountButton.UseVisualStyleBackColor = true;
+            this.ModifyAccountButton.Click += new System.EventHandler(this.ModifyAccountButton_Click);
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(998, 460);
+            this.Controls.Add(this.ModifyAccountButton);
             this.Controls.Add(this.UserEncryptionCheckBox);
             this.Controls.Add(this.AddOrRemoveFriendButton);
             this.Controls.Add(this.FriendsCountLabel);
@@ -341,5 +353,6 @@ namespace OFTP_Client
         private System.Windows.Forms.Label FriendsCountLabel;
         private System.Windows.Forms.Button AddOrRemoveFriendButton;
         private System.Windows.Forms.CheckBox UserEncryptionCheckBox;
+        private System.Windows.Forms.Button ModifyAccountButton;
     }
 }
